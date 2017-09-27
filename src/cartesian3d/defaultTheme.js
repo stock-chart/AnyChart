@@ -35,6 +35,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       }
     ],
     'yScale': {
+      'softMinimum': 0,
       'stackDirection': 'reverse'
     }
   },
