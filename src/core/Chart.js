@@ -1277,10 +1277,12 @@ anychart.core.Chart.contextMenuMap = {
     'exporting-separator': {'index': 51}
   },
   'full-screen-enter': {
-    'full-screen-enter': anychart.core.Chart.contextMenuItems['full-screen-enter']
+    'full-screen-enter': anychart.core.Chart.contextMenuItems['full-screen-enter'],
+    'full-screen-separator': {'index': 61}
   },
   'full-screen-exit': {
-    'full-screen-exit': anychart.core.Chart.contextMenuItems['full-screen-exit']
+    'full-screen-exit': anychart.core.Chart.contextMenuItems['full-screen-exit'],
+    'full-screen-separator': {'index': 61}
   },
   'main': {
     'about': anychart.core.Chart.contextMenuItems['about']
