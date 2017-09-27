@@ -86,16 +86,20 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'tooltip': {
           'titleFormat': anychart.core.defaultTheme.returnDateTimeX
         },
-        'labels': {
-          'format': anychart.core.defaultTheme.returnDateTimeX
+        'normal': {
+          'labels': {
+            'format': anychart.core.defaultTheme.returnDateTimeX
+          }
         }
       },
       'ohlc': {
         'tooltip': {
           'titleFormat': anychart.core.defaultTheme.returnDateTimeX
         },
-        'labels': {
-          'format': anychart.core.defaultTheme.returnDateTimeX
+        'normal': {
+          'labels': {
+            'format': anychart.core.defaultTheme.returnDateTimeX
+          }
         }
       }
     },

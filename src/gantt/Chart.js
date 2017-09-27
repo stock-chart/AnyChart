@@ -9,6 +9,7 @@ goog.require('anychart.ganttModule.IInteractiveGrid');
 goog.require('anychart.ganttModule.Splitter');
 goog.require('anychart.ganttModule.TimeLine');
 goog.require('anychart.treeDataModule.Tree');
+goog.require('anychart.treeDataModule.utils');
 
 
 
@@ -213,12 +214,6 @@ anychart.ganttModule.Chart.Z_INDEX_SCROLL = 20;
 
 
 /** @inheritDoc */
-anychart.ganttModule.Chart.prototype.usesTreeData = function() {
-  return true;
-};
-
-
-/** @inheritDoc */
 anychart.ganttModule.Chart.prototype.getAllSeries = function() {
   return [];
 };
@@ -382,13 +377,13 @@ anychart.ganttModule.Chart.prototype.scrollInvalidated_ = function(event) {
  */
 anychart.ganttModule.Chart.prototype.data = function(opt_value, opt_fillMethod) {
   if (goog.isDef(opt_value)) {
-    if (opt_value instanceof anychart.treeDataModule.Tree || opt_value instanceof anychart.treeDataModule.View) {
+    if (anychart.utils.instanceOf(opt_value, anychart.treeDataModule.Tree) || anychart.utils.instanceOf(opt_value, anychart.treeDataModule.View)) {
       if (this.data_ != opt_value) {
-        this.data_ = opt_value;
+        this.data_ = /** @type {(anychart.treeDataModule.Tree|anychart.treeDataModule.View)} */(opt_value);
         this.invalidate(anychart.ConsistencyState.GANTT_DATA | anychart.ConsistencyState.CHART_LABELS, anychart.Signal.NEEDS_REDRAW);
       }
     } else {
-      this.data_ = new anychart.treeDataModule.Tree(opt_value, opt_fillMethod);
+      this.data_ = new anychart.treeDataModule.Tree(/** @type {Array.<Object>} */(opt_value), opt_fillMethod);
       this.invalidate(anychart.ConsistencyState.GANTT_DATA | anychart.ConsistencyState.CHART_LABELS, anychart.Signal.NEEDS_REDRAW);
     }
     return this;
@@ -836,7 +831,7 @@ anychart.ganttModule.Chart.prototype.rowMouseMove = function(event) {
     this.highlight(event['hoveredIndex'], event['startY'], event['endY']);
 
     var tooltip;
-    if (target instanceof anychart.ganttModule.DataGrid) {
+    if (anychart.utils.instanceOf(target, anychart.ganttModule.DataGrid)) {
       tooltip = /** @type {anychart.core.ui.Tooltip} */(this.dg_.tooltip());
     } else {
       tooltip = /** @type {anychart.core.ui.Tooltip} */(this.tl_.tooltip());
@@ -1048,6 +1043,13 @@ anychart.ganttModule.Chart.prototype.drawContent = function(bounds) {
     this.markConsistent(anychart.ConsistencyState.GANTT_POSITION);
   }
 
+};
+
+
+/** @inheritDoc */
+anychart.ganttModule.Chart.prototype.toCsv = function(opt_chartDataExportMode, opt_csvSettings) {
+  return anychart.treeDataModule.utils.toCsv(
+      /** @type {anychart.treeDataModule.Tree|anychart.treeDataModule.View} */(this.data()), opt_csvSettings);
 };
 
 

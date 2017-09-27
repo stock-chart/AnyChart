@@ -1413,32 +1413,27 @@ anychart.stockModule.Scroller.prototype.isVertical = function() {
 //----------------------------------------------------------------------------------------------------------------------
 /**
  * Default plot Y scale getter/setter.
- * @param {(anychart.enums.ScatterScaleTypes|anychart.scales.ScatterBase)=} opt_value Y Scale to set.
+ * @param {(anychart.enums.ScatterScaleTypes|Object|anychart.scales.ScatterBase)=} opt_value Y Scale to set.
  * @return {!(anychart.scales.ScatterBase|anychart.stockModule.Scroller)} Default chart scale value or itself for method chaining.
  */
 anychart.stockModule.Scroller.prototype.yScale = function(opt_value) {
   if (goog.isDef(opt_value)) {
-    if (goog.isString(opt_value)) {
-      opt_value = anychart.scales.ScatterBase.fromString(opt_value, false);
-    }
-    if (!(opt_value instanceof anychart.scales.ScatterBase)) {
-      anychart.core.reporting.error(anychart.enums.ErrorCode.INCORRECT_SCALE_TYPE, undefined, ['Scatter chart scales', 'scatter', 'linear, log']);
-      return this;
-    }
-    if (this.yScale_ != opt_value) {
-      if (this.yScale_)
-        this.yScale_.unlistenSignals(this.yScaleInvalidated, this);
-      this.yScale_ = opt_value;
-      if (this.yScale_)
-        this.yScale_.listenSignals(this.yScaleInvalidated, this);
-      for (var i = 0; i < this.series_.length; i++) {
-        var series = this.series_[i];
-        if (series && series.enabled() && series.yScale() == this.yScale_) {
-          series.invalidate(anychart.ConsistencyState.SERIES_POINTS);
-          this.invalidate(anychart.ConsistencyState.STOCK_SCROLLER_SERIES);
+    var val = anychart.scales.Base.setupScale(this.yScale_, opt_value, null,
+        anychart.scales.Base.ScaleTypes.SCATTER, ['Scroller Y scale', 'scatter', 'linear, log'], this.yScaleInvalidated, this);
+    if (val) {
+      var dispatch = this.yScale_ == val;
+      this.yScale_ = /** @type {anychart.scales.ScatterBase} */(val);
+      this.yScale_.resumeSignalsDispatching(dispatch);
+      if (!dispatch) {
+        for (var i = 0; i < this.series_.length; i++) {
+          var series = this.series_[i];
+          if (series && series.enabled() && series.yScale() == this.yScale_) {
+            series.invalidate(anychart.ConsistencyState.SERIES_POINTS);
+            this.invalidate(anychart.ConsistencyState.STOCK_SCROLLER_SERIES);
+          }
         }
+        this.dispatchSignal(anychart.Signal.NEEDS_REDRAW);
       }
-      this.dispatchSignal(anychart.Signal.NEEDS_REDRAW);
     }
     return this;
   } else {
@@ -1603,11 +1598,11 @@ anychart.stockModule.Scroller.prototype.draw = function() {
  * @return {!(anychart.palettes.RangeColors|anychart.palettes.DistinctColors|anychart.stockModule.Scroller)} .
  */
 anychart.stockModule.Scroller.prototype.palette = function(opt_value) {
-  if (opt_value instanceof anychart.palettes.RangeColors) {
-    this.setupPalette_(anychart.palettes.RangeColors, opt_value);
+  if (anychart.utils.instanceOf(opt_value, anychart.palettes.RangeColors)) {
+    this.setupPalette_(anychart.palettes.RangeColors, /** @type {anychart.palettes.RangeColors} */(opt_value));
     return this;
-  } else if (opt_value instanceof anychart.palettes.DistinctColors) {
-    this.setupPalette_(anychart.palettes.DistinctColors, opt_value);
+  } else if (anychart.utils.instanceOf(opt_value, anychart.palettes.DistinctColors)) {
+    this.setupPalette_(anychart.palettes.DistinctColors, /** @type {anychart.palettes.DistinctColors} */(opt_value));
     return this;
   } else if (goog.isObject(opt_value) && opt_value['type'] == 'range') {
     this.setupPalette_(anychart.palettes.RangeColors);
@@ -1629,7 +1624,7 @@ anychart.stockModule.Scroller.prototype.palette = function(opt_value) {
  */
 anychart.stockModule.Scroller.prototype.setupPalette_ = function(cls, opt_cloneFrom) {
   this.invalidateSeries_();
-  if (this.palette_ instanceof cls) {
+  if (anychart.utils.instanceOf(this.palette_, cls)) {
     if (opt_cloneFrom)
       this.palette_.setup(opt_cloneFrom);
   } else {
