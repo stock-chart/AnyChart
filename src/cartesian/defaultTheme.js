@@ -17,7 +17,16 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     },
     'interactivity': {
       'hoverMode': 'by-x'
-    }
+    },
+    'scales': [
+      {
+        'type': 'ordinal'
+      },
+      {
+        'type': 'linear',
+        'softMinimum': 0
+      }
+    ]
   },
   'bar': {
     'isVertical': true,
