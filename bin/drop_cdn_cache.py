@@ -35,27 +35,18 @@ if __name__ == '__main__':
     dist_path = os.path.join(PROJECT_PATH, 'dist')
 
     releases = get_paths_list(dist_path, '/releases/%s/' % version)
-    latest = get_paths_list(dist_path, '/releases/latest/')
 
     legacy_versioned_js = get_paths_list(os.path.join(dist_path, 'js'), '/js/%s/' % version)
-    legacy_latest_js = get_paths_list(os.path.join(dist_path, 'js'), '/js/latest/')
-
     legacy_versioned_css = get_paths_list(os.path.join(dist_path, 'css'), '/css/%s/' % version)
-    legacy_latest_css = get_paths_list(os.path.join(dist_path, 'css'), '/css/latest/')
-
     legacy_versioned_themes = get_paths_list(os.path.join(dist_path, 'themes'), '/themes/%s/' % version)
-    legacy_latest_themes = get_paths_list(os.path.join(dist_path, 'themes'), '/themes/latest/')
-
     legacy_schemas = [
-        '/schemas/DVF-3234-minor-build-fixes/json-schema.json',
-        '/schemas/DVF-3234-minor-build-fixes/xml-schema.xsd',
-        '/schemas/latest/json-schema.json',
-        '/schemas/latest/xml-schema.xsd'
+        '/schemas/%s/json-schema.json' % version,
+        '/schemas/%s/xml-schema.xsd' % version
     ]
 
-    paths = releases + latest
-    paths += legacy_versioned_js + legacy_latest_js + legacy_versioned_css + legacy_latest_css
-    paths += legacy_versioned_themes + legacy_latest_themes + legacy_schemas
+    paths = releases
+    paths += legacy_versioned_js + legacy_versioned_css
+    paths += legacy_versioned_themes + legacy_schemas
 
     pieces = list(split(paths, 250))
     for piece in pieces:
