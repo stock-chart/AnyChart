@@ -1,0 +1,47 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:2.7.14
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies
+      - run:
+          name: install dependencies
+          command: |
+            git submodule update --init
+            pip install maxcdn --user
+            ./build.py libs
+
+
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies
+
+      - run:
+          name: run tests
+          command: echo ok
+
+      - run:
+          name: prepare for build
+          command: |
+            echo -e "//registry.npmjs.org/:_authToken=$NPM_TOKEN\n" >> ~/.npmrc
+            echo -e "Host $STATIC_HOST\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+            git rev-parse HEAD >> ./dist/commit-hash.txt
+
+      - run:
+          name: build
+          command: ./bin/make_build.sh
+
+      - run:
+          name: run cat tests
+          command: curl -X POST $TESTS_HOST/ci_test --data "branch=$TRAVIS_BRANCH&commit=$TRAVIS_COMMIT"
+
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
