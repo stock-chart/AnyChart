@@ -258,14 +258,14 @@ def __get_build_version():
 
     if travis_branch is not None:
         # see https://anychart.atlassian.net/browse/DVF-3193
-        contributors_token = '&token=' + github_token if github_token else ''
+        contributors_token = '&access_token=' + github_token if github_token else ''
         contributors_response = urllib.urlopen(GIT_CONTRIBUTORS_URL % contributors_token)
         contributors_data = json.loads(contributors_response.read())
         contributions = 0
         for contributor in contributors_data:
             contributions += contributor['contributions']
 
-        compare_token = '?token=' + github_token if github_token else ''
+        compare_token = '?access_token=' + github_token if github_token else ''
         compare_response = urllib.urlopen(GIT_COMPARE_URL_TEMPLATE % (travis_branch, compare_token))
         compare_data = json.loads(compare_response.read())
 
