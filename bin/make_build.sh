@@ -63,7 +63,7 @@ zip -q -r installation-package.zip *
 
 # ensure release paths exists and clean
 # as far as cdn always serve removed content, we are free to clean entire folder
-ssh $STATIC_HOST_SSH_STRING "
+ssh $STATIC_HOST_SSH_STRING " 
 mkdir -p /apps/static/cdn/releases/${VERSION} &&
 rm -rf /apps/static/cdn/releases/${VERSION}/*"
 
