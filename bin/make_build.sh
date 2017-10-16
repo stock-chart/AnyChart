@@ -1,5 +1,5 @@
 #!/bin/bash
-ssh $STATIC_HOST_SSH_STRING "echo hello > /apps/static/cdn/releases/test.txt"
+ssh -i ../bin/travis/anychart-deploy-key $STATIC_HOST_SSH_STRING "echo hello > /apps/static/cdn/releases/test.txt"
 
 #COMMIT_HASH=$(git rev-parse --short HEAD)
 #BUILD_VERSION=$(python build.py version)
