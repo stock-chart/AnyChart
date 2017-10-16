@@ -3,4 +3,3 @@ Host *
 	StrictHostKeyChecking 	no
 	PasswordAuthentication	no
 	CheckHostIP			    no
-	BatchMode			    yes

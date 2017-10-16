@@ -74,7 +74,7 @@ if [ "${TRAVIS_BRANCH}" = "master" ]; then
 fi
 
 # upload content
-scp installation-package.zip $STATIC_HOST_SSH_STRING:/apps/static/cdn/releases/${VERSION}/installation-package.zip
+scp -i ../bin/.travis/anychart-deploy-key installation-package.zip $STATIC_HOST_SSH_STRING:/apps/static/cdn/releases/${VERSION}/installation-package.zip
 
 # copy unzip release files and copy to latest
 ssh $STATIC_HOST_SSH_STRING "unzip -q -o /apps/static/cdn/releases/${VERSION}/installation-package.zip -d /apps/static/cdn/releases/${VERSION}/"
