@@ -15981,7 +15981,7 @@ declare namespace anychart.core.ui {
         listenOnce(type: string, listener: (() => void), useCapture?: boolean, listenerScope?: Object): Object;
         maxHeight(): number | string;
         maxHeight(value?: number | string): anychart.core.ui.Scroller;
-        minHeight(): number | string;
+        minHeight(): number | string;co
         minHeight(value?: number | string): anychart.core.ui.Scroller;
         orientation(): anychart.enums.Orientation | string;
         orientation(value?: anychart.enums.Orientation | string): anychart.core.ui.Scroller;
