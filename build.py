@@ -61,8 +61,8 @@ CHECKS_FLAGS = os.path.join(PROJECT_PATH, 'bin', 'checks.flags')
 COMMON_FLAGS = os.path.join(PROJECT_PATH, 'bin', 'common.flags')
 BINARIES_WRAPPER_START = os.path.join(PROJECT_PATH, 'bin', 'binaries_wrapper_start.txt')
 BINARIES_WRAPPER_END = os.path.join(PROJECT_PATH, 'bin', 'binaries_wrapper_end.txt')
-GIT_CONTRIBUTORS_URL = 'https://api.github.com/repos/anychart/anychart/contributors?anon=1'
-GIT_COMPARE_URL_TEMPLATE = 'https://api.github.com/repos/AnyChart/AnyChart/compare/master...%s'
+GIT_CONTRIBUTORS_URL = 'https://api.github.com/repos/anychart/anychart/contributors?anon=1&token=eb6c5adb7e954249f72ed9ca210f461ac6643840'
+GIT_COMPARE_URL_TEMPLATE = 'https://api.github.com/repos/AnyChart/AnyChart/compare/master...%s?token=eb6c5adb7e954249f72ed9ca210f461ac6643840'
 
 
 # endregion
@@ -254,17 +254,18 @@ def __get_build_version():
     branch_name = name_output.strip()
 
     travis_branch = os.environ.get('TRAVIS_BRANCH') if branch_name == 'HEAD' else None
+    travis_branch = 'try_to_fix_travis'
 
     if travis_branch is not None:
         #see https://anychart.atlassian.net/browse/DVF-3193
-        contributors_response = urllib.urlopen(GIT_CONTRIBUTORS_URL, {"token": "eb6c5adb7e954249f72ed9ca210f461ac6643840"})
+        contributors_response = urllib.urlopen(GIT_CONTRIBUTORS_URL)
         contributors_data = json.loads(contributors_response.read())
         contributions = 0
         for contributor in contributors_data:
             contributions += contributor['contributions']
 
         git_compare_url = GIT_COMPARE_URL_TEMPLATE % travis_branch
-        compare_response = urllib.urlopen(git_compare_url, {"token": "eb6c5adb7e954249f72ed9ca210f461ac6643840"})
+        compare_response = urllib.urlopen(git_compare_url)
         compare_data = json.loads(compare_response.read())
 
         behind_by = compare_data.get('behind_by', 0)
