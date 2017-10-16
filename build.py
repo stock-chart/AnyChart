@@ -260,12 +260,14 @@ def __get_build_version():
         contributors_response = urllib.urlopen(GIT_CONTRIBUTORS_URL)
         contributors_data = json.loads(contributors_response.read())
         contributions = 0
+        print contributors_data
         for contributor in contributors_data:
             contributions += contributor['contributions']
 
         git_compare_url = GIT_COMPARE_URL_TEMPLATE % travis_branch
         compare_response = urllib.urlopen(git_compare_url)
         compare_data = json.loads(compare_response.read())
+        print compare_data
 
         behind_by = compare_data.get('behind_by', 0)
         ahead_by = compare_data.get('ahead_by', 0)
