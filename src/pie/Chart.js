@@ -1109,13 +1109,26 @@ anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
   this[___name].setBounds(bounds);
 
   var minWidthHeight = Math.min(bounds.width, bounds.height);
+  this.explodeValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('explode')), minWidthHeight);
+  this.piePlotBounds_ = anychart.math.rect(
+      bounds.left + this.explodeValue_,
+      bounds.top + this.explodeValue_,
+      bounds.width - 2 * this.explodeValue_,
+      bounds.height - 2 * this.explodeValue_);
 
-  this.outsideLabelsOffsetValue_ = this.isOutsideLabels() && this.labels().enabled() ?
-      anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('outsideLabelsSpace')), minWidthHeight) : 0;
 
-  this.radiusValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('radius')), minWidthHeight);
+  var ___name = 'piePlotBounds__';
+  if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
+  this[___name].setBounds(this.piePlotBounds_);
+
+
+  // this.outsideLabelsOffsetValue_ = this.isOutsideLabels() && this.labels().enabled() ?
+  //     anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('outsideLabelsSpace')), minWidthHeight) : 0;
+
+  minWidthHeight = Math.min(this.piePlotBounds_.width, this.piePlotBounds_.height);
+
+  this.radiusValue_ = Math.max(anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('radius')), minWidthHeight), 0);
   this.connectorLengthValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('connectorLength')), this.radiusValue_);
-  this.radiusValue_ -= this.connectorLengthValue_;
   this.originalRadiusValue_ = this.radiusValue_;
 
   //todo Don't remove it, it can be useful (blackart)
@@ -1131,10 +1144,8 @@ anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
       innerRadius(this.radiusValue_) :
       anychart.utils.normalizeSize(innerRadius, this.radiusValue_);
 
-  this.explodeValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('explode')), minWidthHeight);
-
-  this.cx_ = bounds.left + bounds.width / 2;
-  this.cy_ = bounds.top + bounds.height / 2;
+  this.cx_ = this.piePlotBounds_.left + this.piePlotBounds_.width / 2;
+  this.cy_ = this.piePlotBounds_.top + this.piePlotBounds_.height / 2;
 
   /**
    * Bounds of pie. (Not bounds of content area).
@@ -1142,11 +1153,14 @@ anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
    * @type {anychart.math.Rect}
    * @private
    */
-  this.pieBounds_ = new anychart.math.Rect(this.cx_ - this.radiusValue_, this.cy_ - this.radiusValue_,
-      this.radiusValue_ * 2, this.radiusValue_ * 2);
+  this.pieBounds_ = new anychart.math.Rect(
+      this.cx_ - this.radiusValue_,
+      this.cy_ - this.radiusValue_,
+      this.radiusValue_ * 2,
+      this.radiusValue_ * 2);
 
-  // if (!this.pieBounds) this.pieBounds = this.container().rect().zIndex(1000);
-  // this.pieBounds.setBounds(this.pieBounds_);
+  if (!this.pieBounds) this.pieBounds = this.container().rect().zIndex(1000);
+  this.pieBounds.setBounds(this.pieBounds_);
 
   //Calculate aqua style relative bounds.
   var ac6_angle = goog.math.toRadians(-145);
@@ -1180,7 +1194,7 @@ anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
 
 
 anychart.pieModule.Chart.prototype.updateBounds = function() {
-  this.radiusValue_ -= this.labelsRadiusOffset_;
+  this.radiusValue_ = Math.max(this.radiusValue_ - this.labelsRadiusOffset_, 0);
 
   var innerRadius = /** @type {Function|string|number} */ (this.getOption('innerRadius'));
   this.innerRadiusValue_ = goog.isFunction(innerRadius) ?
@@ -1193,8 +1207,11 @@ anychart.pieModule.Chart.prototype.updateBounds = function() {
    * @type {anychart.math.Rect}
    * @private
    */
-  this.pieBounds_ = new anychart.math.Rect(this.cx_ - this.radiusValue_, this.cy_ - this.radiusValue_,
-      this.radiusValue_ * 2, this.radiusValue_ * 2);
+  this.pieBounds_ = new anychart.math.Rect(
+      this.cx_ - this.radiusValue_,
+      this.cy_ - this.radiusValue_,
+      this.radiusValue_ * 2,
+      this.radiusValue_ * 2);
 
   // if (!this.pieBounds) this.pieBounds = this.container().rect().zIndex(1000);
   // this.pieBounds.setBounds(this.pieBounds_);
@@ -1337,9 +1354,8 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
       this.labelsRadiusOffset_ = 0;
       this.calculateOutsideLabels();
 
-      // while (this.labelsRadiusOffset_) {
-        this.radiusValue_ = this.originalRadiusValue_;
-        console.log(this.labelsRadiusOffset_);
+      var iteration = 5;
+      for (;this.labelsRadiusOffset_ && iteration;) {
         this.updateBounds();
 
         this.labelsRadiusOffset_ = 0;
@@ -1352,32 +1368,8 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
 
         this.calculateOutsideLabels();
 
-      // console.log(this.labelsRadiusOffset_);
-      // this.updateBounds();
-      //
-      // this.labels().clear();
-      // if (this.connectorsLayer_) {
-      //   this.connectorsLayer_.clear();
-      //   if (mode3d) this.connectorsLowerLayer_.clear();
-      // }
-      //
-      // this.radiusValue_ = this.originalRadiusValue_;
-      // this.labelsRadiusOffset_ = 0;
-      // this.calculateOutsideLabels();
-      //
-      // console.log(this.labelsRadiusOffset_);
-      // this.updateBounds();
-      //
-      // this.labels().clear();
-      // if (this.connectorsLayer_) {
-      //   this.connectorsLayer_.clear();
-      //   if (mode3d) this.connectorsLowerLayer_.clear();
-      // }
-      //
-      // this.radiusValue_ = this.originalRadiusValue_;
-      // this.labelsRadiusOffset_ = 0;
-      // this.calculateOutsideLabels();
-      // }
+        iteration--;
+      }
     } else {
       iterator.reset();
       while (iterator.advance()) {
@@ -1390,6 +1382,7 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
     this.labels().draw();
     this.labels().getDomElement().clip(bounds);
 
+    this.invalidate(anychart.ConsistencyState.APPEARANCE);
     this.markConsistent(anychart.ConsistencyState.PIE_LABELS);
   }
 
@@ -2905,18 +2898,50 @@ anychart.pieModule.Chart.prototype.clickSlice = function(opt_explode) {
     this.drawSlice_(true);
   }
   if (this.isOutsideLabels()) {
-    this.labels().suspendSignalsDispatching();
-    this.labels().clear();
-    this.calculateOutsideLabels();
-    this.labels().draw();
-    this.labels().resumeSignalsDispatching(true);
+    exploded = iterator.meta('exploded');
+    // this.labels().suspendSignalsDispatching();
+    // this.labels().clear();
+    // this.calculateOutsideLabels();
+    // this.labels().draw();
+    // this.labels().resumeSignalsDispatching(true);
     iterator.select(index);
+    var label = this.labels().getLabel(index);
+
+    var positionProviderValue = label.positionProvider()['value'];
+    var angle = goog.math.toRadians(positionProviderValue['angle']);
+
+    // var angle = (start + sweep / 2) * Math.PI / 180;
+    // var angleDeg = goog.math.standardAngle(goog.math.toDegrees(angle));
+    var mode3d = this.getOption('mode3d');
+    //
+
+    var dR0 = this.radiusValue_ + (exploded ? this.explodeValue_ : 0);
+    var dR1 = mode3d ?
+        (this.get3DYRadius(this.radiusValue_) + (exploded ? this.get3DYRadius(this.explodeValue_) : 0)) :
+        dR0;
+
+    // coordinates of the point where the connector touches a pie
+    var x0 = this.cx_ + dR0 * Math.cos(angle);
+    var y0 = this.cy_ + dR1 * Math.sin(angle);
+
+    if (mode3d) {
+      y0 += this.get3DHeight() / 2;
+    }
+
+    this.connectorAnchorCoords[index * 2] = x0;
+    this.connectorAnchorCoords[index * 2 + 1] = y0;
+
+    positionProviderValue['radius'] = (this.radiusValue_ + this.connectorLengthValue_) + (exploded ? this.explodeValue_ : 0);
+    positionProviderValue['radiusY'] = (this.radiusValue_ + this.connectorLengthValue_) + (exploded ? this.explodeValue_ : 0);
+
+    this.updateConnector_(/** @type {anychart.core.ui.CircularLabelsFactory.Label}*/(label), true);
+    label.draw();
   }
   // for support users pointClick changes
-  var pointState = this.state.seriesState | this.state.getPointStateByIndex(iterator.getIndex());
-  var hovered = this.state.isStateContains(pointState, anychart.PointState.HOVER);
-  this.drawLabel_(pointState, hovered);
-  this.labels().draw();
+  // var pointState = this.state.seriesState | this.state.getPointStateByIndex(iterator.getIndex());
+  // var hovered = this.state.isStateContains(pointState, anychart.PointState.HOVER);
+  // this.drawLabel_(pointState, hovered);
+  // this.labels().draw();
 };
 
 
@@ -3825,52 +3850,6 @@ anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
   if (this.getOption('overlapMode') != anychart.enums.LabelsOverlapMode.ALLOW_OVERLAP) {
     this.calcDomain(leftSideLabels, false);
     this.calcDomain(rightSideLabels, true);
-
-    // var lsd = this.calcDomain(leftSideLabels, false);
-    // var rsd = this.calcDomain(rightSideLabels, true);
-    //
-    // var domains = goog.array.concat(lsd, rsd);
-    // var i, k, len, labelsLen, domain;
-
-    // while (iterator.advance()) {
-    //   if (this.isMissing_(iterator.get('value'))) continue;
-    //   var index = iterator.getIndex();
-    //   var start = /** @type {number} */ (iterator.meta('start'));
-    //   var sweep = /** @type {number} */ (iterator.meta('sweep'));
-    //   var exploded = /** @type {boolean} */ (iterator.meta('exploded')) && !(iterator.getRowsCount() == 1);
-    //   var angle = (start + sweep / 2) * Math.PI / 180;
-    //   var angleDeg = goog.math.standardAngle(goog.math.toDegrees(angle));
-    //
-    //   isRightSide = angleDeg < 90 || angleDeg > 270;
-    //
-    //   dR0 = this.radiusValue_ + (exploded ? this.explodeValue_ : 0);
-    //   var dR1 = mode3d ?
-    //       (this.get3DYRadius(this.radiusValue_) + (exploded ? this.get3DYRadius(this.explodeValue_) : 0)) :
-    //       dR0;
-    //
-    //   // coordinates of the point where the connector touches a pie
-    //   x0 = this.cx_ + dR0 * Math.cos(angle);
-    //   y0 = this.cy_ + dR1 * Math.sin(angle);
-    //
-    //   if (mode3d) {
-    //     y0 += this.get3DHeight() / 2;
-    //   }
-    //
-    //   this.connectorAnchorCoords[index * 2] = x0;
-    //   this.connectorAnchorCoords[index * 2 + 1] = y0;
-    // }
-
-    // for (i = 0, len = domains.length; i < len; i++) {
-    //   domain = domains[i];
-    //   if (domain) {
-    //     domain.applyPositions();
-    //
-    //     for (k = 0, labelsLen = domain.labels.length; k < labelsLen; k++) {
-    //       label = domain.labels[k];
-    //       this.updateConnector_(label, true);
-    //     }
-    //   }
-    // }
   }
 };
 
@@ -3979,17 +3958,22 @@ anychart.pieModule.Chart.prototype.calcDomain = function(labels, isRightSide) {
 
           this.dropLabelBoundsCache(label);
           bounds = this.getLabelBounds(label);
-          var ___name = '' + goog.getUid(label);
-          if (!this[___name]) this[___name] = this.rootElement.rect().zIndex(1000);
-          this[___name].setBounds(bounds);
+          // var ___name = '' + goog.getUid(label);
+          // if (!this[___name]) this[___name] = this.rootElement.rect().zIndex(1000);
+          //
+
+          iterator.select(label.getIndex());
+          var exploded = iterator.meta('exploded');
+
+          var boundsForCompare = exploded ? this.contentBounds : this.piePlotBounds_;
 
 
 
           this.labelsRadiusOffset_ = Math.max(
-              this.contentBounds.left - bounds.left,
-              bounds.getRight() - this.contentBounds.getRight(),
-              this.contentBounds.top - bounds.top,
-              bounds.getBottom() - this.contentBounds.getBottom(),
+              boundsForCompare.left - bounds.left,
+              bounds.getRight() - boundsForCompare.getRight(),
+              boundsForCompare.top - bounds.top,
+              bounds.getBottom() - boundsForCompare.getBottom(),
               this.labelsRadiusOffset_);
 
 
@@ -4009,6 +3993,8 @@ anychart.pieModule.Chart.prototype.calcDomain = function(labels, isRightSide) {
       }
     }
   }
+
+  this.labelsRadiusOffset_ = Math.round(this.labelsRadiusOffset_);
 
   return domains;
 };
