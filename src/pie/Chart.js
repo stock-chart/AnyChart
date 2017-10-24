@@ -1096,10 +1096,6 @@ anychart.pieModule.Chart.prototype.explodeSlices = function(value) {
  * @private
  */
 anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
-  // var ___name = 'bounds__';
-  // if (!this[___name]) this[___name] = this.rootElement.rect().zIndex(1000);
-  // this[___name].setBounds(this.contentBounds);
-
   var minWidthHeight = Math.min(bounds.width, bounds.height);
   this.explodeValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('explode')), minWidthHeight);
   this.piePlotBounds_ = anychart.math.rect(
@@ -1108,11 +1104,7 @@ anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
       bounds.width - 2 * this.explodeValue_,
       bounds.height - 2 * this.explodeValue_);
 
-  // var ___name = 'piePlotBounds__';
-  // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
-  // this[___name].setBounds(this.piePlotBounds_);
-
-  minWidthHeight = Math.min(this.piePlotBounds_.width, this.piePlotBounds_.height);
+  minWidthHeight -= this.explodeValue_;
 
   this.radiusValue_ = Math.max(anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('radius')), minWidthHeight), 0);
   this.connectorLengthValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('connectorLength')), this.radiusValue_);
@@ -1134,21 +1126,6 @@ anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
   this.cx_ = this.piePlotBounds_.left + this.piePlotBounds_.width / 2;
   this.cy_ = this.piePlotBounds_.top + this.piePlotBounds_.height / 2;
 
-  /**
-   * Bounds of pie. (Not bounds of content area).
-   * Need for radial gradient to set correct bounds.
-   * @type {anychart.math.Rect}
-   * @private
-   */
-  this.pieBounds_ = new anychart.math.Rect(
-      this.cx_ - this.radiusValue_,
-      this.cy_ - this.radiusValue_,
-      this.radiusValue_ * 2,
-      this.radiusValue_ * 2);
-
-  // if (!this.pieBounds) this.pieBounds = this.container().rect().zIndex(1000);
-  // this.pieBounds.setBounds(this.pieBounds_);
-
   //Calculate aqua style relative bounds.
   var ac6_angle = goog.math.toRadians(-145);
   var ac6_focalPoint = .5;
@@ -1165,18 +1142,7 @@ anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
   this.aquaStyleObj_['fy'] = !isNaN(fy) && isFinite(fy) ? fy : 0;
   this.aquaStyleObj_['mode'] = bounds;
 
-  var labels = this.labels();
-  labels.suspendSignalsDispatching();
-  labels.cx(this.cx_);
-  labels.cy(this.cy_);
-  labels.parentRadius(this.radiusValue_);
-  labels.startAngle(/** @type {number} */ (this.getOption('startAngle')));
-  labels.sweepAngle(360);
-  labels.parentBounds(this.pieBounds_);
-  labels.resumeSignalsDispatching(false);
-
-  this.hovered().labels()
-      .parentBounds(this.pieBounds_);
+  this.updateBounds();
 };
 
 
@@ -1202,9 +1168,6 @@ anychart.pieModule.Chart.prototype.updateBounds = function() {
       this.cy_ - this.radiusValue_,
       this.radiusValue_ * 2,
       this.radiusValue_ * 2);
-
-  // if (!this.pieBounds) this.pieBounds = this.container().rect().zIndex(1000);
-  // this.pieBounds.setBounds(this.pieBounds_);
 
   var labels = this.labels();
   labels.suspendSignalsDispatching();
