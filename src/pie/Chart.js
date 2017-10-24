@@ -150,9 +150,6 @@ anychart.pieModule.Chart = function(opt_data, opt_csvSettings) {
       anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.PIE_LABELS,
       anychart.Signal.NEEDS_REDRAW],
     ['sort', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW, 0, sortBeforeInvalidation],
-    ['outsideLabelsSpace',
-      anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.PIE_LABELS,
-      anychart.Signal.NEEDS_REDRAW | anychart.Signal.BOUNDS_CHANGED],
     ['insideLabelsOffset',
       anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.PIE_LABELS,
       anychart.Signal.NEEDS_REDRAW | anychart.Signal.BOUNDS_CHANGED],
@@ -895,14 +892,6 @@ anychart.pieModule.Chart.PROPERTY_DESCRIPTORS = (function() {
       anychart.enums.PropertyHandlerType.SINGLE_ARG,
       'sort',
       anychart.enums.normalizeSort);
-  function outsideLabelsSpaceNormalizer(opt_value) {
-    return anychart.utils.normalizeNumberOrPercent(opt_value, '30%');
-  }
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'outsideLabelsSpace',
-      outsideLabelsSpaceNormalizer);
   anychart.core.settings.createDescriptor(
       map,
       anychart.enums.PropertyHandlerType.SINGLE_ARG,
@@ -1122,10 +1111,6 @@ anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
   // var ___name = 'piePlotBounds__';
   // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
   // this[___name].setBounds(this.piePlotBounds_);
-
-
-  // this.outsideLabelsOffsetValue_ = this.isOutsideLabels() && this.labels().enabled() ?
-  //     anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('outsideLabelsSpace')), minWidthHeight) : 0;
 
   minWidthHeight = Math.min(this.piePlotBounds_.width, this.piePlotBounds_.height);
 
@@ -4708,7 +4693,6 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calculate = function()
   // proto['startAngle'] = proto.startAngle;//doc|ex
   // proto['explode'] = proto.explode;//doc/ex
   // proto['sort'] = proto.sort;//doc|ex
-  // proto['outsideLabelsSpace'] = proto.outsideLabelsSpace;//doc|ewx
   // proto['overlapMode'] = proto.overlapMode;
   // proto['insideLabelsOffset'] = proto.insideLabelsOffset;//doc|ewx
   // proto['connectorLength'] = proto.connectorLength;//doc|ex
