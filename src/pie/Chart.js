@@ -4496,7 +4496,7 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.applyPositions = funct
  * Calculating domain parameters: bounds, labels positions, critical angle.
  */
 anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function() {
-  var label, labelBounds, nextLabel;
+  var label, labelBounds;
   this.height = 0;
   var sumPos = 0;
   this.dropBoundsCache();
