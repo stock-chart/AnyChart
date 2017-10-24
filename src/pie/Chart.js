@@ -1195,6 +1195,9 @@ anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
 };
 
 
+/**
+ * Update bounds.
+ */
 anychart.pieModule.Chart.prototype.updateBounds = function() {
   this.radiusValue_ = Math.max(this.radiusValue_ - this.labelsRadiusOffset_, 0);
 
@@ -3742,6 +3745,9 @@ anychart.pieModule.Chart.prototype.isNoData = function() {
 
 
 //region --- Calculating outside labels and connectors
+/**
+ * Init connector elements.
+ */
 anychart.pieModule.Chart.prototype.initConnectorElements = function() {
   //region init connector elements
   this.connectorAnchorCoords = [];
@@ -3906,7 +3912,7 @@ anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
             connectorPath = /** @type {acgraph.vector.Path} */(this.connectorsLayer_.genNextChild());
           }
           this.drawnConnectors_[index] = connectorPath;
-          connectorPath.stroke(connectorStroke);
+          connectorPath.stroke(/** @type {acgraph.vector.Stroke} */ (this.getOption('connectorStroke')));
           this.drawConnectorLine(label, connectorPath);
         }
       }
@@ -4144,8 +4150,6 @@ anychart.pieModule.Chart.prototype.calcDomain = function(labels, isRightSide, op
   }
 
   this.labelsRadiusOffset_ = Math.round(this.labelsRadiusOffset_);
-
-  return domains;
 };
 
 
