@@ -2645,7 +2645,6 @@ anychart.pieModule.Chart.prototype.drawOutsideLabel_ = function(pointState, opt_
       label['anchor'](/** @type {string} */(anchor));
     label.enabled(false);
   }
-  // label.normalPP = {'value': {'radius': positionProvider['value']['normalRadius'], 'angle': positionProvider['value']['angle']}};
   if (opt_updateConnector)
     this.updateConnector_(/** @type {anychart.core.ui.CircularLabelsFactory.Label}*/(label), isDraw);
   return /** @type {anychart.core.ui.CircularLabelsFactory.Label}*/(label);
@@ -2892,7 +2891,6 @@ anychart.pieModule.Chart.prototype.paletteInvalidated_ = function(event) {
  */
 anychart.pieModule.Chart.prototype.clickSlice = function(opt_explode) {
   var iterator = this.getIterator();
-  var mode3d = this.getOption('mode3d');
   // if only 1 point in Pie was drawn - forbid to explode it
   if (iterator.getRowsCount() == 1 || iterator.meta('sweep') == 360)
     return;
@@ -2909,53 +2907,12 @@ anychart.pieModule.Chart.prototype.clickSlice = function(opt_explode) {
   if (!goog.isDef(start) || !goog.isDef(sweep) || !sweep) return;
 
   var index = iterator.getIndex();
-  if (mode3d) {
+  if (this.getOption('mode3d')) {
     this.draw3DSlices_(index, true);
   } else {
     this.drawSlice_(true);
   }
   if (this.isOutsideLabels()) {
-    // exploded = iterator.meta('exploded');
-    //
-    // var label = this.labels().getLabel(index);
-    // label.exploded = exploded;
-    // label.suspendSignalsDispatching();
-    //
-    // var angle = goog.math.toRadians(start + sweep / 2);
-    //
-    // var dR0 = this.radiusValue_ + (exploded ? this.explodeValue_ : 0);
-    // var dR1 = mode3d ?
-    //     (this.get3DYRadius(this.radiusValue_) + (exploded ? this.get3DYRadius(this.explodeValue_) : 0)) :
-    //     dR0;
-    //
-    // // coordinates of the point where the connector touches a pie
-    // var x0 = this.cx_ + dR0 * Math.cos(angle);
-    // var y0 = this.cy_ + dR1 * Math.sin(angle);
-    //
-    // if (mode3d) {
-    //   y0 += this.get3DHeight() / 2;
-    // }
-    //
-    // this.connectorAnchorCoords[index * 2] = x0;
-    // this.connectorAnchorCoords[index * 2 + 1] = y0;
-    //
-    // if (exploded) {
-    //   var radius = (this.radiusValue_ + this.connectorLengthValue_) + (exploded ? this.explodeValue_ : 0);
-    //   label.normalPP = goog.object.clone(label.positionProvider());
-    //
-    //   label.positionProvider({'value': {
-    //     'angle': label.positionProvider()['value']['angle'],
-    //     'radius': radius,
-    //     'radiusY': radius
-    //   }});
-    // } else {
-    //   label.positionProvider(label.normalPP);
-    // }
-    //
-    // this.updateConnector_(/** @type {anychart.core.ui.CircularLabelsFactory.Label}*/(label), true);
-    // label.draw();
-    // label.resumeSignalsDispatching(false);
-
     this.recalculateBounds_ = false;
     this.labels().suspendSignalsDispatching();
     this.labels().clear();
@@ -3641,10 +3598,8 @@ anychart.pieModule.Chart.prototype.createTooltipContextProvider = function() {
 anychart.pieModule.Chart.prototype.getLabelBounds = function(label) {
   if (!this.labelsBoundsCache_) this.labelsBoundsCache_ = [];
   var index = label.getIndex();
-
-  if (!this.labelsBoundsCache_[index]) {
+  if (!this.labelsBoundsCache_[index])
     this.labelsBoundsCache_[index] = anychart.math.Rect.fromCoordinateBox(this.labels().measureWithTransform(label));
-  }
 
   return this.labelsBoundsCache_[index];
 };
@@ -3675,7 +3630,7 @@ anychart.pieModule.Chart.prototype.createPositionProvider = function() {
   var singlePoint = (iterator.getRowsCount() == 1) || sweep == 360;
   var exploded = /** @type {boolean} */ (iterator.meta('exploded')) && !singlePoint;
   var angle = start + sweep / 2;
-  var dR, normalDr;
+  var dR;
   var outerXR;
   var outerYR;
   var innerXR;
@@ -3721,18 +3676,16 @@ anychart.pieModule.Chart.prototype.createPositionProvider = function() {
     }
 
     return {'value': {'angle': angle, 'radius': xRadius, 'radiusY': yRadius}};
-
   } else {
     if (outside) {
       dR = (this.radiusValue_ + this.connectorLengthValue_) + (exploded ? this.explodeValue_ : 0);
-      normalDr = this.radiusValue_ + this.connectorLengthValue_;
     } else {
       var radius = singlePoint && !this.innerRadiusValue_ ? 0 : this.radiusValue_ - this.innerRadiusValue_;
       dR = anychart.utils.normalizeSize(insideLabelsOffset, radius) +
           this.innerRadiusValue_ + (exploded ? this.explodeValue_ : 0);
     }
 
-    return {'value': {'angle': angle, 'radius': dR, 'normalRadius': normalDr}};
+    return {'value': {'angle': angle, 'radius': dR}};
   }
 };
 
@@ -3819,7 +3772,7 @@ anychart.pieModule.Chart.prototype.getSliceCenterCoords = function(index) {
  */
 anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
   var iterator = this.getIterator();
-  var label, x0, y0, dR0, isRightSide;
+  var label, x0, y0, radius, isRightSide;
   var connectorPath, connector;
   var mode3d = this.getOption('mode3d');
 
@@ -3859,11 +3812,11 @@ anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
     isRightSide = angleDeg < 90 || angleDeg > 270;
 
     var center = this.getSliceCenterCoords(index);
-    dR0 = mode3d ? this.get3DYRadius(this.radiusValue_) : this.radiusValue_;
+    radius = mode3d ? this.get3DYRadius(this.radiusValue_) : this.radiusValue_;
 
     // coordinates of the point where the connector touches a pie
-    x0 = center[0] + dR0 * Math.cos(angle);
-    y0 = center[1] + dR0 * Math.sin(angle);
+    x0 = center[0] + this.radiusValue_ * Math.cos(angle);
+    y0 = center[1] + radius * Math.sin(angle);
 
     if (mode3d) {
       y0 += this.get3DHeight() / 2;
@@ -4488,8 +4441,7 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.dropLabel = function(l
  */
 anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.getBounds = function() {
   if (!this.boundsCache) {
-    var label = this.labels[0];
-    var firstLabelHeight = label ? this.pie.getLabelBounds(label).height : 0;
+    var firstLabelHeight = this.labels[0] ? this.pie.getLabelBounds(this.labels[0]).height : 0;
     var domainY = this.y + firstLabelHeight / 2;
     this.boundsCache = new anychart.math.Rect(this.x, domainY, this.width, this.height);
   }
@@ -4582,13 +4534,13 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
     this.y = bottomLabelsYLimit - this.height;
   }
   if (this.labels.length != 0) {
-    label = this.labels[0];
-    var firstLabelHeight = this.pie.getLabelBounds(label).height;
+    var firstLabelHeight = this.pie.getLabelBounds(this.labels[0]).height;
     if (this.y + firstLabelHeight < topLabelsYLimit) {
       startLabelsDrawingYPos = topLabelsYLimit - firstLabelHeight + this.height;
       this.y = topLabelsYLimit - firstLabelHeight;
     }
   }
+
   var criticalAngle = /** @type {number} */ (this.pie.getOption('outsideLabelsCriticalAngle'));
 
   this.labelsPositions.length = 0;
@@ -4606,9 +4558,8 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
 
   for (j = 0, len = this.labels.length; j < len; j++) {
     label = this.labels[j];
-    nextLabel = this.labels[j + 1];
     labelBounds = this.pie.getLabelBounds(label);
-    nextLabelHeight = (j == len - 1) ? 0 : this.pie.getLabelBounds(nextLabel).height;
+    nextLabelHeight = (j == len - 1) ? 0 : this.pie.getLabelBounds(this.labels[j + 1]).height;
 
     iterator.select(label.getIndex());
 
