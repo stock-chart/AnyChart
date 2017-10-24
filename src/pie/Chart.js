@@ -1109,6 +1109,7 @@ anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
   this.radiusValue_ = Math.max(anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('radius')), minWidthHeight), 0);
   this.connectorLengthValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('connectorLength')), this.radiusValue_);
   this.originalRadiusValue_ = this.radiusValue_;
+  this.labelsRadiusOffset_ = 0;
 
   //todo Don't remove it, it can be useful (blackart)
   //  this.recommendedLabelWidth_ = parseInt(
@@ -1117,11 +1118,6 @@ anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
   //          - 2 * this.connectorLengthValue_
   //          - 2 * anychart.pieModule.Chart.OUTSIDE_LABELS_CONNECTOR_SIZE_)
   //      / 2);
-
-  var innerRadius = /** @type {Function|string|number} */ (this.getOption('innerRadius'));
-  this.innerRadiusValue_ = goog.isFunction(innerRadius) ?
-      innerRadius(this.radiusValue_) :
-      anychart.utils.normalizeSize(innerRadius, this.radiusValue_);
 
   this.cx_ = this.piePlotBounds_.left + this.piePlotBounds_.width / 2;
   this.cy_ = this.piePlotBounds_.top + this.piePlotBounds_.height / 2;
