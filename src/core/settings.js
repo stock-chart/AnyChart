@@ -934,6 +934,13 @@ anychart.core.settings.descriptors = (function() {
   map.DUMMY_FILL = [anychart.enums.PropertyHandlerType.MULTI_ARG, 'dummyFill', anychart.core.settings.fillOrFunctionNormalizer];
   map.DUMMY_STROKE = [anychart.enums.PropertyHandlerType.MULTI_ARG, 'dummyStroke', anychart.core.settings.strokeOrFunctionNormalizer];
 
+  //pie
+  map.EXPLODE = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'explode', anychart.core.settings.numberOrPercentNormalizer];
+  map.OUTLINE_STROKE = [anychart.enums.PropertyHandlerType.MULTI_ARG, 'outlineStroke', anychart.core.settings.strokeNormalizer];
+  map.OUTLINE_FILL = [anychart.enums.PropertyHandlerType.MULTI_ARG, 'outlineFill', anychart.core.settings.fillNormalizer];
+  map.OUTLINE_WIDTH = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'outlineWidth', anychart.core.settings.numberOrPercentNormalizer];
+  map.OUTLINE_OFFSET = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'outlineOffset', anychart.core.settings.numberOrPercentNormalizer];
+
   return map;
 })();
 

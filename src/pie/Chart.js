@@ -214,6 +214,16 @@ anychart.pieModule.Chart = function(opt_data, opt_csvSettings) {
   this.hovered_ = new anychart.core.StateSettings(this, hoveredDescriptorsMeta, anychart.PointState.HOVER);
   this.hovered_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.CIRCULAR_LABELS_CONSTRUCTOR);
 
+  var selectedDescriptorsMeta = {};
+  anychart.core.settings.createDescriptorsMeta(selectedDescriptorsMeta, [
+    ['fill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
+    ['stroke', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
+    ['hatchFill', 0, 0],
+    ['labels', 0, 0]
+  ]);
+  this.selected_ = new anychart.core.StateSettings(this, selectedDescriptorsMeta, anychart.PointState.SELECT);
+  this.selected_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.CIRCULAR_LABELS_CONSTRUCTOR);
+
   this.resumeSignalsDispatching(false);
 };
 goog.inherits(anychart.pieModule.Chart, anychart.core.SeparateChart);
@@ -3332,16 +3342,6 @@ anychart.pieModule.Chart.prototype.makePointEvent = function(event) {
 
 
 /**
- * @param {(anychart.enums.SelectionMode|string|null)=} opt_value Selection mode.
- * @return {anychart.pieModule.Chart|anychart.enums.SelectionMode|null} .
- */
-/*TODO(AntonKagakin): Do not remove. For future interactivity improvement.
-anychart.pieModule.Chart.prototype.selectionMode = function(opt_value) {
-  return null;
-};*/
-
-
-/**
  * Normal state settings.
  * @param {!Object=} opt_value
  * @return {anychart.core.StateSettings|anychart.pieModule.Chart}
@@ -3403,7 +3403,7 @@ anychart.pieModule.Chart.prototype.hover = function(opt_indexOrIndexes) {
 /** @inheritDoc */
 anychart.pieModule.Chart.prototype.unhover = function(opt_indexOrIndexes) {
   if (!(this.state.hasPointState(anychart.PointState.HOVER) ||
-      this.state.isStateContains(this.state.getSeriesState(), anychart.PointState.HOVER)) || !this.enabled())
+          this.state.isStateContains(this.state.getSeriesState(), anychart.PointState.HOVER)) || !this.enabled())
     return;
 
   var index;
@@ -3464,11 +3464,24 @@ anychart.pieModule.Chart.prototype.hoverSeries = function() {
 
 
 /**
+ * Selected state settings.
+ * @param {!Object=} opt_value
+ * @return {anychart.core.StateSettings|anychart.pieModule.Chart}
+ */
+anychart.pieModule.Chart.prototype.selected = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    this.selected_.setup(opt_value);
+    return this;
+  }
+  return this.selected_;
+};
+
+
+/**
  * Selects a point of the chart by its index.
  * @param {(number|Array.<number>)=} opt_indexOrIndexes Index or array of indexes of the point to select.
  * @return {!anychart.pieModule.Chart} {@link anychart.pieModule.Chart} instance for method chaining.
  */
-/*TODO(AntonKagakin): Do not remove. For future interactivity improvement.
 anychart.pieModule.Chart.prototype.select = function(opt_indexOrIndexes) {
   if (!this.enabled())
     return this;
@@ -3479,14 +3492,13 @@ anychart.pieModule.Chart.prototype.select = function(opt_indexOrIndexes) {
     this.selectSeries();
 
   return this;
-};*/
+};
 
 
 /**
  * Selects all points of the chart. Use <b>unselect</b> method to unselect them.
  * @return {!anychart.pieModule.Chart} An instance of the {@link anychart.pieModule.Chart} class for method chaining.
  */
-/*TODO(AntonKagakin): Do not remove. For future interactivity improvement.
 anychart.pieModule.Chart.prototype.selectSeries = function() {
   if (!this.enabled())
     return this;
@@ -3497,7 +3509,7 @@ anychart.pieModule.Chart.prototype.selectSeries = function() {
   this.state.setPointState(anychart.PointState.SELECT);
 
   return this;
-};*/
+};
 
 
 /**
@@ -3526,7 +3538,6 @@ anychart.pieModule.Chart.prototype.selectPoint = function(indexOrIndexes) {
 
 
 /** @inheritDoc */
-/*TODO(AntonKagakin): Do not remove. For future interactivity improvement.
 anychart.pieModule.Chart.prototype.unselect = function(opt_indexOrIndexes) {
   if (!this.enabled())
     return;
@@ -3544,14 +3555,9 @@ anychart.pieModule.Chart.prototype.unselect = function(opt_indexOrIndexes) {
   while (iterator.advance()) {
     this.drawLabel_(this.state.getPointStateByIndex(iterator.getIndex()));
   }
-};*/
+};
 
 
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Interactivity section (Apply appearance).
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Apply appearance to point.
  * @param {anychart.PointState|number} pointState
