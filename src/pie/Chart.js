@@ -3813,6 +3813,18 @@ anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
       if (label && label.enabled() != false) {
         index = label.getIndex();
 
+        this.dropLabelBoundsCache(label);
+        var bounds = this.getLabelBounds(label);
+
+        var boundsForCompare = exploded ? this.contentBounds : this.piePlotBounds_;
+
+        this.labelsRadiusOffset_ = Math.max(
+            boundsForCompare.left - bounds.left,
+            bounds.getRight() - boundsForCompare.getRight(),
+            boundsForCompare.top - bounds.top,
+            bounds.getBottom() - boundsForCompare.getBottom(),
+            this.labelsRadiusOffset_);
+
         if (!this.drawnConnectors_[index]) {
           y0 = this.connectorAnchorCoords[index * 2 + 1] - this.get3DHeight() / 2;
           if (mode3d && y0 < this.cy_) {
@@ -3825,6 +3837,7 @@ anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
           this.drawConnectorLine(label, connectorPath);
         }
       }
+
     }
   }
   //endregion
@@ -3849,6 +3862,8 @@ anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
     this.calcDomain(leftSideLabels, false, explodedLabels, false);
     this.calcDomain(rightSideLabels, true, explodedLabels, false);
   }
+
+  this.labelsRadiusOffset_ = Math.round(this.labelsRadiusOffset_);
 };
 
 
@@ -4057,8 +4072,6 @@ anychart.pieModule.Chart.prototype.calcDomain = function(labels, isRightSide, op
       }
     }
   }
-
-  this.labelsRadiusOffset_ = Math.round(this.labelsRadiusOffset_);
 };
 
 
