@@ -1774,6 +1774,8 @@ anychart.pieModule.Chart.prototype.drawLabel_ = function(pointState, opt_updateC
 anychart.pieModule.Chart.prototype.drawSlice_ = function(opt_update) {
   var iterator = this.getIterator();
 
+  console.log(1);
+
   var index = /** @type {number} */ (iterator.getIndex());
   var start = /** @type {number} */ (iterator.meta('start'));
   var sweep = /** @type {number} */ (iterator.meta('sweep'));
@@ -1781,16 +1783,21 @@ anychart.pieModule.Chart.prototype.drawSlice_ = function(opt_update) {
 
   /** @type {!acgraph.vector.Path} */
   var slice;
+  /** @type {!acgraph.vector.Path} */
+  var sliceOutline;
   /** @type {acgraph.vector.Path} */
   var hatchSlice;
   if (opt_update) {
     slice = /** @type {!acgraph.vector.Path} */ (iterator.meta('slice'));
+    sliceOutline = /** @type {!acgraph.vector.Path} */ (iterator.meta('sliceOutline'));
     hatchSlice = /** @type {acgraph.vector.Path} */ (iterator.meta('hatchSlice'));
     slice.clear();
     if (hatchSlice) hatchSlice.clear();
   } else {
     slice = /** @type {!acgraph.vector.Path} */(this.dataLayer_.genNextChild());
     iterator.meta('slice', slice);
+    sliceOutline = /** @type {!acgraph.vector.Path} */(this.dataLayer_.genNextChild());
+    iterator.meta('sliceOutline', sliceOutline);
     hatchSlice = /** @type {acgraph.vector.Path} */(this.hatchLayer_.genNextChild());
     iterator.meta('hatchSlice', hatchSlice);
   }
@@ -1801,8 +1808,11 @@ anychart.pieModule.Chart.prototype.drawSlice_ = function(opt_update) {
     var sin = Math.sin(goog.math.toRadians(angle));
     var ex = this.explodeValue_ * cos;
     var ey = this.explodeValue_ * sin;
+
+    sliceOutline = acgraph.vector.primitives.donut(slice, this.cx_ + ex, this.cy_ + ey, this.radiusValue_ + 5, this.radiusValue_ + 2, start, sweep);
     slice = acgraph.vector.primitives.donut(slice, this.cx_ + ex, this.cy_ + ey, this.radiusValue_, this.innerRadiusValue_, start, sweep);
   } else {
+    sliceOutline = acgraph.vector.primitives.donut(slice, this.cx_, this.cy_, this.radiusValue_ + 5, this.radiusValue_ + 2, start, sweep);
     slice = acgraph.vector.primitives.donut(slice, this.cx_, this.cy_, this.radiusValue_, this.innerRadiusValue_, start, sweep);
   }
 
