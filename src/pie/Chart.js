@@ -1774,8 +1774,6 @@ anychart.pieModule.Chart.prototype.drawLabel_ = function(pointState, opt_updateC
 anychart.pieModule.Chart.prototype.drawSlice_ = function(opt_update) {
   var iterator = this.getIterator();
 
-  console.log(1);
-
   var index = /** @type {number} */ (iterator.getIndex());
   var start = /** @type {number} */ (iterator.meta('start'));
   var sweep = /** @type {number} */ (iterator.meta('sweep'));
