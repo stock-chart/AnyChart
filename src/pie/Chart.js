@@ -1110,13 +1110,15 @@ anychart.pieModule.Chart.prototype.explodeSlices = function(value) {
 anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
   var minWidthHeight = Math.min(bounds.width, bounds.height);
   this.explodeValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('explode')), minWidthHeight);
-  this.piePlotBounds_ = anychart.math.rect(
-      bounds.left + this.explodeValue_,
-      bounds.top + this.explodeValue_,
-      bounds.width - 2 * this.explodeValue_,
-      bounds.height - 2 * this.explodeValue_);
+  var clampPie = this.isOutsideLabels() ? this.explodeValue_ : 0;
 
-  minWidthHeight -= this.explodeValue_;
+  this.piePlotBounds_ = anychart.math.rect(
+      bounds.left + clampPie,
+      bounds.top + clampPie,
+      bounds.width - 2 * clampPie,
+      bounds.height - 2 * clampPie);
+
+  minWidthHeight -= clampPie;
 
   this.radiusValue_ = Math.max(anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('radius')), minWidthHeight), 0);
   this.connectorLengthValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('connectorLength')), this.radiusValue_);
@@ -3855,6 +3857,15 @@ anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
       leftSideExplodedLabels2.concat(leftSideExplodedLabels) : leftSideExplodedLabels;
 
   if (this.getOption('overlapMode') != anychart.enums.LabelsOverlapMode.ALLOW_OVERLAP) {
+    // var ___name = 'cb_';
+    // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
+    // this[___name].setBounds(this.contentBounds);
+    //
+    // var ___name = 'ppb_';
+    // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
+    // this[___name].setBounds(this.piePlotBounds_);
+
+    
     this.calcDomain(leftSideExplodedLabels, false, null, true);
     this.calcDomain(rightSideExplodedLabels, true, null, true);
 
@@ -4585,18 +4596,24 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
     x1 = cx + dR * Math.cos(angle);
     y1 = cy + dRY * Math.sin(angle);
 
+    // var ___name = 'lbl_' + label.getIndex();
+    // if (!this.pie[___name]) this.pie[___name] = this.pie.container().circle().zIndex(1000);
+    // this.pie[___name].center({'x': x, 'y': y}).radius(1);
+
+    var rrr = anychart.math.vectorLength(x, y, cx, cy);
+
     // get connector radius before overlap correction
     var normalConnector = (anychart.math.vectorLength(x0, y0, x1, y1)).toFixed(3);
     // get connector radius after overlap correction
     var txConnector = (anychart.math.vectorLength(x0, y0, x, y)).toFixed(3);
     var dAngle = goog.math.toDegrees(Math.acos(normalConnector / txConnector));
 
-    if (dAngle > this.maxAngle || isNaN(this.maxAngle) || leg < 0) {
+    if (dAngle > this.maxAngle || isNaN(this.maxAngle) || leg < 0 || rrr > dR) {
       this.maxAngle = leg < 0 ? Number.POSITIVE_INFINITY : dAngle;
       this.labelToDrop = label;
       this.dropIndex = j;
     }
-    if (dAngle > criticalAngle || leg < 0) this.isCriticalAngle = true;
+    if (dAngle > criticalAngle || leg < 0 || rrr > dR) this.isCriticalAngle = true;
 
     var labelXCoord = x + connector;
     leftBound = this.isRightSide ? labelXCoord : labelXCoord - labelBounds.width;
