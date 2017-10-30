@@ -1331,7 +1331,8 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
           this.labels().clear();
           if (this.connectorsLayer_) {
             this.connectorsLayer_.clear();
-            if (mode3d) this.connectorsLowerLayer_.clear();
+            if (mode3d)
+              this.connectorsLowerLayer_.clear();
           }
 
           this.calculateOutsideLabels();
@@ -2572,6 +2573,7 @@ anychart.pieModule.Chart.prototype.drawOutsideLabel_ = function(pointState, opt_
   var anchor;
   var formatProvider = this.createFormatProvider(true);
   var positionProvider = this.createPositionProvider();
+
   if (isDraw) {
     if (wasNoLabel = !label) {
       label = this.labels().add(formatProvider, positionProvider, index);
@@ -4165,6 +4167,8 @@ anychart.pieModule.Chart.prototype.domainDefragmentation = function(domain) {
 anychart.pieModule.Chart.prototype.drawConnectorLine = function(label, path) {
   var iterator = this.data().getIterator();
   var index = label.getIndex();
+  var mode3d = /** @type {boolean} */ (this.getOption('mode3d'));
+
   if (iterator.select(index)) {
     var x0 = this.connectorAnchorCoords[index * 2];
     var y0 = this.connectorAnchorCoords[index * 2 + 1];
@@ -4183,9 +4187,10 @@ anychart.pieModule.Chart.prototype.drawConnectorLine = function(label, path) {
     var angle = positionProvider['angle'] + offsetAngle;
     var angleRad = goog.math.toRadians(angle);
     var radius = positionProvider['radius'] + offsetRadius;
+    var radiusY = mode3d ? positionProvider['radiusY'] + offsetRadius : radius;
 
     var x = this.cx_ + radius * Math.cos(angleRad) - connector;
-    var y = this.cy_ + radius * Math.sin(angleRad);
+    var y = this.cy_ + radiusY * Math.sin(angleRad);
 
     path.clear().moveTo(x0, y0).lineTo(x, y).lineTo(x + connector, y);
   }
