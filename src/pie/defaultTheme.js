@@ -14,16 +14,18 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     'radius': '45%',
     'innerRadius': 0,
     'startAngle': 0,
-    'explode': 15,
-    'outlineWidth': '10%',
-    'outlineOffset': '5%',
     'outsideLabelsCriticalAngle': 60,
-    // 'outsideLabelsSpace': 30,
     'insideLabelsOffset': '50%',
     'normal': {
       'labels': {
         'format': anychart.core.defaultTheme.PERCENT_VALUE_TOKEN + '%'
-      }
+      },
+      'outlineWidth': '10%',
+      'outlineOffset': '5%',
+      'explode': '10%'
+    },
+    'selected': {
+      'explode': '3%'
     },
     'a11y': {
       'titleFormat': anychart.core.defaultTheme.pieA11yTitleFormatter

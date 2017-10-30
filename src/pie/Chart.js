@@ -1253,7 +1253,16 @@ anychart.pieModule.Chart.prototype.createPositionProvider = function() {
  */
 anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
   var minWidthHeight = Math.min(bounds.width, bounds.height);
-  this.explodeValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('explode')), minWidthHeight);
+
+  var normalExplode = this.normal_.getOption('explode');
+  var hoveredExplode = this.hovered_.getOption('explode');
+  var selectedExplode = this.selected_.getOption('explode');
+
+  this.normalExplodeValue_ = normalExplode ? anychart.utils.normalizeSize(/** @type {number|string} */ (normalExplode), minWidthHeight) : 0;
+  this.hoveredExplodeValue_ = hoveredExplode ? anychart.utils.normalizeSize(/** @type {number|string} */ (hoveredExplode), minWidthHeight) : 0;
+  this.selectedExplodeValue_ = selectedExplode ? anychart.utils.normalizeSize(/** @type {number|string} */ (selectedExplode), minWidthHeight) : 0;
+  this.explodeValue_ = Math.max(this.normalExplodeValue_, this.hoveredExplodeValue_, this.selectedExplodeValue_);
+
   var clampPie = this.isOutsideLabels() ? this.explodeValue_ : 0;
 
   this.piePlotBounds_ = anychart.math.rect(
@@ -1497,6 +1506,22 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
+    var hasOutLine = this.normal_.getOption('outlineOffset') || this.normal_.getOption('outlineWidth') ||
+        this.hovered_.getOption('outlineOffset') || this.hovered_.getOption('outlineWidth') ||
+        this.selected_.getOption('outlineOffset') ||  this.selected_.getOption('outlineWidth');
+
+    if (this.outLineLayer_) {
+      this.outLineLayer_.clear();
+    } else if (hasOutLine) {
+      this.outLineLayer_ = new anychart.core.utils.TypedLayer(function() {
+        return acgraph.path();
+      }, function(child) {
+        (/** @type {acgraph.vector.Path} */ (child)).clear();
+      });
+      this.outLineLayer_.zIndex(anychart.pieModule.Chart.ZINDEX_PIE);
+      this.outLineLayer_.parent(this.rootElement);
+    }
+
     if (this.dataLayer_) {
       this.dataLayer_.clear();
     } else {
@@ -1655,6 +1680,7 @@ anychart.pieModule.Chart.prototype.drawLabel_ = function(pointState, opt_updateC
     return this.drawOutsideLabel_(pointState, opt_updateConnector);
 
   var hovered = this.state.isStateContains(pointState, anychart.PointState.HOVER);
+  var selected = this.state.isStateContains(pointState, anychart.PointState.SELECT);
 
   var iterator = this.getIterator();
 
@@ -1662,6 +1688,8 @@ anychart.pieModule.Chart.prototype.drawLabel_ = function(pointState, opt_updateC
   sliceLabel = goog.isDef(sliceLabel) ? sliceLabel['label'] : void 0;
   var hoverSliceLabel = iterator.get('hovered');
   hoverSliceLabel = goog.isDef(hoverSliceLabel) ? hoverSliceLabel['label'] : void 0;
+  var selectSliceLabel = iterator.get('select');
+  selectSliceLabel = goog.isDef(selectSliceLabel) ? selectSliceLabel['label'] : void 0;
 
   sliceLabel = anychart.utils.getFirstDefinedValue(sliceLabel, iterator.get('label'));
   hoverSliceLabel = hovered ? anychart.utils.getFirstDefinedValue(hoverSliceLabel, iterator.get('hoverLabel')) : null;
@@ -4288,7 +4316,9 @@ anychart.pieModule.Chart.prototype.setupByJSON = function(config, opt_default) {
   anychart.core.settings.deserialize(this, anychart.pieModule.Chart.PROPERTY_DESCRIPTORS, config);
   this.normal_.setupInternal(!!opt_default, config);
   this.normal_.setupInternal(!!opt_default, config['normal']);
+
   this.hovered_.setupInternal(!!opt_default, config['hovered']);
+  this.selected_.setupInternal(!!opt_default, config['selected']);
 };
 
 
