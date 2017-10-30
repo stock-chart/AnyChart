@@ -1007,6 +1007,10 @@ anychart.pieModule.Chart.prototype.colorizeSlice = function(pointState) {
       }
       slice.stroke(strokeColor);
 
+      var sliceOutline = /** @type {acgraph.vector.Path} */ (this.getIterator().meta('sliceOutline'));
+      sliceOutline.fill(fillColor);
+      sliceOutline.stroke(strokeColor);
+
       this.applyHatchFill(pointState);
     }
   }
@@ -1258,12 +1262,28 @@ anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
   var hoveredExplode = this.hovered_.getOption('explode');
   var selectedExplode = this.selected_.getOption('explode');
 
-  this.normalExplodeValue_ = normalExplode ? anychart.utils.normalizeSize(/** @type {number|string} */ (normalExplode), minWidthHeight) : 0;
-  this.hoveredExplodeValue_ = hoveredExplode ? anychart.utils.normalizeSize(/** @type {number|string} */ (hoveredExplode), minWidthHeight) : 0;
-  this.selectedExplodeValue_ = selectedExplode ? anychart.utils.normalizeSize(/** @type {number|string} */ (selectedExplode), minWidthHeight) : 0;
-  this.explodeValue_ = Math.max(this.normalExplodeValue_, this.hoveredExplodeValue_, this.selectedExplodeValue_);
+  this.normalExplodeValue_ = goog.isDef(normalExplode) ? anychart.utils.normalizeSize(/** @type {number|string} */ (normalExplode), minWidthHeight) : 0;
+  this.hoveredExplodeValue_ = goog.isDef(hoveredExplode) ? anychart.utils.normalizeSize(/** @type {number|string} */ (hoveredExplode), minWidthHeight) : void 0;
+  this.selectedExplodeValue_ = goog.isDef(selectedExplode) ? anychart.utils.normalizeSize(/** @type {number|string} */ (selectedExplode), minWidthHeight) : void 0;
 
-  var clampPie = this.isOutsideLabels() ? this.explodeValue_ : 0;
+  this.explodeValue_ = Math.max(this.normalExplodeValue_, this.hoveredExplodeValue_ || 0, this.selectedExplodeValue_ || 0);
+
+  this.normalOutlineWidthValue_ = anychart.utils.normalizeSize(/** @type {number|string} */(this.normal_.getOption('outlineWidth')), minWidthHeight);
+  this.normalOutlineOffsetValue_ = anychart.utils.normalizeSize(/** @type {number|string} */(this.normal_.getOption('outlineOffset')), minWidthHeight);
+
+  var hoveredOutlineWidth = this.hovered_.getOption('outlineWidth');
+  var hoveredOutlineOffset = this.hovered_.getOption('outlineOffset');
+
+  this.hoveredOutlineWidthValue_ = goog.isDef(hoveredOutlineWidth) ? anychart.utils.normalizeSize(/** @type {number|string} */(hoveredOutlineWidth), minWidthHeight) : void 0;
+  this.hoveredOutlineOffsetValue_ = goog.isDef(hoveredOutlineOffset) ? anychart.utils.normalizeSize(/** @type {number|string} */(hoveredOutlineOffset), minWidthHeight) : void 0;
+
+  var selectedOutlineWidth = this.selected_.getOption('outlineWidth');
+  var selectedOutlineOffset = this.selected_.getOption('outlineOffset');
+
+  this.selectedOutlineWidthValue_ = goog.isDef(selectedOutlineWidth) ? anychart.utils.normalizeSize(/** @type {number|string} */(selectedOutlineWidth), minWidthHeight) : void 0;
+  this.selectedOutlineOffsetValue_ = goog.isDef(selectedOutlineOffset) ? anychart.utils.normalizeSize(/** @type {number|string} */(selectedOutlineOffset), minWidthHeight) : void 0;
+
+  var clampPie = (this.isOutsideLabels() ? this.explodeValue_ : 0) + this.normalOutlineWidthValue_ + this.normalOutlineOffsetValue_;
 
   this.piePlotBounds_ = anychart.math.rect(
       bounds.left + clampPie,
@@ -1271,7 +1291,7 @@ anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
       bounds.width - 2 * clampPie,
       bounds.height - 2 * clampPie);
 
-  minWidthHeight -= clampPie;
+  minWidthHeight -= 2 * clampPie;
 
   this.radiusValue_ = Math.max(anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('radius')), minWidthHeight), 0);
   this.connectorLengthValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('connectorLength')), this.radiusValue_);
@@ -1510,16 +1530,16 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
         this.hovered_.getOption('outlineOffset') || this.hovered_.getOption('outlineWidth') ||
         this.selected_.getOption('outlineOffset') ||  this.selected_.getOption('outlineWidth');
 
-    if (this.outLineLayer_) {
-      this.outLineLayer_.clear();
+    if (this.outlineLayer_) {
+      this.outlineLayer_.clear();
     } else if (hasOutLine) {
-      this.outLineLayer_ = new anychart.core.utils.TypedLayer(function() {
+      this.outlineLayer_ = new anychart.core.utils.TypedLayer(function() {
         return acgraph.path();
       }, function(child) {
         (/** @type {acgraph.vector.Path} */ (child)).clear();
       });
-      this.outLineLayer_.zIndex(anychart.pieModule.Chart.ZINDEX_PIE);
-      this.outLineLayer_.parent(this.rootElement);
+      this.outlineLayer_.zIndex(anychart.pieModule.Chart.ZINDEX_PIE);
+      this.outlineLayer_.parent(this.rootElement);
     }
 
     if (this.dataLayer_) {
@@ -1555,7 +1575,7 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
       if (mode3d) {
         this.prepare3DSlice_();
       } else {
-        this.drawSlice_();
+        this.drawSlice_(0);
       }
     }
 
@@ -1693,6 +1713,7 @@ anychart.pieModule.Chart.prototype.drawLabel_ = function(pointState, opt_updateC
 
   sliceLabel = anychart.utils.getFirstDefinedValue(sliceLabel, iterator.get('label'));
   hoverSliceLabel = hovered ? anychart.utils.getFirstDefinedValue(hoverSliceLabel, iterator.get('hoverLabel')) : null;
+  selectSliceLabel = selected ? anychart.utils.getFirstDefinedValue(selectSliceLabel, iterator.get('selectLabel')) : null;
 
   var index = iterator.getIndex();
   var hoverLabels = this.hovered().labels();
@@ -1797,15 +1818,20 @@ anychart.pieModule.Chart.prototype.drawLabel_ = function(pointState, opt_updateC
 
 
 /**
- * Internal function for drawinga slice by arguments.
+ * Internal function for drawing a slice by arguments.
+ * @param {anychart.PointState|number} pointState Point state.
  * @param {boolean=} opt_update Whether to update current slice.
  * @return {boolean} True if point is drawn.
  * @private
  */
-anychart.pieModule.Chart.prototype.drawSlice_ = function(opt_update) {
+anychart.pieModule.Chart.prototype.drawSlice_ = function(pointState, opt_update) {
   var iterator = this.getIterator();
 
+  var hovered = this.state.isStateContains(pointState, anychart.PointState.HOVER);
+  var selected = this.state.isStateContains(pointState, anychart.PointState.SELECT);
+
   var index = /** @type {number} */ (iterator.getIndex());
+
   var start = /** @type {number} */ (iterator.meta('start'));
   var sweep = /** @type {number} */ (iterator.meta('sweep'));
   var exploded = !!iterator.meta('exploded') && !(iterator.getRowsCount() == 1);
@@ -1825,31 +1851,44 @@ anychart.pieModule.Chart.prototype.drawSlice_ = function(opt_update) {
   } else {
     slice = /** @type {!acgraph.vector.Path} */(this.dataLayer_.genNextChild());
     iterator.meta('slice', slice);
-    sliceOutline = /** @type {!acgraph.vector.Path} */(this.dataLayer_.genNextChild());
+    sliceOutline = /** @type {!acgraph.vector.Path} */(this.outlineLayer_.genNextChild());
     iterator.meta('sliceOutline', sliceOutline);
     hatchSlice = /** @type {acgraph.vector.Path} */(this.hatchLayer_.genNextChild());
     iterator.meta('hatchSlice', hatchSlice);
   }
 
-  if (exploded) {
-    var angle = start + sweep / 2;
-    var cos = Math.cos(goog.math.toRadians(angle));
-    var sin = Math.sin(goog.math.toRadians(angle));
-    var ex = this.explodeValue_ * cos;
-    var ey = this.explodeValue_ * sin;
-
-    sliceOutline = acgraph.vector.primitives.donut(slice, this.cx_ + ex, this.cy_ + ey, this.radiusValue_ + 5, this.radiusValue_ + 2, start, sweep);
-    slice = acgraph.vector.primitives.donut(slice, this.cx_ + ex, this.cy_ + ey, this.radiusValue_, this.innerRadiusValue_, start, sweep);
-  } else {
-    sliceOutline = acgraph.vector.primitives.donut(slice, this.cx_, this.cy_, this.radiusValue_ + 5, this.radiusValue_ + 2, start, sweep);
-    slice = acgraph.vector.primitives.donut(slice, this.cx_, this.cy_, this.radiusValue_, this.innerRadiusValue_, start, sweep);
+  var outlineOffset = this.normalOutlineOffsetValue_;
+  var outlineWidth = this.normalOutlineWidthValue_;
+  var explode = this.normalExplodeValue_;
+  if (hovered) {
+    outlineOffset = goog.isDef(this.hoveredOutlineOffsetValue_) ? this.hoveredOutlineOffsetValue_ : outlineOffset;
+    outlineWidth = goog.isDef(this.hoveredOutlineWidthValue_) ? this.hoveredOutlineWidthValue_ : outlineWidth;
+    explode = goog.isDef(this.hoveredExplodeValue_) ? this.hoveredExplodeValue_ : explode;
   }
+  if (selected) {
+    outlineOffset = goog.isDef(this.selectedOutlineOffsetValue_) ? this.selectedOutlineOffsetValue_ : outlineOffset;
+    outlineWidth = goog.isDef(this.selectedOutlineWidthValue_) ? this.selectedOutlineWidthValue_ : outlineWidth;
+    explode = goog.isDef(this.selectedExplodeValue_) ? this.selectedExplodeValue_ : explode;
+  }
+
+  var angle = start + sweep / 2;
+  var cos = Math.cos(goog.math.toRadians(angle));
+  var sin = Math.sin(goog.math.toRadians(angle));
+  var ex = explode * cos;
+  var ey = explode * sin;
+
+  var outerSliceRadius = this.radiusValue_ - (outlineOffset + outlineWidth);
+  var innerOutlineRadius = outerSliceRadius + outlineOffset;
+  var outerOutlineRadius = outerSliceRadius + outlineOffset + outlineWidth;
+
+  sliceOutline = acgraph.vector.primitives.donut(sliceOutline, this.cx_ + ex, this.cy_ + ey, outerOutlineRadius, innerOutlineRadius, start, sweep);
+  slice = acgraph.vector.primitives.donut(slice, this.cx_ + ex, this.cy_ + ey, outerSliceRadius, this.innerRadiusValue_, start, sweep);
 
   slice.tag = {
     series: this,
     index: index
   };
-  var pointState = this.state.getPointStateByIndex(iterator.getIndex());
+
   this.colorizeSlice(pointState);
   if (hatchSlice) {
     hatchSlice.deserialize(slice.serialize());
@@ -3167,6 +3206,8 @@ anychart.pieModule.Chart.prototype.explodeSlices = function(value) {
  */
 anychart.pieModule.Chart.prototype.clickSlice = function(opt_explode) {
   var iterator = this.getIterator();
+  var pointState = this.state.seriesState | this.state.getPointStateByIndex(iterator.getIndex());
+
   // if only 1 point in Pie was drawn - forbid to explode it
   if (iterator.getRowsCount() == 1 || iterator.meta('sweep') == 360)
     return;
@@ -3186,7 +3227,7 @@ anychart.pieModule.Chart.prototype.clickSlice = function(opt_explode) {
   if (this.getOption('mode3d')) {
     this.draw3DSlices_(index, true);
   } else {
-    this.drawSlice_(true);
+    this.drawSlice_(pointState, true);
   }
   if (this.isOutsideLabels()) {
     this.recalculateBounds_ = false;
@@ -3198,7 +3239,6 @@ anychart.pieModule.Chart.prototype.clickSlice = function(opt_explode) {
     iterator.select(index);
   }
   // for support users pointClick changes
-  var pointState = this.state.seriesState | this.state.getPointStateByIndex(iterator.getIndex());
   var hovered = this.state.isStateContains(pointState, anychart.PointState.HOVER);
   this.drawLabel_(pointState, hovered);
   this.labels().draw();
