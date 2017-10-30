@@ -4622,20 +4622,22 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
     // if (!this.pie[___name]) this.pie[___name] = this.pie.container().circle().zIndex(1000);
     // this.pie[___name].center({'x': x, 'y': y}).radius(1);
 
-    var rrr = anychart.math.vectorLength(x, y, cx, cy);
+    //radius from center of pir to label position.
+    var realConnectorRadius = Math.floor(anychart.math.vectorLength(x, y, cx, cy));
 
     // get connector radius before overlap correction
     var normalConnector = (anychart.math.vectorLength(x0, y0, x1, y1)).toFixed(3);
     // get connector radius after overlap correction
     var txConnector = (anychart.math.vectorLength(x0, y0, x, y)).toFixed(3);
     var dAngle = goog.math.toDegrees(Math.acos(normalConnector / txConnector));
+    var isNotValidConnectorLength = leg < 0 || realConnectorRadius > dR;
 
-    if (dAngle > this.maxAngle || isNaN(this.maxAngle) || leg < 0 || rrr > dR) {
+    if (dAngle > this.maxAngle || isNaN(this.maxAngle) || isNotValidConnectorLength) {
       this.maxAngle = leg < 0 ? Number.POSITIVE_INFINITY : dAngle;
       this.labelToDrop = label;
       this.dropIndex = j;
     }
-    if (dAngle > criticalAngle || leg < 0 || rrr > dR) this.isCriticalAngle = true;
+    if (dAngle > criticalAngle || isNotValidConnectorLength) this.isCriticalAngle = true;
 
     var labelXCoord = x + connector;
     leftBound = this.isRightSide ? labelXCoord : labelXCoord - labelBounds.width;
