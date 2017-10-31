@@ -178,7 +178,11 @@ anychart.pieModule.Chart = function(opt_data, opt_csvSettings) {
     ['hatchFill',
       anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.CHART_LEGEND,
       anychart.Signal.NEEDS_REDRAW],
-    ['labels', 0, 0]
+    ['labels', 0, 0],
+    ['outlineFill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
+    ['outlineStroke', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
+    ['outlineWidth', anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
+    ['outlineOffset', anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW]
   ]);
   function pieFillNormalizer(args) {
     var isAqua = false;
@@ -1289,24 +1293,6 @@ anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
 
   this.explodeValue_ = Math.max(this.normalExplodeValue_, this.hoveredExplodeValue_ || 0, this.selectedExplodeValue_ || 0);
 
-  var normalOutlineWidth = this.normal_.getOption('outlineWidth');
-  var normalOutlineOffset = this.normal_.getOption('outlineOffset');
-
-  this.normalOutlineWidthValue_ = goog.isDef(normalOutlineWidth) ? anychart.utils.normalizeSize(/** @type {number|string} */(normalOutlineWidth), minWidthHeight) : 0;
-  this.normalOutlineOffsetValue_ = goog.isDef(normalOutlineOffset) ? anychart.utils.normalizeSize(/** @type {number|string} */(normalOutlineOffset), minWidthHeight) : 0;
-
-  var hoveredOutlineWidth = this.hovered_.getOption('outlineWidth');
-  var hoveredOutlineOffset = this.hovered_.getOption('outlineOffset');
-
-  this.hoveredOutlineWidthValue_ = goog.isDef(hoveredOutlineWidth) ? anychart.utils.normalizeSize(/** @type {number|string} */(hoveredOutlineWidth), minWidthHeight) : void 0;
-  this.hoveredOutlineOffsetValue_ = goog.isDef(hoveredOutlineOffset) ? anychart.utils.normalizeSize(/** @type {number|string} */(hoveredOutlineOffset), minWidthHeight) : void 0;
-
-  var selectedOutlineWidth = this.selected_.getOption('outlineWidth');
-  var selectedOutlineOffset = this.selected_.getOption('outlineOffset');
-
-  this.selectedOutlineWidthValue_ = goog.isDef(selectedOutlineWidth) ? anychart.utils.normalizeSize(/** @type {number|string} */(selectedOutlineWidth), minWidthHeight) : void 0;
-  this.selectedOutlineOffsetValue_ = goog.isDef(selectedOutlineOffset) ? anychart.utils.normalizeSize(/** @type {number|string} */(selectedOutlineOffset), minWidthHeight) : void 0;
-
   var isLabelsEnabled = this.normal_.labels().enabled() || this.hovered_.labels().enabled() || this.selected_.labels().enabled();
   var clampPie = (this.isOutsideLabels() && isLabelsEnabled ? this.explodeValue_ : 0);
 
@@ -1317,6 +1303,8 @@ anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
       bounds.height - 2 * clampPie);
 
   minWidthHeight -= 2 * clampPie;
+
+  this.minWidthHeight_ = minWidthHeight;
 
   // var ___name = 'ppb';
   // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
@@ -1885,17 +1873,37 @@ anychart.pieModule.Chart.prototype.drawSlice_ = function(pointState, opt_update)
     iterator.meta('hatchSlice', hatchSlice);
   }
 
-  var outlineOffset = this.normalOutlineOffsetValue_;
-  var outlineWidth = this.normalOutlineWidthValue_;
+
+  var normalOutlineOffset = this.normal_.getOption('outlineOffset');
+  var normalOutlineWidth = this.normal_.getOption('outlineWidth');
+
+  var normalOutlineOffsetValue = anychart.utils.normalizeSize(/** @type {number|string} */(normalOutlineOffset || 0), this.radiusValue_);
+  var normalOutlineWidthValue = anychart.utils.normalizeSize(/** @type {number|string} */(normalOutlineWidth || 0), this.radiusValue_);
+
+  var hoveredOutlineOffset = this.hovered_.getOption('outlineOffset');
+  var hoveredOutlineWidth = this.hovered_.getOption('outlineWidth');
+
+  var hoveredOutlineOffsetValue = anychart.utils.normalizeSize(/** @type {number|string} */(hoveredOutlineOffset), this.radiusValue_);
+  var hoveredOutlineWidthValue = anychart.utils.normalizeSize(/** @type {number|string} */(hoveredOutlineWidth), this.radiusValue_);
+
+  var selectedOutlineOffset = this.selected_.getOption('outlineOffset');
+  var selectedOutlineWidth = this.selected_.getOption('outlineWidth');
+
+  var selectedOutlineOffsetValue = anychart.utils.normalizeSize(/** @type {number|string} */(selectedOutlineOffset), this.radiusValue_);
+  var selectedOutlineWidthValue = anychart.utils.normalizeSize(/** @type {number|string} */(selectedOutlineWidth), this.radiusValue_);
+
+
+  var outlineOffset = normalOutlineOffsetValue;
+  var outlineWidth = normalOutlineWidthValue;
   var explode = this.normalExplodeValue_;
   if (hovered) {
-    outlineOffset = goog.isDef(this.hoveredOutlineOffsetValue_) ? this.hoveredOutlineOffsetValue_ : outlineOffset;
-    outlineWidth = goog.isDef(this.hoveredOutlineWidthValue_) ? this.hoveredOutlineWidthValue_ : outlineWidth;
+    outlineOffset = isNaN(hoveredOutlineOffsetValue) ? outlineOffset : hoveredOutlineOffsetValue;
+    outlineWidth = isNaN(hoveredOutlineWidthValue) ? outlineWidth : hoveredOutlineWidthValue;
     explode = goog.isDef(this.hoveredExplodeValue_) ? this.hoveredExplodeValue_ : explode;
   }
   if (selected) {
-    outlineOffset = goog.isDef(this.selectedOutlineOffsetValue_) ? this.selectedOutlineOffsetValue_ : outlineOffset;
-    outlineWidth = goog.isDef(this.selectedOutlineWidthValue_) ? this.selectedOutlineWidthValue_ : outlineWidth;
+    outlineOffset = isNaN(selectedOutlineOffsetValue) ? outlineOffset : selectedOutlineOffsetValue;
+    outlineWidth = isNaN(selectedOutlineWidthValue) ? outlineWidth : selectedOutlineWidthValue;
     explode = goog.isDef(this.selectedExplodeValue_) ? this.selectedExplodeValue_ : explode;
   }
 
