@@ -1386,6 +1386,7 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
 
     iterator.reset();
     while (iterator.advance()) {
+      if (this.isMissing_(iterator.get('value'))) continue;
       if (mode3d) {
         this.prepare3DSlice_();
       } else {
