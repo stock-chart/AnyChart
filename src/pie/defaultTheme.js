@@ -20,9 +20,13 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'labels': {
         'format': anychart.core.defaultTheme.PERCENT_VALUE_TOKEN + '%'
       },
-      'outlineWidth': '1%',
-      'outlineOffset': '.7%',
       'explode': 0
+    },
+    'hovered': {
+      'outlineWidth': 10,
+      'outlineOffset': 0,
+      'outlineFill': anychart.core.defaultTheme.returnLightenSourceColor50,
+      'outlineStroke': 'none'
     },
     'selected': {
       'explode': '3%'
