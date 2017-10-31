@@ -885,12 +885,12 @@ anychart.pieModule.Chart.prototype.resolveOption = function(name, state, point, 
   var hasHoverState = !!(state & anychart.PointState.HOVER);
   var hasSelectState = !!(state & anychart.PointState.SELECT);
 
-  var stateObject = hasSelectState ? this.selected_ : hasHoverState ? this.hovered_ : this.normal_;
+  var stateObject = hasHoverState ? this.hovered_ : hasSelectState ? this.selected_ : this.normal_;
   var stateValue = stateObject.getOption(name);
   if (opt_ignorePointSettings) {
     val = stateValue;
   } else {
-    var pointStateName = hasSelectState ? 'selected' : hasHoverState ? 'hovered' : 'normal';
+    var pointStateName = hasHoverState ? 'hovered' : hasSelectState ? 'selected' : 'normal';
     var pointStateObject = point.get(pointStateName);
     val = anychart.utils.getFirstDefinedValue(
         goog.isDef(pointStateObject) ? pointStateObject[name] : void 0,
@@ -926,9 +926,13 @@ anychart.pieModule.Chart.prototype.getHatchFillResolutionContext = function(opt_
 /** @inheritDoc */
 anychart.pieModule.Chart.prototype.getColorResolutionContext = function(opt_baseColor, opt_ignorePointSettings, opt_ignoreColorScale) {
   var iterator = this.getIterator();
+  var pointFill;
+  if (!opt_ignorePointSettings) {
+    pointFill = iterator.get('fill');
+  }
   return {
     'index': iterator.getIndex(),
-    'sourceColor': opt_baseColor || this.palette().itemAt(iterator.getIndex()) || 'blue',
+    'sourceColor': acgraph.vector.normalizeFill(opt_baseColor || pointFill || this.palette().itemAt(iterator.getIndex()) || 'blue'),
     'iterator': iterator
   };
 };
@@ -1014,9 +1018,16 @@ anychart.pieModule.Chart.prototype.colorizeSlice = function(pointState) {
 
       fillResolver = anychart.pieModule.Chart.getColorResolver('outlineFill', anychart.enums.ColorType.FILL, true);
       fillColor = fillResolver(this, pointState, false, true);
+      if (this.isRadialGradientMode_(fillColor) && goog.isNull(fillColor.mode)) {
+        //fillColor = /** @type {!acgraph.vector.Fill} */(goog.object.clone(/** @type {Object} */(fillColor)));
+        fillColor.mode = this.pieBounds_ ? this.pieBounds_ : null;
+      }
 
       strokeResolver = anychart.pieModule.Chart.getColorResolver('outlineStroke', anychart.enums.ColorType.STROKE, true);
       strokeColor = strokeResolver(this, pointState, false, true);
+      if (this.isRadialGradientMode_(strokeColor) && goog.isNull(strokeColor.mode)) {
+        strokeColor.mode = this.pieBounds_ ? this.pieBounds_ : null;
+      }
 
       sliceOutline.fill(fillColor);
       sliceOutline.stroke(strokeColor);
@@ -1296,8 +1307,8 @@ anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
   this.selectedOutlineWidthValue_ = goog.isDef(selectedOutlineWidth) ? anychart.utils.normalizeSize(/** @type {number|string} */(selectedOutlineWidth), minWidthHeight) : void 0;
   this.selectedOutlineOffsetValue_ = goog.isDef(selectedOutlineOffset) ? anychart.utils.normalizeSize(/** @type {number|string} */(selectedOutlineOffset), minWidthHeight) : void 0;
 
-  var isLabelsEnabled = this.normal_.labels().enabled() || this.hovered_.labels().enabled();
-  var clampPie = (this.isOutsideLabels() && isLabelsEnabled ? this.explodeValue_ : 0) + this.normalOutlineWidthValue_ + this.normalOutlineOffsetValue_;
+  var isLabelsEnabled = this.normal_.labels().enabled() || this.hovered_.labels().enabled() || this.selected_.labels().enabled();
+  var clampPie = (this.isOutsideLabels() && isLabelsEnabled ? this.explodeValue_ : 0);
 
   this.piePlotBounds_ = anychart.math.rect(
       bounds.left + clampPie,
@@ -1311,14 +1322,6 @@ anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
   this.connectorLengthValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('connectorLength')), this.radiusValue_);
   this.originalRadiusValue_ = this.radiusValue_;
   this.labelsRadiusOffset_ = 0;
-
-  //todo Don't remove it, it can be useful (blackart)
-  //  this.recommendedLabelWidth_ = parseInt(
-  //      (bounds.width
-  //          - 2 * this.radiusValue_
-  //          - 2 * this.connectorLengthValue_
-  //          - 2 * anychart.pieModule.Chart.OUTSIDE_LABELS_CONNECTOR_SIZE_)
-  //      / 2);
 
   this.cx_ = this.piePlotBounds_.left + this.piePlotBounds_.width / 2;
   this.cy_ = this.piePlotBounds_.top + this.piePlotBounds_.height / 2;
@@ -1863,6 +1866,7 @@ anychart.pieModule.Chart.prototype.drawSlice_ = function(pointState, opt_update)
     hatchSlice = /** @type {acgraph.vector.Path} */ (iterator.meta('hatchSlice'));
     slice.clear();
     if (hatchSlice) hatchSlice.clear();
+    if (sliceOutline) sliceOutline.clear();
   } else {
     slice = /** @type {!acgraph.vector.Path} */(this.dataLayer_.genNextChild());
     iterator.meta('slice', slice);

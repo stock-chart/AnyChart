@@ -29,7 +29,9 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'outlineStroke': 'none'
     },
     'selected': {
-      'explode': '3%'
+      'explode': '3%',
+      'fill': anychart.core.defaultTheme.returnSourceColor,
+      'stroke': anychart.core.defaultTheme.returnSourceColor
     },
     'a11y': {
       'titleFormat': anychart.core.defaultTheme.pieA11yTitleFormatter
