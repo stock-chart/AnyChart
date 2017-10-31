@@ -1118,7 +1118,7 @@ anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
       bounds.width - 2 * clampPie,
       bounds.height - 2 * clampPie);
 
-  minWidthHeight -= clampPie;
+  minWidthHeight -= 2 * clampPie;
 
   this.radiusValue_ = Math.max(anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('radius')), minWidthHeight), 0);
   this.connectorLengthValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('connectorLength')), this.radiusValue_);
