@@ -1110,7 +1110,8 @@ anychart.pieModule.Chart.prototype.explodeSlices = function(value) {
 anychart.pieModule.Chart.prototype.calculate_ = function(bounds) {
   var minWidthHeight = Math.min(bounds.width, bounds.height);
   this.explodeValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('explode')), minWidthHeight);
-  var clampPie = this.isOutsideLabels() ? this.explodeValue_ : 0;
+  var isLabelsEnabled = this.normal_.labels().enabled() || this.hovered_.labels().enabled();
+  var clampPie = this.isOutsideLabels() && isLabelsEnabled ? this.explodeValue_ : 0;
 
   this.piePlotBounds_ = anychart.math.rect(
       bounds.left + clampPie,
