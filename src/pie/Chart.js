@@ -1310,45 +1310,49 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
       if (mode3d) this.connectorsLowerLayer_.clear();
     }
 
-    var themePart = this.isOutsideLabels() ?
-        anychart.getFullTheme('pie.outsideLabels') :
-        anychart.getFullTheme('pie.insideLabels');
-    this.labels().setAutoColor(themePart['autoColor']);
-    this.labels()['disablePointerEvents'](themePart['disablePointerEvents']);
-    if (this.isOutsideLabels()) {
-      if (this.recalculateBounds_) {
-        this.radiusValue_ = this.originalRadiusValue_;
-        this.labelsRadiusOffset_ = 0;
-      }
-      this.calculateOutsideLabels();
+    if (this.labels().enabled()) {
+      var themePart = this.isOutsideLabels() ?
+          anychart.getFullTheme('pie.outsideLabels') :
+          anychart.getFullTheme('pie.insideLabels');
+      this.labels().setAutoColor(themePart['autoColor']);
+      this.labels()['disablePointerEvents'](themePart['disablePointerEvents']);
+      if (this.isOutsideLabels()) {
 
-      if (this.recalculateBounds_) {
-        var iteration = 5;
-        for (; this.labelsRadiusOffset_ && iteration;) {
-          this.updateBounds();
-
+        if (this.recalculateBounds_) {
+          this.radiusValue_ = this.originalRadiusValue_;
           this.labelsRadiusOffset_ = 0;
+        }
+        this.calculateOutsideLabels();
 
-          this.labels().clear();
-          if (this.connectorsLayer_) {
-            this.connectorsLayer_.clear();
-            if (mode3d)
-              this.connectorsLowerLayer_.clear();
+        if (this.recalculateBounds_) {
+          var iteration = 5;
+          for (; this.labelsRadiusOffset_ && iteration;) {
+            this.updateBounds();
+
+            this.labelsRadiusOffset_ = 0;
+
+            this.labels().clear();
+            if (this.connectorsLayer_) {
+              this.connectorsLayer_.clear();
+              if (mode3d)
+                this.connectorsLowerLayer_.clear();
+            }
+
+            this.calculateOutsideLabels();
+            iteration--;
           }
-
-          this.calculateOutsideLabels();
-          iteration--;
+        }
+      } else {
+        iterator.reset();
+        while (iterator.advance()) {
+          if (this.isMissing_(iterator.get('value'))) continue;
+          var pointState = this.state.seriesState | this.state.getPointStateByIndex(iterator.getIndex());
+          var hovered = this.state.isStateContains(pointState, anychart.PointState.HOVER);
+          this.drawLabel_(pointState, hovered);
         }
       }
-    } else {
-      iterator.reset();
-      while (iterator.advance()) {
-        if (this.isMissing_(iterator.get('value'))) continue;
-        var pointState = this.state.seriesState | this.state.getPointStateByIndex(iterator.getIndex());
-        var hovered = this.state.isStateContains(pointState, anychart.PointState.HOVER);
-        this.drawLabel_(pointState, hovered);
-      }
     }
+
     this.labels().draw();
     this.labels().getDomElement().clip(bounds);
 
