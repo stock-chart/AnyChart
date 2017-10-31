@@ -1318,8 +1318,17 @@ anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
 
   minWidthHeight -= 2 * clampPie;
 
-  this.radiusValue_ = Math.max(anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('radius')), minWidthHeight), 0);
+  // var ___name = 'ppb';
+  // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
+  // this[___name].setBounds(this.piePlotBounds_);
+  //
+  // var ___name = 'bbounds';
+  // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
+  // this[___name].setBounds(bounds);
+
+  this.radiusValue_ = Math.min(minWidthHeight / 2, Math.max(anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('radius')), minWidthHeight), 0));
   this.connectorLengthValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('connectorLength')), this.radiusValue_);
+
   this.originalRadiusValue_ = this.radiusValue_;
   this.labelsRadiusOffset_ = 0;
 
