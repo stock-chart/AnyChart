@@ -1296,7 +1296,8 @@ anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
   this.selectedOutlineWidthValue_ = goog.isDef(selectedOutlineWidth) ? anychart.utils.normalizeSize(/** @type {number|string} */(selectedOutlineWidth), minWidthHeight) : void 0;
   this.selectedOutlineOffsetValue_ = goog.isDef(selectedOutlineOffset) ? anychart.utils.normalizeSize(/** @type {number|string} */(selectedOutlineOffset), minWidthHeight) : void 0;
 
-  var clampPie = (this.isOutsideLabels() ? this.explodeValue_ : 0) + this.normalOutlineWidthValue_ + this.normalOutlineOffsetValue_;
+  var isLabelsEnabled = this.normal_.labels().enabled() || this.hovered_.labels().enabled();
+  var clampPie = (this.isOutsideLabels() && isLabelsEnabled ? this.explodeValue_ : 0) + this.normalOutlineWidthValue_ + this.normalOutlineOffsetValue_;
 
   this.piePlotBounds_ = anychart.math.rect(
       bounds.left + clampPie,
