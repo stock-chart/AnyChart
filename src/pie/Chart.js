@@ -889,12 +889,12 @@ anychart.pieModule.Chart.prototype.resolveOption = function(name, state, point, 
   var hasHoverState = !!(state & anychart.PointState.HOVER);
   var hasSelectState = !!(state & anychart.PointState.SELECT);
 
-  var stateObject = hasHoverState ? this.hovered_ : hasSelectState ? this.selected_ : this.normal_;
+  var stateObject = hasSelectState ? this.selected_ : hasHoverState ? this.hovered_ : this.normal_;
   var stateValue = stateObject.getOption(name);
   if (opt_ignorePointSettings) {
     val = stateValue;
   } else {
-    var pointStateName = hasHoverState ? 'hovered' : hasSelectState ? 'selected' : 'normal';
+    var pointStateName = hasSelectState ? 'selected' : hasHoverState ? 'hovered' : 'normal';
     var pointStateObject = point.get(pointStateName);
     val = anychart.utils.getFirstDefinedValue(
         goog.isDef(pointStateObject) ? pointStateObject[name] : void 0,
@@ -1211,7 +1211,7 @@ anychart.pieModule.Chart.prototype.createPositionProvider = function() {
   var start = /** @type {number} */ (iterator.meta('start'));
   var sweep = /** @type {number} */ (iterator.meta('sweep'));
   var singlePoint = (iterator.getRowsCount() == 1) || sweep == 360;
-  var exploded = /** @type {boolean} */ (iterator.meta('exploded')) && !singlePoint;
+  var explode = this.getExplode(this.state.getPointStateByIndex(iterator.getIndex()));
   var angle = start + sweep / 2;
   var dR;
   var outerXR;
@@ -1228,9 +1228,9 @@ anychart.pieModule.Chart.prototype.createPositionProvider = function() {
       xRadius = this.radiusValue_ + this.connectorLengthValue_;
       yRadius = this.get3DYRadius(this.radiusValue_) + this.connectorLengthValue_;
 
-      if (exploded) {
-        xRadius += this.explodeValue_;
-        yRadius += this.get3DYRadius(this.explodeValue_);
+      if (explode) {
+        xRadius += explode;
+        yRadius += this.get3DYRadius(explode);
       }
 
     } else {
@@ -1251,9 +1251,9 @@ anychart.pieModule.Chart.prototype.createPositionProvider = function() {
           yRadius = this.get3DYRadius(anychart.utils.normalizeSize(insideLabelsOffset, (innerYR + outerYR)));
         }
 
-        if (exploded) {
-          xRadius += this.explodeValue_;
-          yRadius += this.get3DYRadius(this.explodeValue_);
+        if (explode) {
+          xRadius += explode;
+          yRadius += this.get3DYRadius(explode);
         }
       }
     }
@@ -1261,11 +1261,10 @@ anychart.pieModule.Chart.prototype.createPositionProvider = function() {
     return {'value': {'angle': angle, 'radius': xRadius, 'radiusY': yRadius}};
   } else {
     if (outside) {
-      dR = (this.radiusValue_ + this.connectorLengthValue_) + (exploded ? this.explodeValue_ : 0);
+      dR = this.radiusValue_ + this.connectorLengthValue_ + explode;
     } else {
-      var radius = singlePoint && !this.innerRadiusValue_ ? 0 : this.radiusValue_ - this.innerRadiusValue_;
-      dR = anychart.utils.normalizeSize(insideLabelsOffset, radius) +
-          this.innerRadiusValue_ + (exploded ? this.explodeValue_ : 0);
+      var radius = (singlePoint && !this.innerRadiusValue_) ? 0 : this.radiusValue_ - this.innerRadiusValue_;
+      dR = anychart.utils.normalizeSize(insideLabelsOffset, radius) + this.innerRadiusValue_ + explode;
     }
 
     return {'value': {'angle': angle, 'radius': dR}};
@@ -1283,18 +1282,14 @@ anychart.pieModule.Chart.prototype.createPositionProvider = function() {
 anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
   var minWidthHeight = Math.min(bounds.width, bounds.height);
 
-  var normalExplode = this.normal_.getOption('explode');
-  var hoveredExplode = this.hovered_.getOption('explode');
-  var selectedExplode = this.selected_.getOption('explode');
+  var normalExplode = this.getExplode(anychart.PointState.NORMAL);
+  var hoveredExplode = this.getExplode(anychart.PointState.HOVER);
+  var selectedExplode = this.getExplode(anychart.PointState.SELECT);
 
-  this.normalExplodeValue_ = goog.isDef(normalExplode) ? anychart.utils.normalizeSize(/** @type {number|string} */ (normalExplode), minWidthHeight) : 0;
-  this.hoveredExplodeValue_ = goog.isDef(hoveredExplode) ? anychart.utils.normalizeSize(/** @type {number|string} */ (hoveredExplode), minWidthHeight) : void 0;
-  this.selectedExplodeValue_ = goog.isDef(selectedExplode) ? anychart.utils.normalizeSize(/** @type {number|string} */ (selectedExplode), minWidthHeight) : void 0;
-
-  this.explodeValue_ = Math.max(this.normalExplodeValue_, this.hoveredExplodeValue_ || 0, this.selectedExplodeValue_ || 0);
+  var maxExplode = Math.max(normalExplode, hoveredExplode || 0, selectedExplode || 0);
 
   var isLabelsEnabled = this.normal_.labels().enabled() || this.hovered_.labels().enabled() || this.selected_.labels().enabled();
-  var clampPie = (this.isOutsideLabels() && isLabelsEnabled ? this.explodeValue_ : 0);
+  var clampPie = (this.isOutsideLabels() && isLabelsEnabled ? maxExplode : 0);
 
   this.piePlotBounds_ = anychart.math.rect(
       bounds.left + clampPie,
@@ -1474,12 +1469,12 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
       sweep = value / /** @type {number} */ (this.getStat(anychart.enums.Statistics.SUM)) * 360;
 
       iterator.meta('start', start).meta('sweep', sweep);
-      if (!goog.isDef(exploded = iterator.meta('exploded'))) {
-        exploded = !!iterator.get('exploded');
-        iterator.meta('exploded', exploded);
-        if (exploded)
-          this.state.setPointState(anychart.PointState.SELECT, iterator.getIndex());
-      }
+      // if (!goog.isDef(exploded = iterator.meta('exploded'))) {
+      //   exploded = !!this.getExplode();
+      //   iterator.meta('exploded', exploded);
+      //   if (exploded)
+      //     this.state.setPointState(anychart.PointState.SELECT, iterator.getIndex());
+      // }
       start += sweep;
     }
   }
@@ -1755,11 +1750,11 @@ anychart.pieModule.Chart.prototype.drawLabel_ = function(pointState, opt_updateC
     var cy = this.cy_;
 
     var angle;
-    var exploded = !!iterator.meta('exploded') && !(iterator.getRowsCount() == 1);
+    var exploded = this.getExplode(pointState);
     if (exploded) {
       angle = (start + sweep / 2) * Math.PI / 180;
-      var ex = this.explodeValue_ * Math.cos(angle);
-      var ey = (mode3d ? this.get3DYRadius(this.explodeValue_) : this.explodeValue_) * Math.sin(angle);
+      var ex = exploded * Math.cos(angle);
+      var ey = (mode3d ? this.get3DYRadius(exploded) : exploded) * Math.sin(angle);
       cx += ex;
       cy += ey;
     }
@@ -1845,14 +1840,9 @@ anychart.pieModule.Chart.prototype.drawLabel_ = function(pointState, opt_updateC
 anychart.pieModule.Chart.prototype.drawSlice_ = function(pointState, opt_update) {
   var iterator = this.getIterator();
 
-  var hovered = this.state.isStateContains(pointState, anychart.PointState.HOVER);
-  var selected = this.state.isStateContains(pointState, anychart.PointState.SELECT);
-
   var index = /** @type {number} */ (iterator.getIndex());
-
   var start = /** @type {number} */ (iterator.meta('start'));
   var sweep = /** @type {number} */ (iterator.meta('sweep'));
-  var exploded = !!iterator.meta('exploded') && !(iterator.getRowsCount() == 1);
 
   /** @type {!acgraph.vector.Path} */
   var slice;
@@ -1876,39 +1866,15 @@ anychart.pieModule.Chart.prototype.drawSlice_ = function(pointState, opt_update)
     iterator.meta('hatchSlice', hatchSlice);
   }
 
+  var normalizer = anychart.core.settings.numberOrPercentNormalizer;
 
-  var normalOutlineOffset = this.normal_.getOption('outlineOffset');
-  var normalOutlineWidth = this.normal_.getOption('outlineWidth');
+  var outlineOffset = this.resolveOption('outlineOffset', pointState, iterator, normalizer, false) || 0;
+  var outlineWidth = this.resolveOption('outlineWidth', pointState, iterator, normalizer, false) || 0;
 
-  var normalOutlineOffsetValue = anychart.utils.normalizeSize(/** @type {number|string} */(normalOutlineOffset || 0), this.radiusValue_);
-  var normalOutlineWidthValue = anychart.utils.normalizeSize(/** @type {number|string} */(normalOutlineWidth || 0), this.radiusValue_);
+  outlineOffset = anychart.utils.normalizeSize(/** @type {number|string} */(outlineOffset), this.radiusValue_);
+  outlineWidth = anychart.utils.normalizeSize(/** @type {number|string} */(outlineWidth), this.radiusValue_);
 
-  var hoveredOutlineOffset = this.hovered_.getOption('outlineOffset');
-  var hoveredOutlineWidth = this.hovered_.getOption('outlineWidth');
-
-  var hoveredOutlineOffsetValue = anychart.utils.normalizeSize(/** @type {number|string} */(hoveredOutlineOffset), this.radiusValue_);
-  var hoveredOutlineWidthValue = anychart.utils.normalizeSize(/** @type {number|string} */(hoveredOutlineWidth), this.radiusValue_);
-
-  var selectedOutlineOffset = this.selected_.getOption('outlineOffset');
-  var selectedOutlineWidth = this.selected_.getOption('outlineWidth');
-
-  var selectedOutlineOffsetValue = anychart.utils.normalizeSize(/** @type {number|string} */(selectedOutlineOffset), this.radiusValue_);
-  var selectedOutlineWidthValue = anychart.utils.normalizeSize(/** @type {number|string} */(selectedOutlineWidth), this.radiusValue_);
-
-
-  var outlineOffset = normalOutlineOffsetValue;
-  var outlineWidth = normalOutlineWidthValue;
-  var explode = this.normalExplodeValue_;
-  if (hovered) {
-    outlineOffset = isNaN(hoveredOutlineOffsetValue) ? outlineOffset : hoveredOutlineOffsetValue;
-    outlineWidth = isNaN(hoveredOutlineWidthValue) ? outlineWidth : hoveredOutlineWidthValue;
-    explode = goog.isDef(this.hoveredExplodeValue_) ? this.hoveredExplodeValue_ : explode;
-  }
-  if (selected) {
-    outlineOffset = isNaN(selectedOutlineOffsetValue) ? outlineOffset : selectedOutlineOffsetValue;
-    outlineWidth = isNaN(selectedOutlineWidthValue) ? outlineWidth : selectedOutlineWidthValue;
-    explode = goog.isDef(this.selectedExplodeValue_) ? this.selectedExplodeValue_ : explode;
-  }
+  var explode = this.getExplode(pointState);
 
   var angle = start + sweep / 2;
   var cos = Math.cos(goog.math.toRadians(angle));
@@ -2146,14 +2112,14 @@ anychart.pieModule.Chart.prototype.updatePointOnAnimate = function(point) {
   var sweep = /** @type {number} */ (point.meta('sweep'));
   var radius = /** @type {number} */ (point.meta('radius'));
   var innerRadius = /** @type {number} */ (point.meta('innerRadius'));
-  var exploded = !!point.meta('exploded') && !(point.getRowsCount() == 1);
+  var explode = this.getExplode(this.state.getPointStateByIndex(index));
 
-  if (exploded) {
+  if (explode) {
     var angle = start + sweep / 2;
     var cos = Math.cos(goog.math.toRadians(angle));
     var sin = Math.sin(goog.math.toRadians(angle));
-    var ex = this.explodeValue_ * cos;
-    var ey = this.explodeValue_ * sin;
+    var ex = explode * cos;
+    var ey = explode * sin;
     slice = acgraph.vector.primitives.donut(slice, this.cx_ + ex, this.cy_ + ey, radius, innerRadius, start, sweep);
   } else {
     slice = acgraph.vector.primitives.donut(slice, this.cx_, this.cy_, radius, innerRadius, start, sweep);
@@ -2226,6 +2192,7 @@ anychart.pieModule.Chart.prototype.get3DHeight = function() {
 anychart.pieModule.Chart.prototype.prepare3DSlice_ = function() {
   var iterator = this.getIterator();
   var index = iterator.getIndex();
+  var explode = this.getExplode(this.state.getPointStateByIndex(index));
 
   var start = /** @type {number} */ (iterator.meta('start'));
   var sweep = /** @type {number} */ (iterator.meta('sweep'));
@@ -2236,8 +2203,8 @@ anychart.pieModule.Chart.prototype.prepare3DSlice_ = function() {
   var angle = start + sweep / 2;
   var cos = Math.cos(goog.math.toRadians(angle));
   var sin = Math.sin(goog.math.toRadians(angle));
-  var ex = this.explodeValue_ * cos;
-  var ey = this.get3DYRadius(this.explodeValue_) * sin;
+  var ex = explode * cos;
+  var ey = this.get3DYRadius(explode) * sin;
 
   this.sides3D_.push({
     index: index,
@@ -2373,7 +2340,7 @@ anychart.pieModule.Chart.prototype.draw3DSlices_ = function(opt_sliceIndex, opt_
 anychart.pieModule.Chart.prototype.draw3DSlice_ = function(side, opt_update) {
   var iterator = this.getIterator();
   iterator.select(side.index);
-  var exploded = !!iterator.meta('exploded') && !(iterator.getRowsCount() == 1);
+  var exploded = !!this.getExplode();
 
   var cx = this.cx_;
   var cy = this.cy_;
@@ -3055,8 +3022,8 @@ anychart.pieModule.Chart.prototype.getPixelInnerRadius = function() {
  * Getter for the current explode value.
  * @return {number}
  */
-anychart.pieModule.Chart.prototype.getPixelExplode = function() {
-  return this.explodeValue_;
+anychart.pieModule.Chart.prototype.getPixelExplode = function(opt_pointState) {
+  return this.getExplode(opt_pointState);
 };
 
 
@@ -3083,6 +3050,36 @@ anychart.pieModule.Chart.prototype.getPoint = function(index) {
   }
 
   return point;
+};
+
+
+/**
+ * @param {(anychart.PointState|number)=} opt_pointState .
+ * @return {number}
+ */
+anychart.pieModule.Chart.prototype.getExplode = function(opt_pointState) {
+  var pointState = opt_pointState || 0;
+
+  var iterator = this.getIterator();
+  // var iterator;
+  // var currentIterator = this.getIterator();
+  // if (!goog.isDef(opt_index) || currentIterator.getIndex() == opt_index) {
+  //   iterator = currentIterator;
+  // } else {
+  //   iterator = this.getDetachedIterator();
+  //   iterator.select(goog.isDef(opt_index) ? opt_index : currentIterator.getIndex());
+  // }
+
+  var singlePoint = iterator.getRowsCount() == 1;
+  var explode, explodeValue;
+  if (singlePoint) {
+    explodeValue = 0;
+  } else {
+    explode = this.resolveOption('explode', pointState, iterator, anychart.core.settings.numberOrPercentNormalizer, false, void 0, true);
+    explodeValue = goog.isDef(explode) ? anychart.utils.normalizeSize(/** @type {number|string} */ (explode), this.minWidthHeight_) : 0;
+  }
+
+  return explodeValue;
 };
 
 
@@ -3159,7 +3156,7 @@ anychart.pieModule.Chart.prototype.legendItemClick = function(item, event) {
   var sourceKey = item.sourceKey();
   var iterator = this.data().getIterator();
   if (iterator.select(/** @type {number} */ (sourceKey))) {
-    var isExploded = !!iterator.meta('exploded');
+    var isExploded = !!this.getExplode();
     this.explodeSlice(/** @type {number} */ (sourceKey), !isExploded);
   }
 };
@@ -3254,15 +3251,17 @@ anychart.pieModule.Chart.prototype.clickSlice = function(opt_explode) {
   // if only 1 point in Pie was drawn - forbid to explode it
   if (iterator.getRowsCount() == 1 || iterator.meta('sweep') == 360)
     return;
-  if (goog.isDef(opt_explode)) {
-    iterator.meta('exploded', opt_explode);
-  } else {
-    var exploded = iterator.meta('exploded');
-    iterator.meta('exploded', !exploded);
-  }
+
+  // if (goog.isDef(opt_explode)) {
+  //   iterator.meta('exploded', opt_explode);
+  // } else {
+  //   var exploded = this.getExplode();
+  //   iterator.meta('exploded', !exploded);
+  // }
 
   var start = /** @type {number} */ (iterator.meta('start'));
   var sweep = /** @type {number} */ (iterator.meta('sweep'));
+
   // if no information about slice in meta (e.g. no slice has drawn: call explodeSlice(_, _) before chart.draw()).
   if (!goog.isDef(start) || !goog.isDef(sweep) || !sweep) return;
 
@@ -3371,23 +3370,23 @@ anychart.pieModule.Chart.prototype.makeBrowserEvent = function(e) {
  * Mouse click internal handler.
  * @param {anychart.core.MouseEvent} event Event object.
  */
-anychart.pieModule.Chart.prototype.handleMouseDown = function(event) {
-  var evt = this.makePointEvent(event);
-  if (!evt) return;
-
-  var index = evt['pointIndex'];
-  if (this.dispatchEvent(evt) && this.getIterator().select(index)) {
-    this.selectPoint(index);
-    var seriesStatus = {
-      series: this,
-      points: [index],
-      nearestPointToCursor: {index: index, distance: 0}
-    };
-    var selectedPointEvent = this.makeInteractivityPointEvent('selected', event, [seriesStatus]);
-    selectedPointEvent['currentPoint']['selected'] = !!this.getIterator().meta('exploded');
-    this.dispatchEvent(selectedPointEvent);
-  }
-};
+// anychart.pieModule.Chart.prototype.handleMouseDown = function(event) {
+//   var evt = this.makePointEvent(event);
+//   if (!evt) return;
+//
+//   var index = evt['pointIndex'];
+//   if (this.dispatchEvent(evt) && this.getIterator().select(index)) {
+//     this.selectPoint(index);
+//     var seriesStatus = {
+//       series: this,
+//       points: [index],
+//       nearestPointToCursor: {index: index, distance: 0}
+//     };
+//     var selectedPointEvent = this.makeInteractivityPointEvent('selected', event, [seriesStatus]);
+//     selectedPointEvent['currentPoint']['selected'] = !!this.getExplode();
+//     this.dispatchEvent(selectedPointEvent);
+//   }
+// };
 
 
 /** @inheritDoc */
@@ -3600,6 +3599,22 @@ anychart.pieModule.Chart.prototype.selected = function(opt_value) {
 
 
 /**
+ * @param {(anychart.enums.SelectionMode|string)=} opt_value Selection mode.
+ * @return {anychart.pieModule.Chart|anychart.enums.SelectionMode} .
+ */
+anychart.pieModule.Chart.prototype.selectionMode = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    opt_value = anychart.enums.normalizeSelectMode(opt_value);
+    if (opt_value != this.selectMode_) {
+      this.selectMode_ = opt_value;
+    }
+    return this;
+  }
+  return /** @type {anychart.enums.SelectionMode}*/(this.selectMode_);
+};
+
+
+/**
  * Selects a point of the chart by its index.
  * @param {(number|Array.<number>)=} opt_indexOrIndexes Index or array of indexes of the point to select.
  * @return {!anychart.pieModule.Chart} {@link anychart.pieModule.Chart} instance for method chaining.
@@ -3637,23 +3652,25 @@ anychart.pieModule.Chart.prototype.selectSeries = function() {
 /**
  * Select a point of the series by its index.
  * @param {number|Array<number>} indexOrIndexes Index of the point to hover.
+ * @param {anychart.core.MouseEvent=} opt_event Event that initiate point selecting.
  * @return {!anychart.pieModule.Chart}  {@link anychart.pieModule.Chart} instance for method chaining.
  */
-anychart.pieModule.Chart.prototype.selectPoint = function(indexOrIndexes) {
+anychart.pieModule.Chart.prototype.selectPoint = function(indexOrIndexes, opt_event) {
+  var unselect = !(opt_event && opt_event.shiftKey);
+
+  if (goog.isArray(indexOrIndexes)) {
+    if (!opt_event)
+      this.unselect();
+
+    this.state.setPointState(anychart.PointState.SELECT, indexOrIndexes, unselect ? anychart.PointState.HOVER : undefined);
+  } else if (goog.isNumber(indexOrIndexes)) {
+    this.state.setPointState(anychart.PointState.SELECT, indexOrIndexes, unselect ? anychart.PointState.HOVER : undefined);
+  }
+
   if (!this.enabled())
     return this;
 
-  var iterator = this.getIterator();
-  // for float tooltip and exploded checking
-  this.getIterator().select(indexOrIndexes[0] || indexOrIndexes);
-
-  if (!iterator.meta('exploded')) {
-    this.state.addPointState(anychart.PointState.SELECT, indexOrIndexes);
-  } else {
-    this.state.removePointState(anychart.PointState.SELECT, indexOrIndexes);
-  }
-
-  this.clickSlice();
+  // this.clickSlice();
 
   return this;
 };
@@ -3685,9 +3702,9 @@ anychart.pieModule.Chart.prototype.unselect = function(opt_indexOrIndexes) {
  * @param {anychart.PointState|number} pointState
  */
 anychart.pieModule.Chart.prototype.applyAppearanceToPoint = function(pointState) {
-  // this.drawSlice_(pointState, true);
+  this.drawSlice_(pointState, true);
   // this.drawLabel_(pointState, true);
-  this.clickSlice();
+  // this.clickSlice();
 };
 
 
@@ -3839,15 +3856,15 @@ anychart.pieModule.Chart.prototype.getSliceCenterCoords = function(index) {
   var cx = this.cx_;
   var cy = this.cy_;
 
-  var exploded = /** @type {boolean} */ (iterator.meta('exploded')) && !(iterator.getRowsCount() == 1);
-  if (exploded) {
+  var explode = this.getExplode(this.state.getPointStateByIndex(index));
+  if (explode) {
     var mode3d = /** @type {boolean} */ (this.getOption('mode3d'));
     var start = /** @type {number} */ (iterator.meta('start'));
     var sweep = /** @type {number} */ (iterator.meta('sweep'));
 
     var angle = (start + sweep / 2) * Math.PI / 180;
-    var ex = this.explodeValue_ * Math.cos(angle);
-    var ey = (mode3d ? this.get3DYRadius(this.explodeValue_) : this.explodeValue_) * Math.sin(angle);
+    var ex = explode * Math.cos(angle);
+    var ey = (mode3d ? this.get3DYRadius(explode) : explode) * Math.sin(angle);
     cx += ex;
     cy += ey;
   }
@@ -3880,7 +3897,8 @@ anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
     var index = iterator.getIndex();
     var start = /** @type {number} */ (iterator.meta('start'));
     var sweep = /** @type {number} */ (iterator.meta('sweep'));
-    var exploded = /** @type {boolean} */ (iterator.meta('exploded')) && !(iterator.getRowsCount() == 1);
+    var pointState = this.state.getPointStateByIndex(index);
+    var explode = this.getExplode(pointState);
     var angle = (start + sweep / 2) * Math.PI / 180;
     var angleDeg = goog.math.standardAngle(goog.math.toDegrees(angle));
 
@@ -3929,15 +3947,15 @@ anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
     //Target array chosen.
     if (isRightSide) {
       if (switchToRightSide) {
-        arr = exploded ? rightSideExplodedLabels2 : rightSideLabels2;
+        arr = explode ? rightSideExplodedLabels2 : rightSideLabels2;
       } else {
-        arr = exploded ? rightSideExplodedLabels : rightSideLabels;
+        arr = explode ? rightSideExplodedLabels : rightSideLabels;
       }
     } else {
       if (switchToRightSide) {
-        arr = exploded ? leftSideExplodedLabels2 : leftSideLabels2;
+        arr = explode ? leftSideExplodedLabels2 : leftSideLabels2;
       } else {
-        arr = exploded ? leftSideExplodedLabels : leftSideLabels;
+        arr = explode ? leftSideExplodedLabels : leftSideLabels;
       }
     }
     arr.push(label);
@@ -3949,7 +3967,7 @@ anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
         this.dropLabelBoundsCache(label);
         var bounds = this.getLabelBounds(label);
 
-        var boundsForCompare = exploded ? this.contentBounds : this.piePlotBounds_;
+        var boundsForCompare = explode ? this.contentBounds : this.piePlotBounds_;
 
         this.labelsRadiusOffset_ = Math.max(
             boundsForCompare.left - bounds.left,
@@ -4188,7 +4206,7 @@ anychart.pieModule.Chart.prototype.calcDomain = function(labels, isRightSide, op
         if (label && label.enabled() != false) {
           if (this.recalculateBounds_) {
             iterator.select(index);
-            var exploded = /** @type {boolean} */ (iterator.meta('exploded')) && !(iterator.getRowsCount() == 1);
+            var exploded = !!this.getExplode();
             var boundsForCompare = exploded ? this.contentBounds : this.piePlotBounds_;
 
             this.labelsRadiusOffset_ = Math.max(
@@ -4621,7 +4639,7 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
   var pieCenter = this.pie.getCenterPoint();
   var piePxRadius = this.pie.getPixelRadius();
   if (this.exploded)
-    piePxRadius += this.pie.getPixelExplode();
+    piePxRadius += this.pie.getExplode();
 
   var cx = pieCenter['x'], cy = pieCenter['y'];
   var bottomLabelsYLimit, topLabelsYLimit;
@@ -4677,11 +4695,11 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
     labelBounds = this.pie.getLabelBounds(label);
     nextLabelHeight = (j == len - 1) ? 0 : this.pie.getLabelBounds(this.labels[j + 1]).height;
 
-    iterator.select(label.getIndex());
+    var index = label.getIndex();
+    iterator.select(index);
 
     start = /** @type {number} */ (iterator.meta('start'));
     sweep = /** @type {number} */ (iterator.meta('sweep'));
-    exploded = /** @type {boolean} */ (iterator.meta('exploded'));
 
     var offsetX = goog.isDef(label.getOption('offsetX')) ? label.getOption('offsetX') : this.pie.labels().getOption('offsetX');
     if (!offsetX) offsetX = 0;
@@ -4697,13 +4715,16 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
         anychart.pieModule.Chart.OUTSIDE_LABELS_CONNECTOR_SIZE_ :
         -anychart.pieModule.Chart.OUTSIDE_LABELS_CONNECTOR_SIZE_;
 
-    dRPie = this.pie.radiusValue_ + (exploded ? this.pie.explodeValue_ : 0);
-    dR = (this.pie.getPixelRadius() + this.pie.connectorLengthValue_) + (exploded ? this.pie.explodeValue_ : 0) + offsetRadius;
+    var pointState = this.pie.state.getPointStateByIndex(index);
+    var explode = this.pie.getExplode(pointState);
+
+    dRPie = this.pie.radiusValue_ + explode;
+    dR = (this.pie.getPixelRadius() + this.pie.connectorLengthValue_) + explode + offsetRadius;
 
     var dRYPie, dRY;
     if (mode3d) {
-      dRYPie = this.pie.get3DYRadius(this.pie.radiusValue_) + (exploded ? this.pie.get3DYRadius(this.pie.explodeValue_) : 0);
-      dRY = (this.pie.get3DYRadius(this.pie.getPixelRadius()) + this.pie.connectorLengthValue_) + (exploded ? this.pie.get3DYRadius(this.pie.explodeValue_) : 0) + this.pie.get3DYRadius(offsetRadius);
+      dRYPie = this.pie.get3DYRadius(this.pie.radiusValue_ + explode);
+      dRY = this.pie.get3DYRadius(this.pie.getPixelRadius() + explode + offsetRadius) + this.pie.connectorLengthValue_;
     } else {
       dRYPie = dRPie;
       dRY = dR;

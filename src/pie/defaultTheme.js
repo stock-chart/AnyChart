@@ -23,7 +23,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'explode': 0
     },
     'hovered': {
-      'explode': '3%',
+      'explode': 0,
       'outlineWidth': 10,
       'outlineOffset': 0,
       'outlineFill': anychart.core.defaultTheme.returnLightenSourceColor50,
@@ -31,8 +31,12 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     },
     'selected': {
       'explode': '7%',
-      'fill': anychart.core.defaultTheme.returnSourceColor,
-      'stroke': anychart.core.defaultTheme.returnSourceColor
+      'fill': anychart.core.defaultTheme.returnLightenSourceColor,
+      'stroke': 'none',
+      'outlineWidth': 10,
+      'outlineOffset': 0,
+      'outlineFill': anychart.core.defaultTheme.returnLightenSourceColor50,
+      'outlineStroke': 'none'
     },
     'a11y': {
       'titleFormat': anychart.core.defaultTheme.pieA11yTitleFormatter
