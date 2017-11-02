@@ -1419,11 +1419,11 @@ anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
         right2 = explodeLevel[3];
       }
 
-      if (angleDeg > 270 && !switchToRightSide && (left.length != 0 || (left2 && left2.length != 0))) {
+      if (angleDeg > 270 && !switchToRightSide && (left.length || (left2 && left2.length))) {
         switchToRightSide = true;
       }
 
-      if (angleDeg > 90 && !switchToLeftSide && (right.length != 0 || (right2 && right2.length != 0))) {
+      if (angleDeg > 90 && !switchToLeftSide && (right.length || (right2 && right2.length))) {
         switchToLeftSide = true;
       }
 
@@ -1767,6 +1767,9 @@ anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
       bounds.top + clampPie,
       bounds.width - 2 * clampPie,
       bounds.height - 2 * clampPie);
+
+
+  this.minWidthHeight_ -= 2 * clampPie;
 
   var minWidthHeightOfPieBounds = this.minWidthHeight_ - 2 * clampPie;
 
