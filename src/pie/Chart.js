@@ -3704,7 +3704,7 @@ anychart.pieModule.Chart.prototype.unselect = function(opt_indexOrIndexes) {
 anychart.pieModule.Chart.prototype.applyAppearanceToPoint = function(pointState) {
   this.drawSlice_(pointState, true);
   // this.drawLabel_(pointState, true);
-  // this.clickSlice();
+  this.clickSlice();
 };
 
 

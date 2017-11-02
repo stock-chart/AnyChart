@@ -3,6 +3,10 @@ goog.provide('anychart.pieModule.defaultTheme');
 
 goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
   'pie': {
+    'interactivity': {
+      'multiSelectOnClick': true,
+      'unselectOnClickOutOfPoint': false
+    },
     'animation': {
       'duration': 2000
     },
