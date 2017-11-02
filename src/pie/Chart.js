@@ -1273,6 +1273,575 @@ anychart.pieModule.Chart.prototype.createPositionProvider = function() {
 
 
 //endregion
+//region --- Calculating outside labels and connectors
+/**
+ * Init connector elements.
+ */
+anychart.pieModule.Chart.prototype.initConnectorElements = function() {
+  //region init connector elements
+  this.connectorAnchorCoords = [];
+  var mode3d = this.getOption('mode3d');
+  if (this.connectorsLayer_) {
+    this.connectorsLayer_.clear();
+    if (mode3d) this.connectorsLowerLayer_.clear();
+  } else {
+    this.connectorsLayer_ = new anychart.core.utils.TypedLayer(function() {
+      return acgraph.path();
+    }, function(child) {
+      (/** @type {acgraph.vector.Path} */ (child)).clear();
+    });
+    this.connectorsLayer_.parent(this.rootElement);
+    this.connectorsLayer_.zIndex(anychart.pieModule.Chart.ZINDEX_LABEL);
+
+    if (mode3d) {
+      this.connectorsLowerLayer_ = new anychart.core.utils.TypedLayer(function() {
+        return acgraph.path();
+      }, function(child) {
+        (/** @type {acgraph.vector.Path} */ (child)).clear();
+      });
+      this.connectorsLowerLayer_.parent(this.rootElement);
+      this.connectorsLowerLayer_.zIndex(anychart.pieModule.Chart.ZINDEX_CONNECTOR_LOWER_LAYER);
+    }
+  }
+  this.drawnConnectors_ = [];
+  var connectorStroke = /** @type {acgraph.vector.Stroke} */ (this.getOption('connectorStroke'));
+  if (!this.hoveredLabelConnectorPath_) {
+    // path for connector for label disabled by algorithm
+    this.hoveredLabelConnectorPath_ = this.rootElement.path();
+    this.hoveredLabelConnectorPath_.stroke(connectorStroke);
+  }
+  //endregion
+};
+
+
+/**
+ *
+ * @param {number} index
+ * @return {Array.<number>}
+ */
+anychart.pieModule.Chart.prototype.getSliceCenterCoords = function(index) {
+  var iterator = this.getIterator();
+  iterator.select(index);
+
+  var cx = this.cx_;
+  var cy = this.cy_;
+
+  var explode = this.getExplode(this.state.getPointStateByIndex(index));
+  if (explode) {
+    var mode3d = /** @type {boolean} */ (this.getOption('mode3d'));
+    var start = /** @type {number} */ (iterator.meta('start'));
+    var sweep = /** @type {number} */ (iterator.meta('sweep'));
+
+    var angle = (start + sweep / 2) * Math.PI / 180;
+    var ex = explode * Math.cos(angle);
+    var ey = (mode3d ? this.get3DYRadius(explode) : explode) * Math.sin(angle);
+    cx += ex;
+    cy += ey;
+  }
+
+  return [cx, cy];
+};
+
+
+/**
+ * Calculating outside labels.
+ */
+anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
+  var iterator = this.getIterator();
+  var label, x0, y0, radius, isRightSide;
+  var connectorPath, connector;
+  var mode3d = this.getOption('mode3d');
+
+  this.initConnectorElements();
+
+  //region calculate absolute labels position, sort labels, separation of the labels on the left and right side
+  var rightSideLabels = [], leftSideLabels = [], rightSideLabels2, leftSideLabels2;
+  var rightSideExplodedLabels = [], leftSideExplodedLabels = [], rightSideExplodedLabels2, leftSideExplodedLabels2;
+  var arr;
+
+  iterator.reset();
+  var switchToRightSide = false;
+  var switchToLeftSide = false;
+  while (iterator.advance()) {
+    if (this.isMissing_(iterator.get('value'))) continue;
+    var index = iterator.getIndex();
+    var start = /** @type {number} */ (iterator.meta('start'));
+    var sweep = /** @type {number} */ (iterator.meta('sweep'));
+    var pointState = this.state.getPointStateByIndex(index);
+    var explode = this.getExplode(pointState);
+    var angle = (start + sweep / 2) * Math.PI / 180;
+    var angleDeg = goog.math.standardAngle(goog.math.toDegrees(angle));
+
+    if (angleDeg > 270 && !switchToRightSide &&
+        (leftSideLabels.length != 0 || (leftSideLabels2 && leftSideLabels2.length != 0))) {
+      switchToRightSide = true;
+      rightSideLabels2 = [];
+      rightSideExplodedLabels2 = [];
+    }
+
+    if (angleDeg > 90 && !switchToLeftSide &&
+        (rightSideLabels.length != 0 || (rightSideLabels2 && rightSideLabels2.length != 0))) {
+      switchToLeftSide = true;
+      leftSideLabels2 = [];
+      leftSideExplodedLabels2 = [];
+    }
+
+    isRightSide = angleDeg < 90 || angleDeg > 270;
+
+    var center = this.getSliceCenterCoords(index);
+    radius = mode3d ? this.get3DYRadius(this.radiusValue_) : this.radiusValue_;
+
+    // coordinates of the point where the connector touches a pie
+    x0 = center[0] + this.radiusValue_ * Math.cos(angle);
+    y0 = center[1] + radius * Math.sin(angle);
+
+    if (mode3d) {
+      y0 += this.get3DHeight() / 2;
+    }
+
+    connector = isRightSide ?
+        anychart.pieModule.Chart.OUTSIDE_LABELS_CONNECTOR_SIZE_ :
+        -anychart.pieModule.Chart.OUTSIDE_LABELS_CONNECTOR_SIZE_;
+    iterator.meta('connector', connector);
+
+    this.connectorAnchorCoords[index * 2] = x0;
+    this.connectorAnchorCoords[index * 2 + 1] = y0;
+
+    var anchor = isRightSide ? anychart.enums.Position.LEFT_CENTER : anychart.enums.Position.RIGHT_CENTER;
+    iterator.meta('anchor', anchor);
+    label = this.drawLabel_(anychart.PointState.NORMAL, false);
+    this.dropLabelBoundsCache(label);
+
+    label.angle_ = angleDeg;
+
+    //Target array chosen.
+    if (isRightSide) {
+      if (switchToRightSide) {
+        arr = explode ? rightSideExplodedLabels2 : rightSideLabels2;
+      } else {
+        arr = explode ? rightSideExplodedLabels : rightSideLabels;
+      }
+    } else {
+      if (switchToRightSide) {
+        arr = explode ? leftSideExplodedLabels2 : leftSideLabels2;
+      } else {
+        arr = explode ? leftSideExplodedLabels : leftSideLabels;
+      }
+    }
+    arr.push(label);
+
+    if (this.getOption('overlapMode') == anychart.enums.LabelsOverlapMode.ALLOW_OVERLAP) {
+      if (label && label.enabled() != false) {
+        index = label.getIndex();
+
+        this.dropLabelBoundsCache(label);
+        var bounds = this.getLabelBounds(label);
+
+        var boundsForCompare = explode ? this.contentBounds : this.piePlotBounds_;
+
+        this.labelsRadiusOffset_ = Math.max(
+            boundsForCompare.left - bounds.left,
+            bounds.getRight() - boundsForCompare.getRight(),
+            boundsForCompare.top - bounds.top,
+            bounds.getBottom() - boundsForCompare.getBottom(),
+            this.labelsRadiusOffset_);
+
+        if (!this.drawnConnectors_[index]) {
+          y0 = this.connectorAnchorCoords[index * 2 + 1] - this.get3DHeight() / 2;
+          if (mode3d && y0 < this.cy_) {
+            connectorPath = /** @type {acgraph.vector.Path} */(this.connectorsLowerLayer_.genNextChild());
+          } else {
+            connectorPath = /** @type {acgraph.vector.Path} */(this.connectorsLayer_.genNextChild());
+          }
+          this.drawnConnectors_[index] = connectorPath;
+          connectorPath.stroke(/** @type {acgraph.vector.Stroke} */ (this.getOption('connectorStroke')));
+          this.drawConnectorLine(label, connectorPath);
+        }
+      }
+
+    }
+  }
+  //endregion
+
+  rightSideLabels = rightSideLabels2 ?
+      rightSideLabels2.concat(rightSideLabels) : rightSideLabels;
+
+  rightSideExplodedLabels = rightSideExplodedLabels2 ?
+      rightSideExplodedLabels2.concat(rightSideExplodedLabels) : rightSideExplodedLabels;
+
+  leftSideLabels = leftSideLabels2 ?
+      leftSideLabels2.concat(leftSideLabels) : leftSideLabels;
+
+  leftSideExplodedLabels = leftSideExplodedLabels2 ?
+      leftSideExplodedLabels2.concat(leftSideExplodedLabels) : leftSideExplodedLabels;
+
+  if (this.getOption('overlapMode') != anychart.enums.LabelsOverlapMode.ALLOW_OVERLAP) {
+    // var ___name = 'cb_';
+    // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
+    // this[___name].setBounds(this.contentBounds);
+    //
+    // var ___name = 'ppb_';
+    // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
+    // this[___name].setBounds(this.piePlotBounds_);
+
+
+    this.calcDomain(leftSideExplodedLabels, false, null, true);
+    this.calcDomain(rightSideExplodedLabels, true, null, true);
+
+    var explodedLabels = goog.array.concat(leftSideExplodedLabels, rightSideExplodedLabels);
+    this.calcDomain(leftSideLabels, false, explodedLabels, false);
+    this.calcDomain(rightSideLabels, true, explodedLabels, false);
+  }
+
+  this.labelsRadiusOffset_ = Math.round(this.labelsRadiusOffset_);
+};
+
+
+/**
+ * Calculate labels domain.
+ * @param {Array.<anychart.core.ui.CircularLabelsFactory.Label>} labels .
+ * @param {boolean} isRightSide .
+ * @param {Array.<anychart.core.ui.CircularLabelsFactory.Label>=} opt_labelsForComparing .
+ * @param {boolean=} opt_exploded .
+ */
+anychart.pieModule.Chart.prototype.calcDomain = function(labels, isRightSide, opt_labelsForComparing, opt_exploded) {
+  var i, len, bounds, droppedLabels, notIntersection, m, l, domainBounds, domain = null, label;
+  var iterator = this.getIterator();
+  var domains = [];
+  var labelsIterator = isRightSide ? goog.array.forEachRight : goog.array.forEach;
+
+  labelsIterator(labels, function(label) {
+    if (label) {
+      iterator.select(label.getIndex());
+      label.formatProvider(this.createFormatProvider());
+      bounds = this.getLabelBounds(label);
+
+      if (!domain || (domain.isNotIntersect(bounds))) {
+        if (domain) domains.push(domain);
+        domain = new anychart.pieModule.Chart.PieOutsideLabelsDomain(isRightSide, this, domains, !!opt_exploded);
+        domain.addLabel(label);
+      } else {
+        domain.addLabel(label);
+      }
+    }
+  }, this);
+
+  if (domain) domains.push(domain);
+
+  for (i = 0, len = domains.length; i < len; i++) {
+    domain = domains[i];
+    if (domain && domain.droppedLabels) {
+      if (!droppedLabels) droppedLabels = [];
+      droppedLabels = goog.array.concat(droppedLabels, domain.droppedLabels);
+    }
+  }
+
+  domain = null;
+  if (droppedLabels) {
+    goog.array.sort(droppedLabels, function(a, b) {
+      return a.getIndex() > b.getIndex() ? 1 : a.getIndex() < b.getIndex() ? -1 : 0;
+    });
+
+    labelsIterator(droppedLabels, function(label) {
+      if (label) {
+        iterator.select(label.getIndex());
+        label.formatProvider(this.createFormatProvider());
+        bounds = this.getLabelBounds(label);
+
+        notIntersection = true;
+        for (m = 0, l = domains.length; m < l; m++) {
+          notIntersection = notIntersection && domains[m].isNotIntersect(bounds);
+        }
+
+        if (notIntersection) {
+          if (!domain) {
+            domain = new anychart.pieModule.Chart.PieOutsideLabelsDomain(isRightSide, this, [], !!opt_exploded);
+          }
+          domain.softAddLabel(label);
+          domainBounds = domain.getBounds();
+
+          notIntersection = true;
+          for (m = 0; m < l; m++) {
+            notIntersection = notIntersection && domains[m].isNotIntersect(domainBounds);
+          }
+
+          if (domain.isCriticalAngle || !notIntersection) {
+            domain.labels.pop().enabled(false);
+            domain.calcDomain();
+            domains.push(domain);
+            domain = null;
+          } else {
+            label.enabled(true);
+          }
+        } else {
+          if (domain) {
+            domains.push(domain);
+            domain = null;
+          }
+        }
+      }
+    }, this);
+
+    if (domain)
+      domains.push(domain);
+  }
+
+  var y0, connectorPath, index, k, z, labelsLen, labelsForComparingLen;
+  var mode3d = this.getOption('mode3d');
+  var connectorStroke = /** @type {acgraph.vector.Stroke} */ (this.getOption('connectorStroke'));
+
+  for (i = 0, len = domains.length; i < len; i++) {
+    domain = domains[i];
+    if (domain) {
+      domain.applyPositions();
+
+      for (k = 0, labelsLen = domain.labels.length; k < labelsLen; k++) {
+        label = domain.labels[k];
+        this.dropLabelBoundsCache(label);
+        bounds = this.getLabelBounds(label);
+        index = label.getIndex();
+
+        if (opt_labelsForComparing && label && label.enabled() != false) {
+          var c_x0 = this.connectorAnchorCoords[index * 2];
+          var c_y0 = this.connectorAnchorCoords[index * 2 + 1];
+
+          var connector = /** @type {number} */(iterator.meta('connector'));
+          var positionProvider = label.positionProvider()['value'];
+
+          var angle = positionProvider['angle'];
+          var angleRad = goog.math.toRadians(angle);
+          var radius = positionProvider['radius'];
+
+          var c_x1 = this.cx_ + radius * Math.cos(angleRad) - connector;
+          var c_y1 = this.cy_ + radius * Math.sin(angleRad);
+
+          for (z = 0, labelsForComparingLen = opt_labelsForComparing.length; z < labelsForComparingLen; z++) {
+            var comparingLabel = opt_labelsForComparing[z];
+            this.dropLabelBoundsCache(comparingLabel);
+
+            var comparingBounds = this.getLabelBounds(comparingLabel);
+            var comparingLabelIndex = comparingLabel.getIndex();
+
+            var center = this.getSliceCenterCoords(comparingLabelIndex);
+            var cx = center[0], cy = center[1];
+
+            var start = /** @type {number} */ (iterator.meta('start'));
+            var sweep = /** @type {number} */ (iterator.meta('sweep'));
+
+            //Coords of comparing label connector
+            var cc_x0 = this.connectorAnchorCoords[comparingLabelIndex * 2];
+            var cc_y0 = this.connectorAnchorCoords[comparingLabelIndex * 2 + 1];
+
+            connector = /** @type {number} */(iterator.meta('connector'));
+            positionProvider = comparingLabel.positionProvider()['value'];
+
+            angle = positionProvider['angle'];
+            angleRad = goog.math.toRadians(angle);
+            radius = positionProvider['radius'];
+
+            var cc_x1 = this.cx_ + radius * Math.cos(angleRad) - connector;
+            var cc_y1 = this.cy_ + radius * Math.sin(angleRad);
+
+            //Coords of slice sides
+            angleRad = goog.math.toRadians(start);
+            var startSliceLinePointInner_x = cx + this.innerRadiusValue_ * Math.cos(angleRad);
+            var startSliceLinePointInner_y = cy + this.innerRadiusValue_ * Math.sin(angleRad);
+
+            var startSliceLinePointOuter_x = cx + this.radiusValue_ * Math.cos(angleRad);
+            var startSliceLinePointOuter_y = cy + this.radiusValue_ * Math.sin(angleRad);
+
+            angleRad = goog.math.toRadians(start + sweep);
+            var endSliceLinePointInner_x = cx + this.innerRadiusValue_ * Math.cos(angleRad);
+            var endSliceLinePointInner_y = cy + this.innerRadiusValue_ * Math.sin(angleRad);
+
+            var endSliceLinePointOuter_x = cx + this.radiusValue_ * Math.cos(angleRad);
+            var endSliceLinePointOuter_y = cy + this.radiusValue_ * Math.sin(angleRad);
+
+            var cbbox = bounds.toCoordinateBox();
+            var isIntersect =
+                anychart.math.checkRectIntersection(cbbox, comparingBounds.toCoordinateBox()) ||
+                anychart.math.checkRectIntersectionWithSegment(startSliceLinePointInner_x, startSliceLinePointInner_y, startSliceLinePointOuter_x, startSliceLinePointOuter_y, cbbox) ||
+                anychart.math.checkRectIntersectionWithSegment(endSliceLinePointInner_x, endSliceLinePointInner_y, endSliceLinePointOuter_x, endSliceLinePointOuter_y, cbbox) ||
+                anychart.math.checkRectIntersectionWithSegment(cc_x0, cc_y0, cc_x1, cc_y1, cbbox) ||
+                anychart.math.checkSegmentsIntersection(c_x0, c_y0, c_x1, c_y1, startSliceLinePointInner_x, startSliceLinePointInner_y, startSliceLinePointOuter_x, startSliceLinePointOuter_y) ||
+                anychart.math.checkSegmentsIntersection(c_x0, c_y0, c_x1, c_y1, endSliceLinePointInner_x, endSliceLinePointInner_y, endSliceLinePointOuter_x, endSliceLinePointOuter_y);
+
+            if (isIntersect) {
+              label.enabled(false);
+              break;
+            }
+          }
+        }
+
+        if (label && label.enabled() != false) {
+          if (this.recalculateBounds_) {
+            iterator.select(index);
+            var exploded = !!this.getExplode();
+            var boundsForCompare = exploded ? this.contentBounds : this.piePlotBounds_;
+
+            this.labelsRadiusOffset_ = Math.max(
+                boundsForCompare.left - bounds.left,
+                bounds.getRight() - boundsForCompare.getRight(),
+                boundsForCompare.top - bounds.top,
+                bounds.getBottom() - boundsForCompare.getBottom(),
+                this.labelsRadiusOffset_);
+          }
+
+          if (!this.drawnConnectors_[index]) {
+            y0 = this.connectorAnchorCoords[index * 2 + 1] - this.get3DHeight() / 2;
+            if (mode3d && y0 < this.cy_) {
+              connectorPath = /** @type {acgraph.vector.Path} */(this.connectorsLowerLayer_.genNextChild());
+            } else {
+              connectorPath = /** @type {acgraph.vector.Path} */(this.connectorsLayer_.genNextChild());
+            }
+            this.drawnConnectors_[index] = connectorPath;
+            connectorPath.stroke(connectorStroke);
+            this.drawConnectorLine(label, connectorPath);
+          }
+        }
+      }
+    }
+  }
+};
+
+
+/**
+ * Defragmentation domain. If domain have critical angle then need defragment domain.
+ * @param {!anychart.pieModule.Chart.PieOutsideLabelsDomain} domain Domain to defragmentation.
+ */
+anychart.pieModule.Chart.prototype.domainDefragmentation = function(domain) {
+  var labels = domain.labels;
+  var sourcePieLabelsDomains = domain.pieLabelsDomains;
+  var i, len, label, bounds;
+  var prevDomain = sourcePieLabelsDomains[sourcePieLabelsDomains.length - 1];
+
+  if (prevDomain == domain) return;
+
+  var tmpDomain = null;
+  var tmpLabels = labels.slice();
+  var domainsLength = sourcePieLabelsDomains.length;
+  var domainExpanded = false;
+
+  for (i = 0, len = labels.length; i < len; i++) {
+    label = labels[i];
+    if (label) {
+      bounds = this.getLabelBounds(label);
+
+      if (!prevDomain || prevDomain.isNotIntersect(bounds)) {
+
+        if (!tmpDomain || tmpDomain.isNotIntersect(bounds)) {
+          if (tmpDomain) {
+            sourcePieLabelsDomains.push(tmpDomain);
+            prevDomain = tmpDomain;
+          }
+          var isRightSide = label['anchor']() == anychart.enums.Anchor.LEFT_CENTER;
+          tmpDomain = new anychart.pieModule.Chart.PieOutsideLabelsDomain(isRightSide, this, sourcePieLabelsDomains, domain.exploded);
+          tmpDomain.softAddLabel(label);
+        } else {
+          tmpDomain.softAddLabel(label);
+
+          if (this.isCriticalAngle) {
+            label.enabled(false);
+            if (!tmpDomain.droppedLabels) tmpDomain.droppedLabels = [];
+            tmpDomain.droppedLabels.push(label);
+            tmpDomain.labels.pop();
+            tmpDomain.calcDomain();
+          } else if (prevDomain && tmpDomain && !prevDomain.isNotIntersect(tmpDomain.getBounds())) {
+            sourcePieLabelsDomains.pop();
+            tmpDomain.labels = goog.array.concat(prevDomain.labels, tmpDomain.labels);
+            prevDomain = null;
+            tmpDomain.calcDomain();
+
+            domainExpanded = true;
+          }
+        }
+      } else {
+        label.enabled(false);
+        if (tmpDomain) {
+          if (!tmpDomain.droppedLabels) tmpDomain.droppedLabels = [];
+          tmpDomain.droppedLabels.push(label);
+        }
+      }
+    }
+  }
+  if (tmpDomain) {
+    if (sourcePieLabelsDomains.length - domainsLength > 0 || domainExpanded) {
+      domain.labels = tmpDomain.labels;
+    } else {
+      tmpDomain.clearDroppedLabels();
+      if (tmpLabels.length != labels.length)
+        domain.labels = tmpLabels;
+    }
+  }
+};
+
+
+/**
+ * Draws connector line for label.
+ * @param {anychart.core.ui.CircularLabelsFactory.Label} label Label.
+ * @param {acgraph.vector.Path} path Connector path element.
+ */
+anychart.pieModule.Chart.prototype.drawConnectorLine = function(label, path) {
+  var iterator = this.data().getIterator();
+  var index = label.getIndex();
+  var mode3d = /** @type {boolean} */ (this.getOption('mode3d'));
+
+  if (iterator.select(index)) {
+    var x0 = this.connectorAnchorCoords[index * 2];
+    var y0 = this.connectorAnchorCoords[index * 2 + 1];
+
+    var connector = /** @type {number} */(iterator.meta('connector'));
+    var positionProvider = label.positionProvider()['value'];
+
+    var offsetY = goog.isDef(label.getOption('offsetY')) ? label.getOption('offsetY') : this.labels().getOption('offsetY');
+    if (!offsetY) offsetY = 0;
+    var offsetRadius = anychart.utils.normalizeSize(/** @type {number|string} */(offsetY), this.radiusValue_);
+
+    var offsetX = goog.isDef(label.getOption('offsetX')) ? label.getOption('offsetX') : this.labels().getOption('offsetX');
+    if (!offsetX) offsetX = 0;
+    var offsetAngle = anychart.utils.normalizeSize(/** @type {number|string} */(offsetX), 360);
+
+    var angle = positionProvider['angle'] + offsetAngle;
+    var angleRad = goog.math.toRadians(angle);
+    var radius = positionProvider['radius'] + offsetRadius;
+    var radiusY = mode3d ? positionProvider['radiusY'] + offsetRadius : radius;
+
+    var x = this.cx_ + radius * Math.cos(angleRad) - connector;
+    var y = this.cy_ + radiusY * Math.sin(angleRad);
+
+    path.clear().moveTo(x0, y0).lineTo(x, y).lineTo(x + connector, y);
+  }
+};
+
+
+/**
+ * Show or hide connector for label.
+ * @param {anychart.core.ui.CircularLabelsFactory.Label} label Label.
+ * @param {boolean} show Whether to show connector ot not for label.
+ * @private
+ */
+anychart.pieModule.Chart.prototype.updateConnector_ = function(label, show) {
+  if (!label || !this.drawnConnectors_)
+    return;
+  var index = label.getIndex();
+  var path;
+  if (!(path = this.drawnConnectors_[index])) {
+    if (!show) {
+      this.hoveredLabelConnectorPath_.clear();
+    } else {
+      this.drawConnectorLine(label, this.hoveredLabelConnectorPath_);
+    }
+    return;
+  }
+
+  if (label && label.enabled() != false && show) {
+    this.drawConnectorLine(label, path);
+  } else
+    path.clear();
+};
+
+
+//endregion
 //region --- Drawing
 /**
  * Calculating common values for a pie plot.
@@ -1280,7 +1849,7 @@ anychart.pieModule.Chart.prototype.createPositionProvider = function() {
  * @private
  */
 anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
-  var minWidthHeight = Math.min(bounds.width, bounds.height);
+  this.minWidthHeight_ = Math.min(bounds.width, bounds.height);
 
   var normalExplode = this.getExplode(anychart.PointState.NORMAL);
   var hoveredExplode = this.getExplode(anychart.PointState.HOVER);
@@ -1297,9 +1866,7 @@ anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
       bounds.width - 2 * clampPie,
       bounds.height - 2 * clampPie);
 
-  minWidthHeight -= 2 * clampPie;
-
-  this.minWidthHeight_ = minWidthHeight;
+  var minWidthHeightOfPieBounds = this.minWidthHeight_ - 2 * clampPie;
 
   // var ___name = 'ppb';
   // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
@@ -1309,7 +1876,7 @@ anychart.pieModule.Chart.prototype.calculateBounds_ = function(bounds) {
   // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
   // this[___name].setBounds(bounds);
 
-  this.radiusValue_ = Math.min(minWidthHeight / 2, Math.max(anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('radius')), minWidthHeight), 0));
+  this.radiusValue_ = Math.min(minWidthHeightOfPieBounds / 2, Math.max(anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('radius')), minWidthHeightOfPieBounds), 0));
   this.connectorLengthValue_ = anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('connectorLength')), this.radiusValue_);
 
   this.originalRadiusValue_ = this.radiusValue_;
@@ -3803,575 +4370,6 @@ anychart.pieModule.Chart.prototype.createTooltipContextProvider = function() {
 
 
 //endregion
-//region --- Calculating outside labels and connectors
-/**
- * Init connector elements.
- */
-anychart.pieModule.Chart.prototype.initConnectorElements = function() {
-  //region init connector elements
-  this.connectorAnchorCoords = [];
-  var mode3d = this.getOption('mode3d');
-  if (this.connectorsLayer_) {
-    this.connectorsLayer_.clear();
-    if (mode3d) this.connectorsLowerLayer_.clear();
-  } else {
-    this.connectorsLayer_ = new anychart.core.utils.TypedLayer(function() {
-      return acgraph.path();
-    }, function(child) {
-      (/** @type {acgraph.vector.Path} */ (child)).clear();
-    });
-    this.connectorsLayer_.parent(this.rootElement);
-    this.connectorsLayer_.zIndex(anychart.pieModule.Chart.ZINDEX_LABEL);
-
-    if (mode3d) {
-      this.connectorsLowerLayer_ = new anychart.core.utils.TypedLayer(function() {
-        return acgraph.path();
-      }, function(child) {
-        (/** @type {acgraph.vector.Path} */ (child)).clear();
-      });
-      this.connectorsLowerLayer_.parent(this.rootElement);
-      this.connectorsLowerLayer_.zIndex(anychart.pieModule.Chart.ZINDEX_CONNECTOR_LOWER_LAYER);
-    }
-  }
-  this.drawnConnectors_ = [];
-  var connectorStroke = /** @type {acgraph.vector.Stroke} */ (this.getOption('connectorStroke'));
-  if (!this.hoveredLabelConnectorPath_) {
-    // path for connector for label disabled by algorithm
-    this.hoveredLabelConnectorPath_ = this.rootElement.path();
-    this.hoveredLabelConnectorPath_.stroke(connectorStroke);
-  }
-  //endregion
-};
-
-
-/**
- *
- * @param {number} index
- * @return {Array.<number>}
- */
-anychart.pieModule.Chart.prototype.getSliceCenterCoords = function(index) {
-  var iterator = this.getIterator();
-  iterator.select(index);
-
-  var cx = this.cx_;
-  var cy = this.cy_;
-
-  var explode = this.getExplode(this.state.getPointStateByIndex(index));
-  if (explode) {
-    var mode3d = /** @type {boolean} */ (this.getOption('mode3d'));
-    var start = /** @type {number} */ (iterator.meta('start'));
-    var sweep = /** @type {number} */ (iterator.meta('sweep'));
-
-    var angle = (start + sweep / 2) * Math.PI / 180;
-    var ex = explode * Math.cos(angle);
-    var ey = (mode3d ? this.get3DYRadius(explode) : explode) * Math.sin(angle);
-    cx += ex;
-    cy += ey;
-  }
-
-  return [cx, cy];
-};
-
-
-/**
- * Calculating outside labels.
- */
-anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
-  var iterator = this.getIterator();
-  var label, x0, y0, radius, isRightSide;
-  var connectorPath, connector;
-  var mode3d = this.getOption('mode3d');
-
-  this.initConnectorElements();
-
-  //region calculate absolute labels position, sort labels, separation of the labels on the left and right side
-  var rightSideLabels = [], leftSideLabels = [], rightSideLabels2, leftSideLabels2;
-  var rightSideExplodedLabels = [], leftSideExplodedLabels = [], rightSideExplodedLabels2, leftSideExplodedLabels2;
-  var arr;
-
-  iterator.reset();
-  var switchToRightSide = false;
-  var switchToLeftSide = false;
-  while (iterator.advance()) {
-    if (this.isMissing_(iterator.get('value'))) continue;
-    var index = iterator.getIndex();
-    var start = /** @type {number} */ (iterator.meta('start'));
-    var sweep = /** @type {number} */ (iterator.meta('sweep'));
-    var pointState = this.state.getPointStateByIndex(index);
-    var explode = this.getExplode(pointState);
-    var angle = (start + sweep / 2) * Math.PI / 180;
-    var angleDeg = goog.math.standardAngle(goog.math.toDegrees(angle));
-
-    if (angleDeg > 270 && !switchToRightSide &&
-        (leftSideLabels.length != 0 || (leftSideLabels2 && leftSideLabels2.length != 0))) {
-      switchToRightSide = true;
-      rightSideLabels2 = [];
-      rightSideExplodedLabels2 = [];
-    }
-
-    if (angleDeg > 90 && !switchToLeftSide &&
-        (rightSideLabels.length != 0 || (rightSideLabels2 && rightSideLabels2.length != 0))) {
-      switchToLeftSide = true;
-      leftSideLabels2 = [];
-      leftSideExplodedLabels2 = [];
-    }
-
-    isRightSide = angleDeg < 90 || angleDeg > 270;
-
-    var center = this.getSliceCenterCoords(index);
-    radius = mode3d ? this.get3DYRadius(this.radiusValue_) : this.radiusValue_;
-
-    // coordinates of the point where the connector touches a pie
-    x0 = center[0] + this.radiusValue_ * Math.cos(angle);
-    y0 = center[1] + radius * Math.sin(angle);
-
-    if (mode3d) {
-      y0 += this.get3DHeight() / 2;
-    }
-
-    connector = isRightSide ?
-        anychart.pieModule.Chart.OUTSIDE_LABELS_CONNECTOR_SIZE_ :
-        -anychart.pieModule.Chart.OUTSIDE_LABELS_CONNECTOR_SIZE_;
-    iterator.meta('connector', connector);
-
-    this.connectorAnchorCoords[index * 2] = x0;
-    this.connectorAnchorCoords[index * 2 + 1] = y0;
-
-    var anchor = isRightSide ? anychart.enums.Position.LEFT_CENTER : anychart.enums.Position.RIGHT_CENTER;
-    iterator.meta('anchor', anchor);
-    label = this.drawLabel_(anychart.PointState.NORMAL, false);
-    this.dropLabelBoundsCache(label);
-
-    label.angle_ = angleDeg;
-
-    //Target array chosen.
-    if (isRightSide) {
-      if (switchToRightSide) {
-        arr = explode ? rightSideExplodedLabels2 : rightSideLabels2;
-      } else {
-        arr = explode ? rightSideExplodedLabels : rightSideLabels;
-      }
-    } else {
-      if (switchToRightSide) {
-        arr = explode ? leftSideExplodedLabels2 : leftSideLabels2;
-      } else {
-        arr = explode ? leftSideExplodedLabels : leftSideLabels;
-      }
-    }
-    arr.push(label);
-
-    if (this.getOption('overlapMode') == anychart.enums.LabelsOverlapMode.ALLOW_OVERLAP) {
-      if (label && label.enabled() != false) {
-        index = label.getIndex();
-
-        this.dropLabelBoundsCache(label);
-        var bounds = this.getLabelBounds(label);
-
-        var boundsForCompare = explode ? this.contentBounds : this.piePlotBounds_;
-
-        this.labelsRadiusOffset_ = Math.max(
-            boundsForCompare.left - bounds.left,
-            bounds.getRight() - boundsForCompare.getRight(),
-            boundsForCompare.top - bounds.top,
-            bounds.getBottom() - boundsForCompare.getBottom(),
-            this.labelsRadiusOffset_);
-
-        if (!this.drawnConnectors_[index]) {
-          y0 = this.connectorAnchorCoords[index * 2 + 1] - this.get3DHeight() / 2;
-          if (mode3d && y0 < this.cy_) {
-            connectorPath = /** @type {acgraph.vector.Path} */(this.connectorsLowerLayer_.genNextChild());
-          } else {
-            connectorPath = /** @type {acgraph.vector.Path} */(this.connectorsLayer_.genNextChild());
-          }
-          this.drawnConnectors_[index] = connectorPath;
-          connectorPath.stroke(/** @type {acgraph.vector.Stroke} */ (this.getOption('connectorStroke')));
-          this.drawConnectorLine(label, connectorPath);
-        }
-      }
-
-    }
-  }
-  //endregion
-
-  rightSideLabels = rightSideLabels2 ?
-      rightSideLabels2.concat(rightSideLabels) : rightSideLabels;
-
-  rightSideExplodedLabels = rightSideExplodedLabels2 ?
-      rightSideExplodedLabels2.concat(rightSideExplodedLabels) : rightSideExplodedLabels;
-
-  leftSideLabels = leftSideLabels2 ?
-      leftSideLabels2.concat(leftSideLabels) : leftSideLabels;
-
-  leftSideExplodedLabels = leftSideExplodedLabels2 ?
-      leftSideExplodedLabels2.concat(leftSideExplodedLabels) : leftSideExplodedLabels;
-
-  if (this.getOption('overlapMode') != anychart.enums.LabelsOverlapMode.ALLOW_OVERLAP) {
-    // var ___name = 'cb_';
-    // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
-    // this[___name].setBounds(this.contentBounds);
-    //
-    // var ___name = 'ppb_';
-    // if (!this[___name]) this[___name] = this.container().rect().zIndex(1000);
-    // this[___name].setBounds(this.piePlotBounds_);
-
-
-    this.calcDomain(leftSideExplodedLabels, false, null, true);
-    this.calcDomain(rightSideExplodedLabels, true, null, true);
-
-    var explodedLabels = goog.array.concat(leftSideExplodedLabels, rightSideExplodedLabels);
-    this.calcDomain(leftSideLabels, false, explodedLabels, false);
-    this.calcDomain(rightSideLabels, true, explodedLabels, false);
-  }
-
-  this.labelsRadiusOffset_ = Math.round(this.labelsRadiusOffset_);
-};
-
-
-/**
- * Calculate labels domain.
- * @param {Array.<anychart.core.ui.CircularLabelsFactory.Label>} labels .
- * @param {boolean} isRightSide .
- * @param {Array.<anychart.core.ui.CircularLabelsFactory.Label>=} opt_labelsForComparing .
- * @param {boolean=} opt_exploded .
- */
-anychart.pieModule.Chart.prototype.calcDomain = function(labels, isRightSide, opt_labelsForComparing, opt_exploded) {
-  var i, len, bounds, droppedLabels, notIntersection, m, l, domainBounds, domain = null, label;
-  var iterator = this.getIterator();
-  var domains = [];
-  var labelsIterator = isRightSide ? goog.array.forEachRight : goog.array.forEach;
-
-  labelsIterator(labels, function(label) {
-    if (label) {
-      iterator.select(label.getIndex());
-      label.formatProvider(this.createFormatProvider());
-      bounds = this.getLabelBounds(label);
-
-      if (!domain || (domain.isNotIntersect(bounds))) {
-        if (domain) domains.push(domain);
-        domain = new anychart.pieModule.Chart.PieOutsideLabelsDomain(isRightSide, this, domains, !!opt_exploded);
-        domain.addLabel(label);
-      } else {
-        domain.addLabel(label);
-      }
-    }
-  }, this);
-
-  if (domain) domains.push(domain);
-
-  for (i = 0, len = domains.length; i < len; i++) {
-    domain = domains[i];
-    if (domain && domain.droppedLabels) {
-      if (!droppedLabels) droppedLabels = [];
-      droppedLabels = goog.array.concat(droppedLabels, domain.droppedLabels);
-    }
-  }
-
-  domain = null;
-  if (droppedLabels) {
-    goog.array.sort(droppedLabels, function(a, b) {
-      return a.getIndex() > b.getIndex() ? 1 : a.getIndex() < b.getIndex() ? -1 : 0;
-    });
-
-    labelsIterator(droppedLabels, function(label) {
-      if (label) {
-        iterator.select(label.getIndex());
-        label.formatProvider(this.createFormatProvider());
-        bounds = this.getLabelBounds(label);
-
-        notIntersection = true;
-        for (m = 0, l = domains.length; m < l; m++) {
-          notIntersection = notIntersection && domains[m].isNotIntersect(bounds);
-        }
-
-        if (notIntersection) {
-          if (!domain) {
-            domain = new anychart.pieModule.Chart.PieOutsideLabelsDomain(isRightSide, this, [], !!opt_exploded);
-          }
-          domain.softAddLabel(label);
-          domainBounds = domain.getBounds();
-
-          notIntersection = true;
-          for (m = 0; m < l; m++) {
-            notIntersection = notIntersection && domains[m].isNotIntersect(domainBounds);
-          }
-
-          if (domain.isCriticalAngle || !notIntersection) {
-            domain.labels.pop().enabled(false);
-            domain.calcDomain();
-            domains.push(domain);
-            domain = null;
-          } else {
-            label.enabled(true);
-          }
-        } else {
-          if (domain) {
-            domains.push(domain);
-            domain = null;
-          }
-        }
-      }
-    }, this);
-
-    if (domain)
-      domains.push(domain);
-  }
-
-  var y0, connectorPath, index, k, z, labelsLen, labelsForComparingLen;
-  var mode3d = this.getOption('mode3d');
-  var connectorStroke = /** @type {acgraph.vector.Stroke} */ (this.getOption('connectorStroke'));
-
-  for (i = 0, len = domains.length; i < len; i++) {
-    domain = domains[i];
-    if (domain) {
-      domain.applyPositions();
-
-      for (k = 0, labelsLen = domain.labels.length; k < labelsLen; k++) {
-        label = domain.labels[k];
-        this.dropLabelBoundsCache(label);
-        bounds = this.getLabelBounds(label);
-        index = label.getIndex();
-
-        if (opt_labelsForComparing && label && label.enabled() != false) {
-          var c_x0 = this.connectorAnchorCoords[index * 2];
-          var c_y0 = this.connectorAnchorCoords[index * 2 + 1];
-
-          var connector = /** @type {number} */(iterator.meta('connector'));
-          var positionProvider = label.positionProvider()['value'];
-
-          var angle = positionProvider['angle'];
-          var angleRad = goog.math.toRadians(angle);
-          var radius = positionProvider['radius'];
-
-          var c_x1 = this.cx_ + radius * Math.cos(angleRad) - connector;
-          var c_y1 = this.cy_ + radius * Math.sin(angleRad);
-
-          for (z = 0, labelsForComparingLen = opt_labelsForComparing.length; z < labelsForComparingLen; z++) {
-            var comparingLabel = opt_labelsForComparing[z];
-            this.dropLabelBoundsCache(comparingLabel);
-
-            var comparingBounds = this.getLabelBounds(comparingLabel);
-            var comparingLabelIndex = comparingLabel.getIndex();
-
-            var center = this.getSliceCenterCoords(comparingLabelIndex);
-            var cx = center[0], cy = center[1];
-
-            var start = /** @type {number} */ (iterator.meta('start'));
-            var sweep = /** @type {number} */ (iterator.meta('sweep'));
-
-            //Coords of comparing label connector
-            var cc_x0 = this.connectorAnchorCoords[comparingLabelIndex * 2];
-            var cc_y0 = this.connectorAnchorCoords[comparingLabelIndex * 2 + 1];
-
-            connector = /** @type {number} */(iterator.meta('connector'));
-            positionProvider = comparingLabel.positionProvider()['value'];
-
-            angle = positionProvider['angle'];
-            angleRad = goog.math.toRadians(angle);
-            radius = positionProvider['radius'];
-
-            var cc_x1 = this.cx_ + radius * Math.cos(angleRad) - connector;
-            var cc_y1 = this.cy_ + radius * Math.sin(angleRad);
-
-            //Coords of slice sides
-            angleRad = goog.math.toRadians(start);
-            var startSliceLinePointInner_x = cx + this.innerRadiusValue_ * Math.cos(angleRad);
-            var startSliceLinePointInner_y = cy + this.innerRadiusValue_ * Math.sin(angleRad);
-
-            var startSliceLinePointOuter_x = cx + this.radiusValue_ * Math.cos(angleRad);
-            var startSliceLinePointOuter_y = cy + this.radiusValue_ * Math.sin(angleRad);
-
-            angleRad = goog.math.toRadians(start + sweep);
-            var endSliceLinePointInner_x = cx + this.innerRadiusValue_ * Math.cos(angleRad);
-            var endSliceLinePointInner_y = cy + this.innerRadiusValue_ * Math.sin(angleRad);
-
-            var endSliceLinePointOuter_x = cx + this.radiusValue_ * Math.cos(angleRad);
-            var endSliceLinePointOuter_y = cy + this.radiusValue_ * Math.sin(angleRad);
-
-            var cbbox = bounds.toCoordinateBox();
-            var isIntersect =
-                anychart.math.checkRectIntersection(cbbox, comparingBounds.toCoordinateBox()) ||
-                anychart.math.checkRectIntersectionWithSegment(startSliceLinePointInner_x, startSliceLinePointInner_y, startSliceLinePointOuter_x, startSliceLinePointOuter_y, cbbox) ||
-                anychart.math.checkRectIntersectionWithSegment(endSliceLinePointInner_x, endSliceLinePointInner_y, endSliceLinePointOuter_x, endSliceLinePointOuter_y, cbbox) ||
-                anychart.math.checkRectIntersectionWithSegment(cc_x0, cc_y0, cc_x1, cc_y1, cbbox) ||
-                anychart.math.checkSegmentsIntersection(c_x0, c_y0, c_x1, c_y1, startSliceLinePointInner_x, startSliceLinePointInner_y, startSliceLinePointOuter_x, startSliceLinePointOuter_y) ||
-                anychart.math.checkSegmentsIntersection(c_x0, c_y0, c_x1, c_y1, endSliceLinePointInner_x, endSliceLinePointInner_y, endSliceLinePointOuter_x, endSliceLinePointOuter_y);
-
-            if (isIntersect) {
-              label.enabled(false);
-              break;
-            }
-          }
-        }
-
-        if (label && label.enabled() != false) {
-          if (this.recalculateBounds_) {
-            iterator.select(index);
-            var exploded = !!this.getExplode();
-            var boundsForCompare = exploded ? this.contentBounds : this.piePlotBounds_;
-
-            this.labelsRadiusOffset_ = Math.max(
-                boundsForCompare.left - bounds.left,
-                bounds.getRight() - boundsForCompare.getRight(),
-                boundsForCompare.top - bounds.top,
-                bounds.getBottom() - boundsForCompare.getBottom(),
-                this.labelsRadiusOffset_);
-          }
-
-          if (!this.drawnConnectors_[index]) {
-            y0 = this.connectorAnchorCoords[index * 2 + 1] - this.get3DHeight() / 2;
-            if (mode3d && y0 < this.cy_) {
-              connectorPath = /** @type {acgraph.vector.Path} */(this.connectorsLowerLayer_.genNextChild());
-            } else {
-              connectorPath = /** @type {acgraph.vector.Path} */(this.connectorsLayer_.genNextChild());
-            }
-            this.drawnConnectors_[index] = connectorPath;
-            connectorPath.stroke(connectorStroke);
-            this.drawConnectorLine(label, connectorPath);
-          }
-        }
-      }
-    }
-  }
-};
-
-
-/**
- * Defragmentation domain. If domain have critical angle then need defragment domain.
- * @param {!anychart.pieModule.Chart.PieOutsideLabelsDomain} domain Domain to defragmentation.
- */
-anychart.pieModule.Chart.prototype.domainDefragmentation = function(domain) {
-  var labels = domain.labels;
-  var sourcePieLabelsDomains = domain.pieLabelsDomains;
-  var i, len, label, bounds;
-  var prevDomain = sourcePieLabelsDomains[sourcePieLabelsDomains.length - 1];
-
-  if (prevDomain == domain) return;
-
-  var tmpDomain = null;
-  var tmpLabels = labels.slice();
-  var domainsLength = sourcePieLabelsDomains.length;
-  var domainExpanded = false;
-
-  for (i = 0, len = labels.length; i < len; i++) {
-    label = labels[i];
-    if (label) {
-      bounds = this.getLabelBounds(label);
-
-      if (!prevDomain || prevDomain.isNotIntersect(bounds)) {
-
-        if (!tmpDomain || tmpDomain.isNotIntersect(bounds)) {
-          if (tmpDomain) {
-            sourcePieLabelsDomains.push(tmpDomain);
-            prevDomain = tmpDomain;
-          }
-          var isRightSide = label['anchor']() == anychart.enums.Anchor.LEFT_CENTER;
-          tmpDomain = new anychart.pieModule.Chart.PieOutsideLabelsDomain(isRightSide, this, sourcePieLabelsDomains, domain.exploded);
-          tmpDomain.softAddLabel(label);
-        } else {
-          tmpDomain.softAddLabel(label);
-
-          if (this.isCriticalAngle) {
-            label.enabled(false);
-            if (!tmpDomain.droppedLabels) tmpDomain.droppedLabels = [];
-            tmpDomain.droppedLabels.push(label);
-            tmpDomain.labels.pop();
-            tmpDomain.calcDomain();
-          } else if (prevDomain && tmpDomain && !prevDomain.isNotIntersect(tmpDomain.getBounds())) {
-            sourcePieLabelsDomains.pop();
-            tmpDomain.labels = goog.array.concat(prevDomain.labels, tmpDomain.labels);
-            prevDomain = null;
-            tmpDomain.calcDomain();
-
-            domainExpanded = true;
-          }
-        }
-      } else {
-        label.enabled(false);
-        if (tmpDomain) {
-          if (!tmpDomain.droppedLabels) tmpDomain.droppedLabels = [];
-          tmpDomain.droppedLabels.push(label);
-        }
-      }
-    }
-  }
-  if (tmpDomain) {
-    if (sourcePieLabelsDomains.length - domainsLength > 0 || domainExpanded) {
-      domain.labels = tmpDomain.labels;
-    } else {
-      tmpDomain.clearDroppedLabels();
-      if (tmpLabels.length != labels.length)
-        domain.labels = tmpLabels;
-    }
-  }
-};
-
-
-/**
- * Draws connector line for label.
- * @param {anychart.core.ui.CircularLabelsFactory.Label} label Label.
- * @param {acgraph.vector.Path} path Connector path element.
- */
-anychart.pieModule.Chart.prototype.drawConnectorLine = function(label, path) {
-  var iterator = this.data().getIterator();
-  var index = label.getIndex();
-  var mode3d = /** @type {boolean} */ (this.getOption('mode3d'));
-
-  if (iterator.select(index)) {
-    var x0 = this.connectorAnchorCoords[index * 2];
-    var y0 = this.connectorAnchorCoords[index * 2 + 1];
-
-    var connector = /** @type {number} */(iterator.meta('connector'));
-    var positionProvider = label.positionProvider()['value'];
-
-    var offsetY = goog.isDef(label.getOption('offsetY')) ? label.getOption('offsetY') : this.labels().getOption('offsetY');
-    if (!offsetY) offsetY = 0;
-    var offsetRadius = anychart.utils.normalizeSize(/** @type {number|string} */(offsetY), this.radiusValue_);
-
-    var offsetX = goog.isDef(label.getOption('offsetX')) ? label.getOption('offsetX') : this.labels().getOption('offsetX');
-    if (!offsetX) offsetX = 0;
-    var offsetAngle = anychart.utils.normalizeSize(/** @type {number|string} */(offsetX), 360);
-
-    var angle = positionProvider['angle'] + offsetAngle;
-    var angleRad = goog.math.toRadians(angle);
-    var radius = positionProvider['radius'] + offsetRadius;
-    var radiusY = mode3d ? positionProvider['radiusY'] + offsetRadius : radius;
-
-    var x = this.cx_ + radius * Math.cos(angleRad) - connector;
-    var y = this.cy_ + radiusY * Math.sin(angleRad);
-
-    path.clear().moveTo(x0, y0).lineTo(x, y).lineTo(x + connector, y);
-  }
-};
-
-
-/**
- * Show or hide connector for label.
- * @param {anychart.core.ui.CircularLabelsFactory.Label} label Label.
- * @param {boolean} show Whether to show connector ot not for label.
- * @private
- */
-anychart.pieModule.Chart.prototype.updateConnector_ = function(label, show) {
-  if (!label || !this.drawnConnectors_)
-    return;
-  var index = label.getIndex();
-  var path;
-  if (!(path = this.drawnConnectors_[index])) {
-    if (!show) {
-      this.hoveredLabelConnectorPath_.clear();
-    } else {
-      this.drawConnectorLine(label, this.hoveredLabelConnectorPath_);
-    }
-    return;
-  }
-
-  if (label && label.enabled() != false && show) {
-    this.drawConnectorLine(label, path);
-  } else
-    path.clear();
-};
-
-
-//endregion
 //region --- Disposing / Serialization / Stup
 /** @inheritDoc */
 anychart.pieModule.Chart.prototype.serialize = function() {
@@ -4639,7 +4637,7 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
   var pieCenter = this.pie.getCenterPoint();
   var piePxRadius = this.pie.getPixelRadius();
   if (this.exploded)
-    piePxRadius += this.pie.getExplode();
+    piePxRadius += this.pie.getExplode(anychart.PointState.SELECT);
 
   var cx = pieCenter['x'], cy = pieCenter['y'];
   var bottomLabelsYLimit, topLabelsYLimit;
@@ -4680,7 +4678,7 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
   this.labelsPositions.length = 0;
   var iterator = this.pie.data().getIterator();
   var nextLabelHeight;
-  var start, sweep, exploded, angle, dR, dRPie, y, y0, y1, x, x0, x1, connector;
+  var start, sweep, angle, dR, dRPie, y, y0, y1, x, x0, x1, connector;
   this.x = NaN;
   this.width = NaN;
   var rightBound, leftBound;
