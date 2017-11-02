@@ -27,7 +27,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'explode': 0
     },
     'hovered': {
-      'explode': '3%',
+      'explode': 0,
       'outlineWidth': 10,
       'outlineOffset': 0,
       'outlineFill': anychart.core.defaultTheme.returnLightenSourceColor50,
