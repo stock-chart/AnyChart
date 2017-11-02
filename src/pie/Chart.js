@@ -1451,7 +1451,7 @@ anychart.pieModule.Chart.prototype.calculateOutsideLabels = function() {
     goog.array.forEachRight(goog.object.getValues(explodeLevels), function(explodeLevel) {
       var right = explodeLevel[3].concat(explodeLevel[1]);
       var left = explodeLevel[2].concat(explodeLevel[0]);
-      var explode = explodeLevel[5];
+      var explode = explodeLevel[4];
 
       this.calcDomain(left, false, labelsToCompare, explode);
       this.calcDomain(right, true, labelsToCompare, explode);
@@ -1643,8 +1643,7 @@ anychart.pieModule.Chart.prototype.calcDomain = function(labels, isRightSide, op
         if (label && label.enabled() != false) {
           if (this.recalculateBounds_) {
             iterator.select(index);
-            var exploded = !!opt_explode;
-            var boundsForCompare = exploded ? this.contentBounds : this.piePlotBounds_;
+            var boundsForCompare = opt_explode ? this.contentBounds : this.piePlotBounds_;
 
             this.labelsRadiusOffset_ = Math.max(
                 boundsForCompare.left - bounds.left,
@@ -1702,7 +1701,7 @@ anychart.pieModule.Chart.prototype.domainDefragmentation = function(domain) {
             prevDomain = tmpDomain;
           }
           var isRightSide = label['anchor']() == anychart.enums.Anchor.LEFT_CENTER;
-          tmpDomain = new anychart.pieModule.Chart.PieOutsideLabelsDomain(isRightSide, this, sourcePieLabelsDomains, domain.exploded);
+          tmpDomain = new anychart.pieModule.Chart.PieOutsideLabelsDomain(isRightSide, this, sourcePieLabelsDomains, domain.explode);
           tmpDomain.softAddLabel(label);
         } else {
           tmpDomain.softAddLabel(label);
@@ -1907,7 +1906,7 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
   this.calculate();
   this.labels().dropCallsCache();
   var iterator = this.getIterator();
-  var exploded, pointState, value;
+  var pointState, value;
   var rowsCount = iterator.getRowsCount();
   var mode3d = /** @type {boolean} */ (this.getOption('mode3d'));
 
@@ -2287,11 +2286,11 @@ anychart.pieModule.Chart.prototype.drawLabel_ = function(pointState, opt_updateC
     var cy = this.cy_;
 
     var angle;
-    var exploded = this.getExplode(pointState);
-    if (exploded) {
+    var explode = this.getExplode(pointState);
+    if (explode) {
       angle = (start + sweep / 2) * Math.PI / 180;
-      var ex = exploded * Math.cos(angle);
-      var ey = (mode3d ? this.get3DYRadius(exploded) : exploded) * Math.sin(angle);
+      var ex = explode * Math.cos(angle);
+      var ey = (mode3d ? this.get3DYRadius(explode) : explode) * Math.sin(angle);
       cx += ex;
       cy += ey;
     }
@@ -2877,11 +2876,11 @@ anychart.pieModule.Chart.prototype.draw3DSlices_ = function(opt_sliceIndex, opt_
 anychart.pieModule.Chart.prototype.draw3DSlice_ = function(side, opt_update) {
   var iterator = this.getIterator();
   iterator.select(side.index);
-  var exploded = !!this.getExplode();
+  var explode = this.getExplode();
 
   var cx = this.cx_;
   var cy = this.cy_;
-  if (exploded) {
+  if (explode) {
     cx += side.ex;
     cy += side.ey;
   }
@@ -4446,7 +4445,7 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain = function(isRight, pie, domains
    *
    * @type {number}
    */
-  this.exploded = explode;
+  this.explode = explode;
 
   /**
    *
@@ -4633,9 +4632,9 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
   var sumPos = 0;
   this.dropBoundsCache();
 
-
+  var explode = this.explode;
   var pieCenter = this.pie.getCenterPoint();
-  var piePxRadius = this.pie.getPixelRadius() + this.explode;
+  var piePxRadius = this.pie.getPixelRadius() + explode;
 
   var cx = pieCenter['x'], cy = pieCenter['y'];
   var bottomLabelsYLimit, topLabelsYLimit;
@@ -4710,9 +4709,6 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
     connector = this.isRightSide ?
         anychart.pieModule.Chart.OUTSIDE_LABELS_CONNECTOR_SIZE_ :
         -anychart.pieModule.Chart.OUTSIDE_LABELS_CONNECTOR_SIZE_;
-
-    var pointState = this.pie.state.getPointStateByIndex(index);
-    var explode = this.pie.getExplode(pointState);
 
     dRPie = this.pie.radiusValue_ + explode;
     dR = (this.pie.getPixelRadius() + this.pie.connectorLengthValue_) + explode + offsetRadius;
