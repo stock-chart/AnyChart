@@ -66,7 +66,8 @@ anychart.core.utils.Interactivity.prototype.SUPPORTED_SIGNALS = anychart.Signal.
 
 /**
  *
- * @param {boolean=} opt_value
+ * @param {boolean=} opt_value .
+ * @return {anychart.core.utils.Interactivity|boolean}
  */
 anychart.core.utils.Interactivity.prototype.multiSelectOnClick = function(opt_value) {
   if (goog.isDef(opt_value)) {
@@ -76,13 +77,14 @@ anychart.core.utils.Interactivity.prototype.multiSelectOnClick = function(opt_va
     }
     return this;
   }
-  return this.multiSelectOnClick_;
+  return /** @type {boolean} */(this.multiSelectOnClick_);
 };
 
 
 /**
  *
- * @param {boolean=} opt_value
+ * @param {boolean=} opt_value .
+ * @return {anychart.core.utils.Interactivity|boolean}
  */
 anychart.core.utils.Interactivity.prototype.unselectOnClickOutOfPoint = function(opt_value) {
   if (goog.isDef(opt_value)) {
@@ -92,7 +94,7 @@ anychart.core.utils.Interactivity.prototype.unselectOnClickOutOfPoint = function
     }
     return this;
   }
-  return this.unselectOnClickOutOfPoint_;
+  return /** @type {boolean} */(this.unselectOnClickOutOfPoint_);
 };
 
 
