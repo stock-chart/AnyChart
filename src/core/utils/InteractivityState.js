@@ -486,50 +486,6 @@ anychart.core.utils.InteractivityState.clarifyState = function(state) {
 };
 
 
-
-/**
- * Interactivity state class for pie. See #addPointStateInternal method.
- * @param {anychart.pieModule.Chart} target Pie chart.
- * @constructor
- * @extends {anychart.core.utils.InteractivityState}
- */
-anychart.core.utils.PieInteractivityState = function(target) {
-  anychart.core.utils.PieInteractivityState.base(this, 'constructor', target);
-};
-goog.inherits(anychart.core.utils.PieInteractivityState, anychart.core.utils.InteractivityState);
-
-
-/** @inheritDoc */
-anychart.core.utils.PieInteractivityState.prototype.addPointStateInternal = function(state, index) {
-  if (!this.target.getIterator().select(index))
-    return;
-
-  var arrIndex = goog.array.binarySearch(this.stateIndex, index);
-  //if state is normal - do nothing.
-  if (state != anychart.PointState.NORMAL) {
-    //if state by index doesn't found then adds it
-    //else updates state.
-    if (arrIndex < 0) {
-      goog.array.insertAt(this.stateIndex, index, ~arrIndex);
-      goog.array.insertAt(this.stateValue, state, ~arrIndex);
-
-      if (this.seriesState == anychart.PointState.NORMAL)
-        this.target.applyAppearanceToPoint(state);
-
-      var updateSeries = this.updateRules(state, NaN);
-      if (updateSeries && !this.target.isDiscreteBased() && this.target.hoverMode() == anychart.enums.HoverMode.SINGLE)
-        this.target.applyAppearanceToSeries(state);
-    } else {
-      // here we upgrading logic for pie
-      // when state adds - update point appearance.
-      this.stateValue[arrIndex] |= state;
-      this.target.applyAppearanceToPoint(this.stateValue[arrIndex]);
-    }
-  }
-};
-
-
-
 /**
  * Interactivity state class for linear gauge. Overrides setPointState method.
  * @param {anychart.linearGaugeModule.pointers.Base} target Pie chart.

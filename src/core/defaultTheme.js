@@ -1923,7 +1923,7 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'neckWidth': null,
     'neckHeight': null,
     'pointsPadding': 0,
-    'forceHoverLabels': false,
+    'forceHoverLabels': true,
     'outsideLabels': {
       'disablePointerEvents': false,
       'autoColor': anychart.core.defaultTheme.fontColorBright
