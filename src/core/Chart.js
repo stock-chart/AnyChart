@@ -2513,7 +2513,7 @@ anychart.core.Chart.prototype.onMouseDown = function(event) {
     index = tag && goog.isNumber(tag.index) ? tag.index : event['pointIndex'];
   }
 
-  debugger;
+  // debugger;
 
   if (series && !series.isDisposed() && series.enabled() && goog.isFunction(series.makePointEvent)) {
     var evt = series.makePointEvent(event);
