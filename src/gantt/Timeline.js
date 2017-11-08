@@ -744,6 +744,46 @@ anychart.ganttModule.TimeLine.EDIT_CORNER_HEIGHT = 5;
 anychart.ganttModule.TimeLine.EDIT_CONNECTOR_RADIUS = 5;
 
 
+//region --- Coloring
+/**
+ * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
+ */
+anychart.ganttModule.TimeLine.COLOR_DESCRIPTORS = (function() {
+  /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
+  var map = {};
+  anychart.core.settings.createDescriptors(map, [
+    // timeline coloring
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'columnStroke', anychart.core.settings.fillOrFunctionNormalizer],
+
+    // elements coloring
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'baseFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'baseStroke', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'baselineFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'baselineStroke', anychart.core.settings.fillOrFunctionNormalizer],
+
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'milestoneFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'milestoneStroke', anychart.core.settings.fillOrFunctionNormalizer],
+
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'parentFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'parentStroke', anychart.core.settings.fillOrFunctionNormalizer],
+
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'progressFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'progressStroke', anychart.core.settings.fillOrFunctionNormalizer],
+
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'progressFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'progressStroke', anychart.core.settings.fillOrFunctionNormalizer],
+
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'selectedElementFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'selectedElementStroke', anychart.core.settings.fillOrFunctionNormalizer],
+  ]);
+  return map;
+})();
+//anychart.core.settings.populate(anychart.ganttModule.TimeLine, anychart.ganttModule.TimeLine.COLOR_DESCRIPTORS);
+
+
+//endregion
+
+
 /**
  * Scale invalidation handler.
  * @param {anychart.SignalEvent} event - Signal event.
@@ -5427,29 +5467,45 @@ anychart.standalones.resourceTimeline = function() {
   var proto = anychart.ganttModule.TimeLine.prototype;
   proto['backgroundFill'] = proto.backgroundFill;
   proto['columnStroke'] = proto.columnStroke;
+
+  // row coloring
   proto['rowFill'] = proto.rowFill;
   proto['rowEvenFill'] = proto.rowEvenFill;
   proto['rowOddFill'] = proto.rowOddFill;
   proto['rowHoverFill'] = proto.rowHoverFill;
   proto['rowSelectedFill'] = proto.rowSelectedFill;
+
+
   proto['editing'] = proto.editing;
 
   proto['baselineAbove'] = proto.baselineAbove;
 
   proto['horizontalScrollBar'] = proto.horizontalScrollBar;
   proto['verticalScrollBar'] = proto.verticalScrollBar;
+
+  // bar coloring
   proto['baseFill'] = proto.baseFill;
   proto['baseStroke'] = proto.baseStroke;
   proto['baselineFill'] = proto.baselineFill;
   proto['baselineStroke'] = proto.baselineStroke;
+
+  // milestone coloring
   proto['milestoneFill'] = proto.milestoneFill;
   proto['milestoneStroke'] = proto.milestoneStroke;
+
+  // parent bar coloring
   proto['parentFill'] = proto.parentFill;
   proto['parentStroke'] = proto.parentStroke;
+
+  // progress bar coloring
   proto['progressFill'] = proto.progressFill;
   proto['progressStroke'] = proto.progressStroke;
+
+  // connector ne sovsem ponyatno coloring
   proto['connectorFill'] = proto.connectorFill;
   proto['connectorStroke'] = proto.connectorStroke;
+
+  // full bar stack coloring (bar progress parent milestone)
   proto['selectedElementFill'] = proto.selectedElementFill;
   proto['selectedElementStroke'] = proto.selectedElementStroke;
   proto['tooltip'] = proto.tooltip;

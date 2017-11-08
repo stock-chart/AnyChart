@@ -412,6 +412,18 @@ anychart.ganttModule.BaseGrid = function(opt_controller, opt_isResource) {
   this.bindHandlersToComponent(this, this.handleMouseOverAndMove_, this.handleMouseOut_, this.handleMouseClick_,
       this.handleMouseOverAndMove_, this.handleAll_);
 
+  function beforeRowFillInvalidation() {
+    this.setOption('rowOddFill', null);
+    this.setOption('rowEvenFill', null);
+  }
+  anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
+    ['backgroundFill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
+    ['rowFill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW, void 0, beforeRowFillInvalidation],
+    ['rowEvenFill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
+    ['rowOddFill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
+    ['rowHoverFill', 0, 0],
+    ['rowSelectedFill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW]
+  ]);
 };
 goog.inherits(anychart.ganttModule.BaseGrid, anychart.core.VisualBaseWithBounds);
 
@@ -1209,11 +1221,32 @@ anychart.ganttModule.BaseGrid.prototype.getHeaderSeparationPath = function() {
 };
 
 
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Decoration.
-//
-//----------------------------------------------------------------------------------------------------------------------
+//region --- Coloring
+/**
+ * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
+ */
+anychart.ganttModule.BaseGrid.COLOR_DESCRIPTORS = (function() {
+  /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
+  var map = {};
+  anychart.core.settings.createDescriptors(map, [
+    // grid coloring
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'backgroundFill', anychart.core.settings.fillOrFunctionNormalizer],
+
+    // row coloring
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowEvenFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowOddFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowHoverFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowSelectedFill', anychart.core.settings.fillOrFunctionNormalizer],
+  ]);
+  return map;
+})();
+//anychart.core.settings.populate(anychart.ganttModule.BaseGrid, anychart.ganttModule.BaseGrid.COLOR_DESCRIPTORS);
+
+
+//endregion
+
+
 /**
  * Gets/sets a default rows fill. Resets odd fill and even fill.
  * @param {(!acgraph.vector.Fill|!Array.<(acgraph.vector.GradientKey|string)>|null)=} opt_fillOrColorOrKeys .
