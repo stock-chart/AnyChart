@@ -2477,7 +2477,8 @@ anychart.core.Chart.prototype.onMouseDown = function(event) {
 
   var seriesStatus, eventSeriesStatus, allSeries, alreadySelectedPoints, i;
   var controlKeyPressed = event.ctrlKey || event.metaKey;
-  var multiSelectKeyPressed = controlKeyPressed || event.shiftKey || interactivity.multiSelectOnClick();
+  var multiSelectOnClick = interactivity.multiSelectOnClick();
+  var multiSelectKeyPressed = controlKeyPressed || event.shiftKey || multiSelectOnClick;
   var clickWithControlOnSelectedSeries, equalsSelectedPoints;
 
   var tag = anychart.utils.extractTag(event['domTarget']);
@@ -2513,8 +2514,6 @@ anychart.core.Chart.prototype.onMouseDown = function(event) {
     index = tag && goog.isNumber(tag.index) ? tag.index : event['pointIndex'];
   }
 
-  // debugger;
-
   if (series && !series.isDisposed() && series.enabled() && goog.isFunction(series.makePointEvent)) {
     var evt = series.makePointEvent(event);
     if (evt && ((anychart.utils.checkIfParent(/** @type {!goog.events.EventTarget} */(series), event['relatedTarget'])) || series.dispatchEvent(evt))) {
@@ -2531,8 +2530,8 @@ anychart.core.Chart.prototype.onMouseDown = function(event) {
           return;
 
         clickWithControlOnSelectedSeries = multiSelectKeyPressed && series.state.isStateContains(series.state.getSeriesState(), anychart.PointState.SELECT);
-        var unselect = clickWithControlOnSelectedSeries || !multiSelectKeyPressed ||
-            (multiSelectKeyPressed && interactivity.selectionMode() != anychart.enums.SelectionMode.MULTI_SELECT);
+        var unselect = !multiSelectOnClick && (clickWithControlOnSelectedSeries || !multiSelectKeyPressed ||
+            (multiSelectKeyPressed && interactivity.selectionMode() != anychart.enums.SelectionMode.MULTI_SELECT));
 
         if (unselect) {
           this.unselect();
@@ -2546,7 +2545,9 @@ anychart.core.Chart.prototype.onMouseDown = function(event) {
             index = index[index.length - 1];
         }
 
-        if (goog.isFunction(series.selectPoint))
+        // if (multiSelectOnClick)
+        //   this.unselect(index);
+        else if (goog.isFunction(series.selectPoint))
           series.selectPoint(/** @type {number} */ (index), event);
 
         allSeries = this.getAllSeries();
