@@ -5,6 +5,7 @@ goog.require('anychart.core.settings.IObjectWithSettings');
 goog.require('anychart.core.ui.CircularLabelsFactory');
 goog.require('anychart.core.ui.LabelsFactory');
 goog.require('anychart.core.ui.MarkersFactory');
+goog.require('anychart.core.utils.Connector');
 
 
 
@@ -38,7 +39,7 @@ anychart.core.StateSettings = function(stateHolder, descriptorsMeta, stateType, 
 
   if (goog.isDef(opt_descriptorsOverride)) {
     var diff = anychart.core.settings.createDescriptors(anychart.core.StateSettings.PROPERTY_DESCRIPTORS, opt_descriptorsOverride);
-    anychart.core.settings.populate(anychart.core.StateSettings, diff);
+    anychart.core.settings.populate(anychart.core.StateSettings, diff, true);
   }
 };
 goog.inherits(anychart.core.StateSettings, anychart.core.Base);
@@ -92,6 +93,13 @@ anychart.core.StateSettings.MARKERS_AFTER_INIT_CALLBACK = 'markersAfterInitCallb
  * @type {string}
  */
 anychart.core.StateSettings.OUTLIER_MARKERS_AFTER_INIT_CALLBACK = 'outlierMarkersAfterInitCallback';
+
+
+/**
+ * Option name for connector after init callback (used in event markers).
+ * @type {string}
+ */
+anychart.core.StateSettings.CONNECTOR_AFTER_INIT_CALLBACK = 'connectorAfterInitCallback';
 
 
 /**
@@ -165,6 +173,17 @@ anychart.core.StateSettings.DEFAULT_MARKERS_AFTER_INIT_CALLBACK = function(facto
 anychart.core.StateSettings.DEFAULT_OUTLIER_MARKERS_AFTER_INIT_CALLBACK = function(factory) {
   factory.listenSignals(this.outlierMarkersInvalidated_, this);
   factory.setParentEventTarget(/** @type {goog.events.EventTarget} */ (this));
+};
+
+
+/**
+ * Default connector after init callback.
+ * @param {anychart.core.utils.Connector} connector
+ * @this {*}
+ */
+anychart.core.StateSettings.DEFAULT_CONNECTOR_AFTER_INIT_CALLBACK = function(connector) {
+  connector.listenSignals(this.connectorInvalidated_, this);
+  connector.setParentEventTarget(/** @type {goog.events.EventTarget} */ (this));
 };
 
 
@@ -436,6 +455,26 @@ anychart.core.StateSettings.prototype.outlierMarkers = function(opt_value) {
 };
 
 
+/**
+ * Connector settings (stroke/length).
+ * @param {(Object|string|number)=} opt_value
+ * @return {anychart.core.StateSettings|anychart.core.utils.Connector}
+ */
+anychart.core.StateSettings.prototype.connector = function(opt_value) {
+  if (!this.connector_) {
+    var afterInitCallback = /** @type {Function} */ (this.getOption(anychart.core.StateSettings.CONNECTOR_AFTER_INIT_CALLBACK)) || goog.nullFunction;
+    this.connector_ = new anychart.core.utils.Connector();
+    afterInitCallback.call(this.stateHolder, this.connector_);
+  }
+
+  if (goog.isDef(opt_value)) {
+    this.connector_.setup(opt_value);
+    return this;
+  }
+  return this.connector_;
+};
+
+
 //endregion
 //region --- State Fallbacks
 /**
@@ -498,6 +537,9 @@ anychart.core.StateSettings.prototype.serialize = function() {
   if (this.descriptorsMeta['outlierMarkers'])
     json['outlierMarkers'] = this.outlierMarkers().serialize();
 
+  if (this.descriptorsMeta['connector'])
+    json['connector'] = this.connector().serialize();
+
   return json;
 };
 
@@ -546,12 +588,17 @@ anychart.core.StateSettings.prototype.setupByJSON = function(config, opt_default
     this.setEnabledTrue(config['outlierMarkers']);
     this.outlierMarkers().setupInternal(!!opt_default, config['outlierMarkers']);
   }
+
+  if (goog.isDef(this.descriptorsMeta['connector'])) {
+    this.connector().setupInternal(!!opt_default, config['connector']);
+  }
 };
 
 
 /** @inheritDoc */
 anychart.core.StateSettings.prototype.disposeInternal = function() {
-  goog.disposeAll(this.labels_, this.headers_, this.lowerLabels_, this.markers_, this.outlierMarkers_);
+  goog.disposeAll(this.labels_, this.headers_, this.lowerLabels_, this.markers_, this.outlierMarkers_, this.connector_);
+  delete this.connector_;
   anychart.core.StateSettings.base(this, 'disposeInternal');
 };
 
@@ -566,6 +613,7 @@ anychart.core.StateSettings.prototype.disposeInternal = function() {
   proto['lowerLabels'] = proto.lowerLabels;
   proto['markers'] = proto.markers;
   proto['outlierMarkers'] = proto.outlierMarkers;
+  proto['connector'] = proto.connector;
   proto['normal'] = proto.normal;
   proto['hovered'] = proto.hovered;
   proto['selected'] = proto.selected;

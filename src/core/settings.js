@@ -315,13 +315,16 @@ anychart.core.settings.createTextPropertiesDescriptorsMeta = function(map, inval
 //----------------------------------------------------------------------------------------------------------------------
 /**
  * Populates the prototype of passed class constructor with settings from descriptors.
- * @param {!Function} classConstructor
+ * @param {!(Function|Object)} target
  * @param {!Object.<anychart.core.settings.PropertyDescriptor>} descriptors
+ * @param {boolean=} opt_targetIsInstance If the target is an instance. Treated as a class contructor otherwise.
  */
-anychart.core.settings.populate = function(classConstructor, descriptors) {
+anychart.core.settings.populate = function(target, descriptors, opt_targetIsInstance) {
+  if (!opt_targetIsInstance)
+    target = target.prototype;
   for (var i in descriptors) {
     var descriptor = descriptors[i];
-    classConstructor.prototype[i] = goog.partial(
+    target[i] = goog.partial(
         anychart.core.settings.handlersMap[descriptor.handler],
         descriptor.propName,
         descriptor.deprecatedPropName,
@@ -933,6 +936,14 @@ anychart.core.settings.descriptors = (function() {
   // pert tasks
   map.DUMMY_FILL = [anychart.enums.PropertyHandlerType.MULTI_ARG, 'dummyFill', anychart.core.settings.fillOrFunctionNormalizer];
   map.DUMMY_STROKE = [anychart.enums.PropertyHandlerType.MULTI_ARG, 'dummyStroke', anychart.core.settings.strokeOrFunctionNormalizer];
+
+  // connector
+  map.EVENT_MARKER_TYPE = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'type', anychart.enums.normalizeEventMarkerType];
+  map.LENGTH = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'length', anychart.core.settings.numberNormalizer];
+  
+  map.DIRECTION = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'direction', anychart.enums.normalizeEventMarkerDirection];
+  map.POSITION = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'position', anychart.enums.normalizeEventMarkerPosition];
+  map.FIELD_NAME = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'fieldName', anychart.core.settings.stringNormalizer];
 
   return map;
 })();

@@ -18,6 +18,7 @@ goog.require('anychart.stockModule.Axis');
 goog.require('anychart.stockModule.CurrentPriceIndicator');
 goog.require('anychart.stockModule.Grid');
 goog.require('anychart.stockModule.Series');
+goog.require('anychart.stockModule.eventMarkers.PlotController');
 goog.require('anychart.stockModule.indicators');
 goog.require('anychart.utils');
 goog.require('goog.fx.Dragger');
@@ -135,6 +136,18 @@ anychart.stockModule.Plot = function(chart) {
   this.eventsInterceptor_ = null;
 
   /**
+   * @type {anychart.annotationsModule.PlotController}
+   * @private
+   */
+  this.annotations_ = null;
+
+  /**
+   * @type {anychart.stockModule.eventMarkers.PlotController}
+   * @private
+   */
+  this.eventMarkers_ = null;
+
+  /**
    * Whether this plot is last in chart.
    * @type {boolean}
    * @private
@@ -217,6 +230,7 @@ anychart.stockModule.Plot.prototype.SUPPORTED_CONSISTENCY_STATES =
     anychart.ConsistencyState.STOCK_PLOT_BACKGROUND |
     anychart.ConsistencyState.STOCK_PLOT_PALETTE |
     anychart.ConsistencyState.STOCK_PLOT_ANNOTATIONS |
+    anychart.ConsistencyState.STOCK_PLOT_EVENT_MARKERS |
     anychart.ConsistencyState.STOCK_PLOT_LEGEND |
     anychart.ConsistencyState.STOCK_PLOT_NO_DATA_LABEL |
     anychart.ConsistencyState.AXES_CHART_CROSSHAIR |
@@ -242,6 +256,13 @@ anychart.stockModule.Plot.ZINDEX_SERIES = 30;
  * @type {number}
  */
 anychart.stockModule.Plot.ZINDEX_LINE_SERIES = 31;
+
+
+/**
+ * Event markers Z index.
+ * @type {number}
+ */
+anychart.stockModule.Plot.ZINDEX_EVENT_MARKERS = 34;
 
 
 /**
@@ -1201,6 +1222,9 @@ anychart.stockModule.Plot.prototype.invalidateRedrawable = function(doInvalidate
       this.series_[i].invalidate(state);
   }
 
+  if (this.eventMarkers_)
+    this.eventMarkers_.invalidate(anychart.ConsistencyState.APPEARANCE);
+
   if (this.chart_.annotationsModule)
     this.annotations().invalidateAnnotations();
 
@@ -1238,6 +1262,7 @@ anychart.stockModule.Plot.prototype.invalidateRedrawable = function(doInvalidate
 
   this.invalidate(anychart.ConsistencyState.STOCK_PLOT_SERIES |
       anychart.ConsistencyState.STOCK_PLOT_ANNOTATIONS |
+      anychart.ConsistencyState.STOCK_PLOT_EVENT_MARKERS |
       anychart.ConsistencyState.STOCK_PLOT_AXES |
       anychart.ConsistencyState.STOCK_PLOT_PRICE_INDICATORS |
       anychart.ConsistencyState.STOCK_PLOT_DT_AXIS |
@@ -1798,6 +1823,17 @@ anychart.stockModule.Plot.prototype.draw = function() {
       annotations.resumeSignalsDispatching(false);
     }
     this.markConsistent(anychart.ConsistencyState.STOCK_PLOT_ANNOTATIONS);
+  }
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.STOCK_PLOT_EVENT_MARKERS)) {
+    var eventMarkers = this.eventMarkers();
+    eventMarkers.suspendSignalsDispatching();
+    eventMarkers.parentBounds(this.seriesBounds_);
+    eventMarkers.container(this.rootLayer_);
+    eventMarkers.setAutoZIndex(anychart.stockModule.Plot.ZINDEX_EVENT_MARKERS);
+    eventMarkers.draw();
+    eventMarkers.resumeSignalsDispatching(false);
+    this.markConsistent(anychart.ConsistencyState.STOCK_PLOT_EVENT_MARKERS);
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.STOCK_PLOT_PRICE_INDICATORS)) {
@@ -2388,6 +2424,42 @@ anychart.stockModule.Plot.prototype.annotations = function(opt_value) {
 
 
 //endregion
+//region --- Event markers
+//------------------------------------------------------------------------------
+//
+//  Event markers
+//
+//------------------------------------------------------------------------------
+/**
+ * Event markers controller getter-setter.
+ * @param {(Object|boolean|null)=} opt_value
+ * @return {anychart.stockModule.eventMarkers.PlotController|anychart.stockModule.Plot}
+ */
+anychart.stockModule.Plot.prototype.eventMarkers = function(opt_value) {
+  if (!this.eventMarkers_) {
+    this.eventMarkers_ = new anychart.stockModule.eventMarkers.PlotController(this, /** @type {anychart.stockModule.eventMarkers.ChartController} */(this.chart_.eventMarkers()));
+    this.eventMarkers_.listenSignals(this.eventMarkersSignalsHandler_, this);
+  }
+
+  if (goog.isDef(opt_value)) {
+    this.eventMarkers_.setup(opt_value);
+    return this;
+  }
+  return this.eventMarkers_;
+};
+
+
+/**
+ * Event markers controller signals handler.
+ * @param {anychart.SignalEvent} e
+ * @private
+ */
+anychart.stockModule.Plot.prototype.eventMarkersSignalsHandler_ = function(e) {
+  this.invalidate(anychart.ConsistencyState.STOCK_PLOT_EVENT_MARKERS, anychart.Signal.NEEDS_REDRAW);
+};
+
+
+//endregion
 //region Invalidation handlers
 /**
  * Background invalidation handler.
@@ -2663,6 +2735,7 @@ anychart.stockModule.Plot.prototype.isNoData = function() {
 anychart.stockModule.Plot.prototype.disposeInternal = function() {
   goog.disposeAll(
       this.annotations_,
+      this.eventMarkers_,
       this.background_,
       this.indicators_,
       this.series_,
@@ -2672,6 +2745,7 @@ anychart.stockModule.Plot.prototype.disposeInternal = function() {
       this.noDataSettings_);
 
   this.annotations_ = null;
+  this.eventMarkers_ = null;
   this.background_ = null;
   delete this.indicators_;
   delete this.series_;
@@ -3204,6 +3278,7 @@ anychart.stockModule.Plot.Dragger.prototype.limitY = function(y) {
   proto['markerPalette'] = proto.markerPalette;
   proto['hatchFillPalette'] = proto.hatchFillPalette;
   proto['annotations'] = proto.annotations;
+  proto['eventMarkers'] = proto.eventMarkers;
   proto['priceIndicator'] = proto.priceIndicator;
   proto['noData'] = proto.noData;
 })();

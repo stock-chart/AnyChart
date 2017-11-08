@@ -452,6 +452,23 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     },
     'padding': [20, 30, 20, 60],
     'plots': [{}],
+    'eventMarkers': {
+      'normal': {
+        'type': 'flag',
+        'width': 15,
+        'height': 15,
+        'fill': 'red',
+        'stroke': 'blue',
+        'format': 'A',
+        'connector': {
+          'length': 5,
+          'stroke': 'blue'
+        }
+      },
+      'direction': 'auto',
+      'position': 'axis',
+      'fieldName': 'value'
+    },
     'scroller': {
       'defaultSeriesSettings': {
         'base': {
