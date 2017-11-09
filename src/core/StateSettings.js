@@ -278,7 +278,7 @@ anychart.core.StateSettings.PROPERTY_DESCRIPTORS = (function() {
     // pert tasks
     descriptors.DUMMY_FILL,
     descriptors.DUMMY_STROKE,
-    //pie tasks
+    // pie tasks
     descriptors.EXPLODE,
     descriptors.OUTLINE_FILL,
     descriptors.OUTLINE_STROKE,
