@@ -1904,7 +1904,7 @@ anychart.standalones.dataGrid = function() {
 //exports
 (function() {
   var proto = anychart.ganttModule.DataGrid.prototype;
-  proto['backgroundFill'] = proto.backgroundFill;
+  //proto['backgroundFill'] = proto.backgroundFill;
   proto['rowFill'] = proto.rowFill;
   proto['rowEvenFill'] = proto.rowEvenFill;
   proto['rowOddFill'] = proto.rowOddFill;
@@ -1949,7 +1949,7 @@ anychart.standalones.dataGrid = function() {
   proto['parentBounds'] = proto.parentBounds;
   proto['container'] = proto.container;
   proto['rowStroke'] = proto.rowStroke;
-  proto['backgroundFill'] = proto.backgroundFill;
+  //proto['backgroundFill'] = proto.backgroundFill;
   proto['headerHeight'] = proto.headerHeight;
   proto['verticalScrollBar'] = proto.verticalScrollBar;
   proto['defaultRowHeight'] = proto.defaultRowHeight;

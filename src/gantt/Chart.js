@@ -457,7 +457,7 @@ anychart.core.settings.populate(anychart.ganttModule.Chart, anychart.ganttModule
 anychart.ganttModule.Chart.prototype.getDataGrid_ = function() {
   if (!this.dg_) {
     this.dg_ = new anychart.ganttModule.DataGrid(this.controller_);
-    this.dg_.backgroundFill(null);
+    this.dg_.setOption('backgroundFill', null);
     this.dg_.zIndex(anychart.ganttModule.Chart.Z_INDEX_DG_TL);
     this.dg_.interactivityHandler = this;
     this.registerDisposable(this.dg_);
@@ -500,7 +500,7 @@ anychart.ganttModule.Chart.prototype.dataGrid = function(opt_enabled) {
 anychart.ganttModule.Chart.prototype.getTimeline = function() {
   if (!this.tl_) {
     this.tl_ = new anychart.ganttModule.TimeLine(this.controller_, this.isResourcesChart_);
-    this.tl_.backgroundFill(null);
+    this.tl_.setOption('backgroundFill', null);
     this.tl_.zIndex(anychart.ganttModule.Chart.Z_INDEX_DG_TL);
     this.tl_.interactivityHandler = this;
     this.registerDisposable(this.tl_);

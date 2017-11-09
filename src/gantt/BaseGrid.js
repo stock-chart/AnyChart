@@ -1230,18 +1230,18 @@ anychart.ganttModule.BaseGrid.COLOR_DESCRIPTORS = (function() {
   var map = {};
   anychart.core.settings.createDescriptors(map, [
     // grid coloring
-    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'backgroundFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'backgroundFill', anychart.core.settings.fillNormalizer],
 
     // row coloring
-    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowFill', anychart.core.settings.fillOrFunctionNormalizer],
-    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowEvenFill', anychart.core.settings.fillOrFunctionNormalizer],
-    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowOddFill', anychart.core.settings.fillOrFunctionNormalizer],
-    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowHoverFill', anychart.core.settings.fillOrFunctionNormalizer],
-    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowSelectedFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowEvenFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowOddFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowHoverFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'rowSelectedFill', anychart.core.settings.fillOrFunctionNormalizer],
   ]);
   return map;
 })();
-//anychart.core.settings.populate(anychart.ganttModule.BaseGrid, anychart.ganttModule.BaseGrid.COLOR_DESCRIPTORS);
+anychart.core.settings.populate(anychart.ganttModule.BaseGrid, anychart.ganttModule.BaseGrid.COLOR_DESCRIPTORS);
 
 
 //endregion
@@ -1380,17 +1380,17 @@ anychart.ganttModule.BaseGrid.prototype.rowSelectedFill = function(opt_fillOrCol
  * @param {number=} opt_fy .
  * @return {acgraph.vector.Fill|anychart.ganttModule.BaseGrid|string} - Current value or itself for method chaining.
  */
-anychart.ganttModule.BaseGrid.prototype.backgroundFill = function(opt_fillOrColorOrKeys, opt_opacityOrAngleOrCx, opt_modeOrCy, opt_opacityOrMode, opt_opacity, opt_fx, opt_fy) {
+/*anychart.ganttModule.BaseGrid.prototype.backgroundFill = function(opt_fillOrColorOrKeys, opt_opacityOrAngleOrCx, opt_modeOrCy, opt_opacityOrMode, opt_opacity, opt_fx, opt_fy) {
   if (goog.isDef(opt_fillOrColorOrKeys)) {
     var val = acgraph.vector.normalizeFill.apply(null, arguments);
-    if (!anychart.color.equals(/** @type {acgraph.vector.Fill} */ (this.backgroundFill_), val)) {
+    if (!anychart.color.equals(/!** @type {acgraph.vector.Fill} *!/ (this.backgroundFill_), val)) {
       this.backgroundFill_ = val;
       this.invalidate(anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW);
     }
     return this;
   }
   return this.backgroundFill_;
-};
+};*/
 
 
 /**
@@ -1868,7 +1868,7 @@ anychart.ganttModule.BaseGrid.prototype.drawInternal = function(positionRecalcul
     this.bgRect_ = this.base_.rect();
     this.registerDisposable(this.bgRect_);
     this.bgRect_
-        .fill(this.backgroundFill_)
+        .fill(this.getOption('backgroundFill'))
         .stroke(null)
         .zIndex(anychart.ganttModule.BaseGrid.BG_RECT_Z_INDEX);
 
@@ -1983,7 +1983,7 @@ anychart.ganttModule.BaseGrid.prototype.drawInternal = function(positionRecalcul
 
 
   if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
-    this.bgRect_.fill(this.backgroundFill_);
+    this.bgRect_.fill(this.getOption('backgroundFill'));
     this.getOddPath().fill(this.rowOddFill_ || this.rowFill_);
     this.getEvenPath().fill(this.rowEvenFill_ || this.rowFill_);
     this.getSelectedPath().fill(this.rowSelectedFill_);
@@ -2475,7 +2475,9 @@ anychart.ganttModule.BaseGrid.prototype.serialize = function() {
     json['defaultRowHeight'] = this.defaultRowHeight();
   }
 
-  json['backgroundFill'] = anychart.color.serialize(/** @type {acgraph.vector.Fill} */ (this.backgroundFill_));
+  anychart.core.settings.serialize(this, anychart.ganttModule.BaseGrid.COLOR_DESCRIPTORS, json, 'Gantt');
+
+  //json['backgroundFill'] = anychart.color.serialize(/** @type {acgraph.vector.Fill} */ (this.backgroundFill_));
   json['rowStroke'] = anychart.color.serialize(/** @type {acgraph.vector.Stroke} */ (this.rowStroke_));
   json['headerHeight'] = this.headerHeight_;
   json['headerHeight'] = this.defaultRowHeight();
@@ -2508,8 +2510,9 @@ anychart.ganttModule.BaseGrid.prototype.setupByJSON = function(config, opt_defau
     this.controller.setup(config['controller']);
     this.defaultRowHeight(config['defaultRowHeight']);
   }
-
-  this.backgroundFill(config['backgroundFill']);
+debugger;
+  anychart.core.settings.deserialize(this, anychart.ganttModule.BaseGrid.COLOR_DESCRIPTORS, config);
+  //this.backgroundFill(config['backgroundFill']);
   this.rowStroke(config['rowStroke']);
   this.rowFill(config['rowFill']);
   this.rowOddFill(config['rowOddFill']);
