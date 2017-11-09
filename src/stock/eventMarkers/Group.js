@@ -90,6 +90,13 @@ anychart.stockModule.eventMarkers.Group = function(plot) {
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW]
   ]);
+
+  /**
+   * Chain caches.
+   * @type {Array.<Array>}
+   * @private
+   */
+  this.partialChains_ = [];
 };
 goog.inherits(anychart.stockModule.eventMarkers.Group, anychart.core.VisualBase);
 anychart.core.settings.populateAliases(anychart.core.series.Base, [
@@ -321,12 +328,16 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
         anychart.ConsistencyState.APPEARANCE);
   }
 
+  if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
+    this.partialChains_.length = 0;
+  }
+
   acgraph.rect(
       this.pixelBoundsCache.left,
       this.pixelBoundsCache.top,
       this.pixelBoundsCache.width,
       this.pixelBoundsCache.height)
-      .parent(this.container())
+      .parent(/** @type {acgraph.vector.ILayer} */(this.container()))
       .fill('red', 0.5)
       .stroke('blue', 5)
       .zIndex(this.zIndex());
@@ -469,7 +480,43 @@ anychart.stockModule.eventMarkers.Group.prototype.getHatchFillResolutionContext 
 
 
 /**
+ * Returns partial resolution chain for passed state and priority.
+ * @param {anychart.PointState|number} state
+ * @param {*} normalPointOverride
+ * @param {*} statePointOverride
+ * @return {Array.<*>}
+ */
+anychart.stockModule.eventMarkers.Group.prototype.getResolutionChain = function(state, normalPointOverride, statePointOverride) {
+  state = Math.min(state, anychart.PointState.SELECT);
+  var res = this.partialChains_[state];
+  if (res) {
+    // These magic numbers rely on the fact, that getPartialChain method of PlotController returns exactly 2 items
+    if (state) {
+      res[6] = normalPointOverride;
+      res[9] = statePointOverride;
+    } else {
+      res[4] = normalPointOverride;
+    }
+  } else {
+    var controller = /** @type {anychart.stockModule.eventMarkers.PlotController} */(this.plot_.eventMarkers());
+    var normalLowChain = controller.getPartialChain(anychart.PointState.NORMAL, true);
+    var normalHighChain = controller.getPartialChain(anychart.PointState.NORMAL, false);
+    if (state) {
+      var stateLowChain = controller.getPartialChain(state, true);
+      var stateHighChain = controller.getPartialChain(state, false);
+      res = goog.array.concat([statePointOverride], stateHighChain, [normalPointOverride], normalHighChain, stateLowChain, normalLowChain);
+    } else {
+      res = goog.array.concat([normalPointOverride], normalHighChain, normalLowChain);
+    }
+    this.partialChains_[state] = res;
+  }
+  return res;
+};
+
+
+/**
  * Returns proper settings due to the state if point settings are supported by the IShapeManagerUser.
+ * Doesn't support opt_seriesName and opt_ignorePointSettings.
  * @param {string} name
  * @param {number} state
  * @param {anychart.data.IRowInfo} point
@@ -480,38 +527,19 @@ anychart.stockModule.eventMarkers.Group.prototype.getHatchFillResolutionContext 
  * @return {*}
  */
 anychart.stockModule.eventMarkers.Group.prototype.resolveOption = function(name, state, point, normalizer, scrollerSelected, opt_seriesName, opt_ignorePointSettings) {
-  var val;
-  var stateObject = state ? (state == 1 ? this.hovered_ : this.selected_) : this.normal_;
-  if (opt_ignorePointSettings) {
-    return normalizer(stateObject.getOption(name));
-  }
-  var pointStateName = state ? (state == 1 ? 'hovered' : 'selected') : 'normal';
-  var pointStateObject = point.get(pointStateName);
-  val = anychart.utils.getFirstDefinedValue(
-      goog.isDef(pointStateObject) ? pointStateObject[name] : void 0,
-      // point.get(anychart.color.getPrefixedColorName(state, name)),
-      stateObject.getOption(name));
-  if (goog.isDef(val)) {
-    val = normalizer(val);
-  } else {
-    name = opt_seriesName || name;
-    if (name in this.descriptorsMeta) {
-      val = this.getOption(name);
-      if (goog.isDef(val))
+  var chain = this.getResolutionChain(state,
+      point.get('normal') || null,
+      (state ? (state == 1) ? point.get('hovered') : point.get('selected') : null) || null);
+  for (var i = 0; i < chain.length; i++) {
+    var obj = chain[i];
+    if (goog.isObject(obj)) {
+      var val = obj[name];
+      if (goog.isDef(val)) {
         return normalizer(val);
-    }
-    if (scrollerSelected)
-      stateObject = this.selected_;
-    val = stateObject.ownSettings[name];
-    if (!goog.isDefAndNotNull(val)) {
-      val = stateObject.themeSettings[name];
-      // if (!goog.isDefAndNotNull(val) && !state)
-      //   val = this.autoSettings[name];
-      if (goog.isDef(val))
-        val = normalizer(val);
+      }
     }
   }
-  return val;
+  return undefined;
 };
 
 

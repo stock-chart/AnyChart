@@ -89,6 +89,13 @@ anychart.stockModule.eventMarkers.PlotController = function(plot, chartControlle
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW]
   ]);
+
+  /**
+   * Partial resolution chains cache.
+   * @type {!Array.<Array>}
+   * @private
+   */
+  this.partialChains_ = [];
 };
 goog.inherits(anychart.stockModule.eventMarkers.PlotController, anychart.core.VisualBase);
 anychart.core.settings.populate(anychart.stockModule.eventMarkers.PlotController, anychart.stockModule.eventMarkers.Group.DESCRIPTORS);
@@ -154,18 +161,37 @@ anychart.stockModule.eventMarkers.PlotController.prototype.selected = function(o
 };
 
 
-/** @inheritDoc */
-anychart.stockModule.eventMarkers.PlotController.prototype.getParentState = function(state) {
-  var controller = /** @type {anychart.stockModule.eventMarkers.ChartController} */(this.plot_.getChart().eventMarkers());
-  var result;
-  if (!state) {
-    result = controller.normal();
-  } else if (state == 1) {
-    result = controller.hovered();
-  } else {
-    result = controller.selected();
+/**
+ * Returns partial resolution chain for passed state and priority.
+ * Always returns 2 elements.
+ * @param {anychart.PointState|number} state
+ * @param {boolean} low
+ * @return {Array.<Object>}
+ */
+anychart.stockModule.eventMarkers.PlotController.prototype.getPartialChain = function(state, low) {
+  var index = Math.min(state, anychart.PointState.SELECT) * 2 + low;
+  var res = this.partialChains_[index];
+  if (!res) {
+    var controller = /** @type {anychart.stockModule.eventMarkers.ChartController} */(this.plot_.getChart().eventMarkers());
+    var plotState, chartState;
+    if (!state) {
+      plotState = this.normal_;
+      chartState = /** @type {anychart.core.StateSettings} */(controller.normal());
+    } else if (state == 1) {
+      plotState = this.hovered_;
+      chartState = /** @type {anychart.core.StateSettings} */(controller.hovered());
+    } else {
+      plotState = this.selected_;
+      chartState = /** @type {anychart.core.StateSettings} */(controller.selected());
+    }
+    if (low) {
+      res = [plotState.themeSettings, chartState.themeSettings];
+    } else {
+      res = [plotState.ownSettings, chartState.ownSettings];
+    }
+    this.partialChains_[index] = res;
   }
-  return /** @type {anychart.core.StateSettings} */(result);
+  return res;
 };
 
 
@@ -234,6 +260,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.draw = function() {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
+    this.partialChains_.length = 0;
     var bounds = /** @type {anychart.math.Rect} */(this.parentBounds());
     for (var i = 0; i < this.groups_.length; i++) {
       var group = this.groups_[i];
