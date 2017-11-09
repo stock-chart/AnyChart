@@ -4128,8 +4128,10 @@ anychart.pieModule.Chart.prototype.unhover = function(opt_indexOrIndexes) {
   if (goog.isDef(opt_indexOrIndexes)) {
     this.state.removePointState(anychart.PointState.HOVER, opt_indexOrIndexes);
   } else {
-    this.state.removePointState(anychart.PointState.HOVER, NaN);
+    this.state.removePointState(anychart.PointState.HOVER, true);
   }
+
+  console.log('unhover', this.getIterator().getIndex(), opt_indexOrIndexes);
 
   this.hideTooltip();
 };
@@ -4175,7 +4177,7 @@ anychart.pieModule.Chart.prototype.hoverSeries = function() {
   if (!this.enabled())
     return this;
 
-  this.state.setPointState(anychart.PointState.HOVER, NaN);
+  this.state.setPointState(anychart.PointState.HOVER, true);
 
   return this;
 };
@@ -4238,7 +4240,7 @@ anychart.pieModule.Chart.prototype.selectSeries = function() {
   //hide tooltip in any case
   this.hideTooltip();
 
-  this.state.setPointState(anychart.PointState.SELECT, NaN);
+  this.state.setPointState(anychart.PointState.SELECT, true);
 
   return this;
 };
@@ -4272,7 +4274,7 @@ anychart.pieModule.Chart.prototype.unselect = function(opt_indexOrIndexes) {
   if (goog.isDef(opt_indexOrIndexes)) {
     this.state.removePointState(anychart.PointState.SELECT, opt_indexOrIndexes);
   } else {
-    this.state.removePointState(anychart.PointState.SELECT, NaN);
+    this.state.removePointState(anychart.PointState.SELECT, true);
   }
 };
 
@@ -4296,6 +4298,8 @@ anychart.pieModule.Chart.prototype.applyAppearanceToPoint = function(pointState)
  * Finalization point appearance. For drawing labels and markers.
  */
 anychart.pieModule.Chart.prototype.finalizePointAppearance = function() {
+  console.log(this.getIterator().getIndex());
+  debugger;
   this.updateLabels();
 };
 

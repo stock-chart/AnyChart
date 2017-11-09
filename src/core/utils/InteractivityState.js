@@ -130,7 +130,7 @@ anychart.core.utils.InteractivityState.prototype.getSeriesStateForUpdate = funct
 /**
  * Sets state for points or series.
  * @param {anychart.PointState|number} state State to set for points or series.
- * @param {(number|Array.<number>)=} opt_index If it's passed than it means that points with passed indexes will get
+ * @param {(number|Array.<number>|boolean)=} opt_index If it's passed than it means that points with passed indexes will get
  * state, otherwise series will get passed state.
  * @param {(anychart.PointState|number)=} opt_stateToChange If a value is passed than points that already have a state will change
  * their state to opt_stateToChange.
@@ -140,7 +140,7 @@ anychart.core.utils.InteractivityState.prototype.setPointState = function(state,
   if (goog.isDef(opt_index)) {
     var rowsCount = this.target.getIterator().getRowsCount();
     var ret = true;
-    if (isNaN(opt_index)) {
+    if (goog.isBoolean(opt_index) && opt_index) {
       for (i = rowsCount; i--;) {
         this.setPointStateInternal(state, i, opt_stateToChange);
         ret = false;
@@ -331,14 +331,14 @@ anychart.core.utils.InteractivityState.prototype.removePointStateInternal = func
 /**
  * Removes state for points or series.
  * @param {anychart.PointState|number} state State to remove for points or series.
- * @param {(number|Array.<number>)=} opt_index If it passed then it means that state of points with passed indexes will be
+ * @param {(number|Array.<number>|boolean)=} opt_index If it passed then it means that state of points with passed indexes will be
  * removed, otherwise state of series will set as normal.
  */
 anychart.core.utils.InteractivityState.prototype.removePointState = function(state, opt_index) {
   var i;
   if (goog.isDef(opt_index)) {
     var rowsCount = this.target.getIterator().getRowsCount();
-    if (isNaN(opt_index)) {
+    if (goog.isBoolean(opt_index) && opt_index) {
       for (i = rowsCount; i--;)
         this.removePointStateInternal(state, i);
     } else if (goog.isArray(opt_index)) {
