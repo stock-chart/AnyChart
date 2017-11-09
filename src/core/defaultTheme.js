@@ -209,6 +209,15 @@ anychart.core.defaultTheme.returnValue = function() {
  * @this {*}
  * @return {*}
  */
+anychart.core.defaultTheme.returnValueAsIs = function() {
+  return this['value'];
+};
+
+
+/**
+ * @this {*}
+ * @return {*}
+ */
 anychart.core.defaultTheme.notRoundedValue = function() {
   return anychart.core.defaultTheme.locNum(this['value'], 10);
 };
@@ -1218,6 +1227,7 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'enabled': true,
     'padding': {'top': 10, 'right': 20, 'bottom': 15, 'left': 10},
     'margin': 0,
+    'autoRedraw': true,
     'background': {'enabled': true, 'zIndex': 1},
     'contextMenu': {
       'fromTheme': true, // suppress NO_FEATURE_IN_MODULE warning
@@ -2234,6 +2244,7 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
           'anchor': 'left-top',
           'fontSize': 10,
           'vAlign': 'middle',
+          'format': anychart.core.defaultTheme.returnValueAsIs,
           'padding': {
             'top': 0,
             'right': 5,
@@ -2253,6 +2264,7 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
           'anchor': 'left-top',
           'fontSize': 10,
           'vAlign': 'middle',
+          'format': anychart.core.defaultTheme.returnValueAsIs,
           'padding': {
             'top': 0,
             'right': 5,
@@ -2272,6 +2284,7 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
           'anchor': 'left-top',
           'fontSize': 10,
           'vAlign': 'middle',
+          'format': anychart.core.defaultTheme.returnValueAsIs,
           'padding': {
             'top': 0,
             'right': 5,
