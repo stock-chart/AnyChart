@@ -753,7 +753,7 @@ anychart.ganttModule.TimeLine.COLOR_DESCRIPTORS = (function() {
   var map = {};
   anychart.core.settings.createDescriptors(map, [
     // timeline coloring
-    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'columnStroke', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'columnStroke', anychart.core.settings.strokeOrFunctionNormalizer],
 
     // elements coloring
     [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'baseFill', anychart.core.settings.fillOrFunctionNormalizer],
@@ -774,7 +774,7 @@ anychart.ganttModule.TimeLine.COLOR_DESCRIPTORS = (function() {
     [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'progressStroke', anychart.core.settings.fillOrFunctionNormalizer],
 
     [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'selectedElementFill', anychart.core.settings.fillOrFunctionNormalizer],
-    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'selectedElementStroke', anychart.core.settings.fillOrFunctionNormalizer],
+    [map, anychart.enums.PropertyHandlerType.MULTI_ARG, 'selectedElementStroke', anychart.core.settings.strokeOrFunctionNormalizer]
   ]);
   return map;
 })();
@@ -5465,15 +5465,15 @@ anychart.standalones.resourceTimeline = function() {
 //exports
 (function() {
   var proto = anychart.ganttModule.TimeLine.prototype;
-  proto['backgroundFill'] = proto.backgroundFill;
+  //proto['backgroundFill'] = proto.backgroundFill;
   proto['columnStroke'] = proto.columnStroke;
 
   // row coloring
-  proto['rowFill'] = proto.rowFill;
-  proto['rowEvenFill'] = proto.rowEvenFill;
-  proto['rowOddFill'] = proto.rowOddFill;
-  proto['rowHoverFill'] = proto.rowHoverFill;
-  proto['rowSelectedFill'] = proto.rowSelectedFill;
+  //proto['rowFill'] = proto.rowFill;
+  //proto['rowEvenFill'] = proto.rowEvenFill;
+  //proto['rowOddFill'] = proto.rowOddFill;
+  //proto['rowHoverFill'] = proto.rowHoverFill;
+  //proto['rowSelectedFill'] = proto.rowSelectedFill;
 
 
   proto['editing'] = proto.editing;
@@ -5558,7 +5558,7 @@ anychart.standalones.resourceTimeline = function() {
   proto['parentBounds'] = proto.parentBounds;
   proto['container'] = proto.container;
   proto['rowStroke'] = proto.rowStroke;
-  proto['backgroundFill'] = proto.backgroundFill;
+  //proto['backgroundFill'] = proto.backgroundFill;
   proto['headerHeight'] = proto.headerHeight;
   proto['defaultRowHeight'] = proto.defaultRowHeight;
 
@@ -5568,7 +5568,7 @@ anychart.standalones.resourceTimeline = function() {
   proto['parentBounds'] = proto.parentBounds;
   proto['container'] = proto.container;
   proto['rowStroke'] = proto.rowStroke;
-  proto['backgroundFill'] = proto.backgroundFill;
+  //proto['backgroundFill'] = proto.backgroundFill;
   proto['headerHeight'] = proto.headerHeight;
   proto['defaultRowHeight'] = proto.defaultRowHeight;
 })();

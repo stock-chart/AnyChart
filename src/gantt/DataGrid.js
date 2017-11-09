@@ -1905,11 +1905,11 @@ anychart.standalones.dataGrid = function() {
 (function() {
   var proto = anychart.ganttModule.DataGrid.prototype;
   //proto['backgroundFill'] = proto.backgroundFill;
-  proto['rowFill'] = proto.rowFill;
-  proto['rowEvenFill'] = proto.rowEvenFill;
-  proto['rowOddFill'] = proto.rowOddFill;
-  proto['rowHoverFill'] = proto.rowHoverFill;
-  proto['rowSelectedFill'] = proto.rowSelectedFill;
+  //proto['rowFill'] = proto.rowFill;
+  //proto['rowEvenFill'] = proto.rowEvenFill;
+  //proto['rowOddFill'] = proto.rowOddFill;
+  //proto['rowHoverFill'] = proto.rowHoverFill;
+  //proto['rowSelectedFill'] = proto.rowSelectedFill;
   proto['editing'] = proto.editing;
 
   proto['column'] = proto.column;

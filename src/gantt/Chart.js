@@ -113,16 +113,16 @@ anychart.ganttModule.Chart = function(opt_isResourcesChart) {
    */
   function rowHoverFillBeforeInvalidation() {
     //rowHoverFill does not invalidate anything. Here's no need to suspend it.
-    this.getTimeline().rowHoverFill(/** @type {acgraph.vector.Fill} */ (this.getOption('rowHoverFill')));
-    this.getDataGrid_().rowHoverFill(/** @type {acgraph.vector.Fill} */ (this.getOption('rowHoverFill')));
+    this.getTimeline()['rowHoverFill'](/** @type {acgraph.vector.Fill} */ (this.getOption('rowHoverFill')));
+    this.getDataGrid_()['rowHoverFill'](/** @type {acgraph.vector.Fill} */ (this.getOption('rowHoverFill')));
   }
   /**
    * @this {anychart.ganttModule.Chart}
    */
   function rowSelectedFillBeforeInvalidation() {
     anychart.core.Base.suspendSignalsDispatching(this.getTimeline(), this.getDataGrid_());
-    this.tl_.rowSelectedFill(/** @type {acgraph.vector.Fill} */ (this.getOption('rowSelectedFill')));
-    this.dg_.rowSelectedFill(/** @type {acgraph.vector.Fill} */ (this.getOption('rowSelectedFill')));
+    this.tl_['rowSelectedFill'](/** @type {acgraph.vector.Fill} */ (this.getOption('rowSelectedFill')));
+    this.dg_['rowSelectedFill'](/** @type {acgraph.vector.Fill} */ (this.getOption('rowSelectedFill')));
     anychart.core.Base.resumeSignalsDispatchingTrue(this.dg_, this.tl_);
   }
   /**
