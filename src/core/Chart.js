@@ -2552,9 +2552,7 @@ anychart.core.Chart.prototype.onMouseDown = function(event) {
             index = index[index.length - 1];
         }
 
-        // if (multiSelectOnClick)
-        //   this.unselect(index);
-        else if (goog.isFunction(series.selectPoint))
+        if (goog.isFunction(series.selectPoint))
           series.selectPoint(/** @type {number} */ (index), event);
 
         allSeries = this.getAllSeries();

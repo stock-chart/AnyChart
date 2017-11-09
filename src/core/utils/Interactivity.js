@@ -201,6 +201,8 @@ anychart.core.utils.Interactivity.prototype.serialize = function() {
 (function() {
   var proto = anychart.core.utils.Interactivity.prototype;
   //proto['allowMultiSeriesSelection'] = proto.allowMultiSeriesSelection;
+  proto['multiSelectOnClick'] = proto.multiSelectOnClick;
+  proto['unselectOnClickOutOfPoint'] = proto.unselectOnClickOutOfPoint;
   proto['hoverMode'] = proto.hoverMode;
   proto['selectionMode'] = proto.selectionMode;
   proto['spotRadius'] = proto.spotRadius;

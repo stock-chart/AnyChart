@@ -935,7 +935,9 @@ anychart.pieModule.Chart.prototype.getColorResolutionContext = function(opt_base
     'index': iterator.getIndex(),
     'sourceColor': acgraph.vector.normalizeFill(/** @type {!acgraph.vector.Fill} */(
         opt_baseColor || pointFill || this.palette().itemAt(iterator.getIndex()) || 'blue')),
-    'iterator': iterator
+    'iterator': iterator,
+    'series': this,
+    'chart': this
   };
 };
 
@@ -3832,6 +3834,7 @@ anychart.pieModule.Chart.prototype.legendItemOut = function(item, event) {
  * @param {number} index Pie slice index that should be exploded or not.
  * @param {boolean=} opt_explode [true] Whether to explode.
  * @return {anychart.pieModule.Chart} .
+ * @deprecated since 8.1.0 use select() instead. DVF-3404
  */
 anychart.pieModule.Chart.prototype.explodeSlice = function(index, opt_explode) {
   anychart.core.reporting.warning(anychart.enums.WarningCode.DEPRECATED, null, ['explodeSlice()', 'select()'], true);
@@ -3854,6 +3857,7 @@ anychart.pieModule.Chart.prototype.explodeSlice = function(index, opt_explode) {
  * chart.container(stage).draw();
  * @param {boolean|Array.<number>} value Whether to explode.
  * @return {anychart.pieModule.Chart} .
+ * @deprecated since 8.1.0 use select() instead. DVF-3404
  */
 anychart.pieModule.Chart.prototype.explodeSlices = function(value) {
   anychart.core.reporting.warning(anychart.enums.WarningCode.DEPRECATED, null, ['explodeSlices()', 'select()'], true);
@@ -4124,7 +4128,7 @@ anychart.pieModule.Chart.prototype.unhover = function(opt_indexOrIndexes) {
   if (goog.isDef(opt_indexOrIndexes)) {
     this.state.removePointState(anychart.PointState.HOVER, opt_indexOrIndexes);
   } else {
-    this.applyStateToAllSlices(anychart.PointState.HOVER, true);
+    this.state.removePointState(anychart.PointState.HOVER, NaN);
   }
 
   this.hideTooltip();
@@ -4171,7 +4175,7 @@ anychart.pieModule.Chart.prototype.hoverSeries = function() {
   if (!this.enabled())
     return this;
 
-  this.applyStateToAllSlices(anychart.PointState.HOVER);
+  this.state.setPointState(anychart.PointState.HOVER, NaN);
 
   return this;
 };
@@ -4231,13 +4235,10 @@ anychart.pieModule.Chart.prototype.select = function(opt_indexOrIndexes) {
  * @return {!anychart.pieModule.Chart} An instance of the {@link anychart.pieModule.Chart} class for method chaining.
  */
 anychart.pieModule.Chart.prototype.selectSeries = function() {
-  if (!this.enabled())
-    return this;
-
   //hide tooltip in any case
   this.hideTooltip();
 
-  this.applyStateToAllSlices(anychart.PointState.SELECT);
+  this.state.setPointState(anychart.PointState.SELECT, NaN);
 
   return this;
 };
@@ -4262,58 +4263,17 @@ anychart.pieModule.Chart.prototype.selectPoint = function(indexOrIndexes, opt_ev
     this.state.setPointState(anychart.PointState.SELECT, indexOrIndexes, changedState);
   }
 
-  if (!this.enabled())
-    return this;
-
   return this;
 };
 
 
 /** @inheritDoc */
 anychart.pieModule.Chart.prototype.unselect = function(opt_indexOrIndexes) {
-  if (!this.enabled())
-    return;
-
   if (goog.isDef(opt_indexOrIndexes)) {
     this.state.removePointState(anychart.PointState.SELECT, opt_indexOrIndexes);
   } else {
-    this.applyStateToAllSlices(anychart.PointState.SELECT, true);
+    this.state.removePointState(anychart.PointState.SELECT, NaN);
   }
-};
-
-
-/**
- * Applying state to all points of pie.
- * @param {number|anychart.PointState} state .
- * @param {boolean=} opt_removeState .
- */
-anychart.pieModule.Chart.prototype.applyStateToAllSlices = function(state, opt_removeState) {
-  this.allSlicesSelectInProgress_ = true;
-
-  var mode3d = /** @type {boolean} */ (this.getOption('mode3d'));
-
-  var iterator = this.getIterator();
-  var currIndex = iterator.getIndex();
-  iterator.reset();
-  while (iterator.advance()) {
-    var index = iterator.getIndex();
-
-    if (opt_removeState) {
-      this.state.removePointState(state, index);
-    } else {
-      this.state.setPointState(state, iterator.getIndex());
-    }
-    if (mode3d) {
-      this.prepare3DSlice_();
-      this.draw3DSlices_(iterator.getIndex(), true);
-    } else {
-      this.drawSlice_(opt_removeState ? this.state.getPointStateByIndex(index) : state, true);
-    }
-  }
-  this.allSlicesSelectInProgress_ = false;
-  iterator.select(currIndex);
-
-  this.updateLabels();
 };
 
 
@@ -4322,9 +4282,6 @@ anychart.pieModule.Chart.prototype.applyStateToAllSlices = function(state, opt_r
  * @param {anychart.PointState|number} pointState
  */
 anychart.pieModule.Chart.prototype.applyAppearanceToPoint = function(pointState) {
-  //todo (blackart) because pie interactivity differ from cartesian series :(
-  if (this.allSlicesSelectInProgress_) return;
-
   var mode3d = /** @type {boolean} */ (this.getOption('mode3d'));
   if (mode3d) {
     this.prepare3DSlice_();
@@ -4332,7 +4289,6 @@ anychart.pieModule.Chart.prototype.applyAppearanceToPoint = function(pointState)
   } else {
     this.drawSlice_(pointState, true);
   }
-  this.updateLabels();
 };
 
 
@@ -4340,7 +4296,7 @@ anychart.pieModule.Chart.prototype.applyAppearanceToPoint = function(pointState)
  * Finalization point appearance. For drawing labels and markers.
  */
 anychart.pieModule.Chart.prototype.finalizePointAppearance = function() {
-
+  this.updateLabels();
 };
 
 
@@ -4892,6 +4848,9 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calculate = function()
 //endregion
 //region --- Exports
 //exports
+/**
+ * @suppress {deprecated}
+ */
 (function() {
   var proto = anychart.pieModule.Chart.prototype;
   // auto generated
@@ -4928,6 +4887,7 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calculate = function()
 
   proto['hover'] = proto.hover;
   proto['unhover'] = proto.unhover;
+
   proto['select'] = proto.select;
   proto['unselect'] = proto.unselect;
 

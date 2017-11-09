@@ -140,7 +140,12 @@ anychart.core.utils.InteractivityState.prototype.setPointState = function(state,
   if (goog.isDef(opt_index)) {
     var rowsCount = this.target.getIterator().getRowsCount();
     var ret = true;
-    if (goog.isArray(opt_index)) {
+    if (isNaN(opt_index)) {
+      for (i = rowsCount; i--;) {
+        this.setPointStateInternal(state, i, opt_stateToChange);
+        ret = false;
+      }
+    } else if (goog.isArray(opt_index)) {
       goog.array.sort(opt_index);
       for (i = opt_index.length; i--;) {
         var ind = +opt_index[i];
@@ -332,7 +337,11 @@ anychart.core.utils.InteractivityState.prototype.removePointStateInternal = func
 anychart.core.utils.InteractivityState.prototype.removePointState = function(state, opt_index) {
   var i;
   if (goog.isDef(opt_index)) {
-    if (goog.isArray(opt_index)) {
+    var rowsCount = this.target.getIterator().getRowsCount();
+    if (isNaN(opt_index)) {
+      for (i = rowsCount; i--;)
+        this.removePointStateInternal(state, i);
+    } else if (goog.isArray(opt_index)) {
       goog.array.sort(opt_index);
       for (i = opt_index.length; i--;)
         this.removePointStateInternal(state, +opt_index[i]);
