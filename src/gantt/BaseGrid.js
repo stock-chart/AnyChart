@@ -2301,7 +2301,7 @@ anychart.ganttModule.BaseGrid.prototype.serialize = function() {
     json['defaultRowHeight'] = this.defaultRowHeight();
   }
 
-  anychart.core.settings.serialize(this, anychart.ganttModule.BaseGrid.COLOR_DESCRIPTORS, json, 'Gantt');
+  anychart.core.settings.serialize(this, anychart.ganttModule.BaseGrid.COLOR_DESCRIPTORS, json);
   //json['backgroundFill'] = anychart.color.serialize(/** @type {acgraph.vector.Fill} */ (this.backgroundFill_));
   //json['rowOddFill'] = anychart.color.serialize(/** @type {acgraph.vector.Fill} */ (this.rowOddFill_));
   //json['rowEvenFill'] = anychart.color.serialize(/** @type {acgraph.vector.Fill} */ (this.rowEvenFill_));
