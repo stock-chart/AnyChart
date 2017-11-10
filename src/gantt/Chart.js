@@ -130,8 +130,8 @@ anychart.ganttModule.Chart = function(opt_isResourcesChart) {
    */
   function columnStrokeBeforeInvalidation() {
     anychart.core.Base.suspendSignalsDispatching(this.getTimeline(), this.getDataGrid_());
-    this.dg_.columnStroke(/** @type {acgraph.vector.Stroke} */ (this.getOption('columnStroke')));
-    this.tl_.columnStroke(/** @type {acgraph.vector.Stroke} */ (this.getOption('columnStroke')));
+    this.dg_['columnStroke'](/** @type {acgraph.vector.Stroke} */ (this.getOption('columnStroke')));
+    this.tl_['columnStroke'](/** @type {acgraph.vector.Stroke} */ (this.getOption('columnStroke')));
     anychart.core.Base.resumeSignalsDispatchingTrue(this.dg_, this.tl_);
   }
   /**

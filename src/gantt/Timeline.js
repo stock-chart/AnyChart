@@ -31,15 +31,6 @@ anychart.ganttModule.TimeLine = function(opt_controller, opt_isResources) {
   anychart.ganttModule.TimeLine.base(this, 'constructor', opt_controller, opt_isResources);
 
   /**
-   * Cell border settings.
-   * NOTE: This field differs from DG's columnStroke_ and its setter has another functionality
-   * and invalidates another states.
-   * @type {acgraph.vector.Stroke}
-   * @private
-   */
-  this.columnStroke_;
-
-  /**
    * Labels factory.
    * @type {anychart.core.ui.LabelsFactory}
    * @private
@@ -475,7 +466,7 @@ anychart.ganttModule.TimeLine = function(opt_controller, opt_isResources) {
 
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
     // timeline coloring
-    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'columnStroke', anychart.core.settings.strokeOrFunctionNormalizer],
+    ['columnStroke', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
 
     // elements coloring
     //['connectorFill', anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW],
@@ -1048,30 +1039,6 @@ anychart.ganttModule.TimeLine.prototype.selectedConnectorStroke = function(opt_s
 };
 
 
-/**
- * Gets/sets column stroke.
- * @param {(acgraph.vector.Stroke|string)=} opt_value - Value to be set.
- * @return {(string|acgraph.vector.Stroke|anychart.ganttModule.TimeLine)} - Current value or itself for method chaining.
- */
-anychart.ganttModule.TimeLine.prototype.columnStroke = function(opt_value) {
-  if (goog.isDef(opt_value)) {
-    var val = acgraph.vector.normalizeStroke.apply(null, arguments);
-
-    //TODO (A.Kudryavtsev): In current moment (15 June 2015) method anychart.color.equals works pretty bad.
-    //TODO (A.Kudryavtsev): That's why here I check thickness as well.
-    var oldThickness = anychart.utils.extractThickness(this.columnStroke_);
-    var newThickness = anychart.utils.extractThickness(val);
-
-    if (!anychart.color.equals(this.columnStroke_, val) || newThickness != oldThickness) {
-      this.columnStroke_ = val;
-      this.invalidate(anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW);
-    }
-    return this;
-  }
-  return this.columnStroke_;
-};
-
-
 //----------------------------------------------------------------------------------------------------------------------
 //
 //  Axes markers.
@@ -1432,7 +1399,7 @@ anychart.ganttModule.TimeLine.prototype.getSeparationPath_ = function() {
   if (!this.separationPath_) {
     this.separationPath_ = /** @type {acgraph.vector.Path} */ (this.getClipLayer().path());
     this.separationPath_.zIndex(6);
-    this.separationPath_.stroke(this.columnStroke_);
+    this.separationPath_.stroke(/** @type {acgraph.vector.Stroke} */(this.getOption('columnStroke')));
     this.registerDisposable(this.separationPath_);
   }
   return this.separationPath_;
@@ -4207,7 +4174,7 @@ anychart.ganttModule.TimeLine.prototype.boundsInvalidated = function() {
  * @override
  */
 anychart.ganttModule.TimeLine.prototype.appearanceInvalidated = function() {
-  this.getSeparationPath_().stroke(this.columnStroke_);
+  this.getSeparationPath_().stroke(/** @type {acgraph.vector.Stroke} */(this.getOption('columnStroke')));
 
   this.getEditConnectorPreviewPath_()
       .stroke(this.connectorPreviewStroke_);
@@ -4606,11 +4573,11 @@ anychart.ganttModule.TimeLine.prototype.serialize = function() {
 
   json['header'] = this.header().serialize();
 
-  json['columnStroke'] = anychart.color.serialize(this.columnStroke_);
 
   json['baselineAbove'] = this.baselineAbove_;
 
   anychart.core.settings.serialize(this, anychart.ganttModule.TimeLine.COLOR_DESCRIPTORS, json);
+  //json['columnStroke'] = anychart.color.serialize(this.columnStroke_);
   //json['baseFill'] = anychart.color.serialize(this.baseFill_);
   //json['baseStroke'] = anychart.color.serialize(this.baseStroke_);
   //json['baselineFill'] = anychart.color.serialize(this.baselineFill_);
@@ -4694,10 +4661,10 @@ anychart.ganttModule.TimeLine.prototype.setupByJSON = function(config, opt_defau
   if ('markers' in config) this.markers(config['markers']);
   if ('header' in config) this.header(config['header']);
 
-  this.columnStroke(config['columnStroke']);
   this.baselineAbove(config['baselineAbove']);
 
   anychart.core.settings.deserialize(this, anychart.ganttModule.TimeLine.COLOR_DESCRIPTORS, config);
+  //this.columnStroke(config['columnStroke']);
   //this.baseFill(config['baseFill']);
   //this.baseStroke(config['baseStroke']);
   //this.baselineFill(config['baselineFill']);
@@ -5127,7 +5094,7 @@ anychart.standalones.resourceTimeline = function() {
 (function() {
   var proto = anychart.ganttModule.TimeLine.prototype;
   //proto['backgroundFill'] = proto.backgroundFill;
-  proto['columnStroke'] = proto.columnStroke;
+  //proto['columnStroke'] = proto.columnStroke;
 
   // row coloring
   //proto['rowFill'] = proto.rowFill;

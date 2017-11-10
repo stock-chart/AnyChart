@@ -45,20 +45,6 @@ anychart.ganttModule.DataGrid = function(opt_controller) {
    */
   this.splitters_ = [];
 
-  /**
-   * Cell border settings.
-   * @type {acgraph.vector.Stroke}
-   * @private
-   */
-  this.columnStroke_;
-
-  /**
-   * Default title fill.
-   * @type {acgraph.vector.Fill}
-   * @private
-   */
-  this.headerFill_;
-
 
   /**
    * Header path filled by header fill.
@@ -83,6 +69,11 @@ anychart.ganttModule.DataGrid = function(opt_controller) {
   this.formatsCache_ = {};
 
   this.controller.dataGrid(this);
+
+  anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
+    ['columnStroke', anychart.ConsistencyState.DATA_GRID_GRIDS, anychart.Signal.NEEDS_REDRAW],
+    ['headerFill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW]
+  ]);
 };
 goog.inherits(anychart.ganttModule.DataGrid, anychart.ganttModule.BaseGrid);
 
@@ -312,28 +303,23 @@ anychart.ganttModule.DataGrid.prototype.defaultColumnSettings = function(opt_val
 };
 
 
+//region --- Coloring
 /**
- * Gets/sets a default title fill.
- * @param {(!acgraph.vector.Fill|!Array.<(acgraph.vector.GradientKey|string)>|null)=} opt_fillOrColorOrKeys .
- * @param {number=} opt_opacityOrAngleOrCx .
- * @param {(number|boolean|!anychart.math.Rect|!{left:number,top:number,width:number,height:number})=} opt_modeOrCy .
- * @param {(number|!anychart.math.Rect|!{left:number,top:number,width:number,height:number}|null)=} opt_opacityOrMode .
- * @param {number=} opt_opacity .
- * @param {number=} opt_fx .
- * @param {number=} opt_fy .
- * @return {acgraph.vector.Fill|anychart.ganttModule.DataGrid|string} - Current value or itself for method chaining.
+ * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
  */
-anychart.ganttModule.DataGrid.prototype.headerFill = function(opt_fillOrColorOrKeys, opt_opacityOrAngleOrCx, opt_modeOrCy, opt_opacityOrMode, opt_opacity, opt_fx, opt_fy) {
-  if (goog.isDef(opt_fillOrColorOrKeys)) {
-    var val = acgraph.vector.normalizeFill.apply(null, arguments);
-    if (!anychart.color.equals(/** @type {acgraph.vector.Fill} */ (this.headerFill_), val)) {
-      this.headerFill_ = val;
-      this.invalidate(anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW);
-    }
-    return this;
-  }
-  return this.headerFill_;
-};
+anychart.ganttModule.DataGrid.COLOR_DESCRIPTORS = (function() {
+  /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
+  var map = {};
+  anychart.core.settings.createDescriptors(map, [
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'headerFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'columnStroke', anychart.core.settings.strokeOrFunctionNormalizer]
+  ]);
+  return map;
+})();
+anychart.core.settings.populate(anychart.ganttModule.DataGrid, anychart.ganttModule.DataGrid.COLOR_DESCRIPTORS);
+
+
+//endregion
 
 
 /**
@@ -398,26 +384,6 @@ anychart.ganttModule.DataGrid.prototype.collapseExpandItem = function(itemIndex,
 
 
 /**
- * Gets/sets column stroke. Actually parses a value to apply width and color to columns splitter.
- * @param {(acgraph.vector.Stroke|string)=} opt_value - Value to be set.
- * @return {(string|acgraph.vector.Stroke|anychart.ganttModule.DataGrid)} - Current value or itself for method chaining.
- */
-anychart.ganttModule.DataGrid.prototype.columnStroke = function(opt_value) {
-  if (goog.isDef(opt_value)) {
-    var val = acgraph.vector.normalizeStroke.apply(null, arguments);
-    var oldThickness = anychart.utils.extractThickness(this.columnStroke_);
-    var newThickness = anychart.utils.extractThickness(val);
-    if (!anychart.color.equals(this.columnStroke_, val) || (newThickness != oldThickness)) {
-      this.columnStroke_ = val;
-      this.invalidate(anychart.ConsistencyState.DATA_GRID_GRIDS, anychart.Signal.NEEDS_REDRAW);
-    }
-    return this;
-  }
-  return this.columnStroke_;
-};
-
-
-/**
  * Gets/set horizontal offset.
  * @param {number=} opt_value - Value to be set.
  * @return {(number|anychart.ganttModule.DataGrid)} - Current value or itself for method chaining.
@@ -449,7 +415,7 @@ anychart.ganttModule.DataGrid.prototype.addSplitter_ = function() {
   if (columnsCount > this.splitters_.length) {
     var newSplitter = new anychart.core.ui.SimpleSplitter();
     this.registerDisposable(newSplitter);
-    newSplitter.stroke(this.columnStroke_);
+    newSplitter.stroke(/** @type {acgraph.vector.Stroke} */(this.getOption('columnStroke')));
     newSplitter.container(this.getClipLayer());
     newSplitter.listenSignals(function() {
       newSplitter.draw();
@@ -677,7 +643,7 @@ anychart.ganttModule.DataGrid.prototype.boundsInvalidated = function() {
       .lineTo(this.pixelBoundsCache.left, headerHeight)
       .close();
 
-  var splitterWidth = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke|string} */ (this.columnStroke_));
+  var splitterWidth = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke|string} */ (this.getOption('columnStroke')));
 
   var totalWidth = 0;
 
@@ -699,7 +665,7 @@ anychart.ganttModule.DataGrid.prototype.boundsInvalidated = function() {
  * @override
  */
 anychart.ganttModule.DataGrid.prototype.appearanceInvalidated = function() {
-  this.getHeaderPath_().fill(this.headerFill_);
+  this.getHeaderPath_().fill(/** @type {acgraph.vector.Fill} */(this.getOption('headerFill')));
 
   this.forEachVisibleColumn_(function(col) {
     col.invalidate(anychart.ConsistencyState.APPEARANCE);
@@ -732,7 +698,7 @@ anychart.ganttModule.DataGrid.prototype.specialInvalidated = function() {
     var totalWidth = 0;
     left = this.pixelBoundsCache.left;
     top = this.pixelBoundsCache.top;
-    var splitterWidth = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke|string} */ (this.columnStroke_));
+    var splitterWidth = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke|string} */ (this.getOption('columnStroke')));
 
     var enabledColumns = [];
     var i, l, col, colWidth;
@@ -770,7 +736,7 @@ anychart.ganttModule.DataGrid.prototype.specialInvalidated = function() {
 
       if (splitter) { //Amount of splitters is (amountOfColumns - 1).
         splitter.suspendSignalsDispatching();
-        splitter.stroke(this.columnStroke_);
+        splitter.stroke(/** @type {acgraph.vector.Stroke} */(this.getOption('columnStroke')));
 
         splitter.enabled(true);
 
@@ -864,8 +830,9 @@ anychart.ganttModule.DataGrid.prototype.mouseOutMove = function(event) {
 anychart.ganttModule.DataGrid.prototype.serialize = function() {
   var json = anychart.ganttModule.DataGrid.base(this, 'serialize');
 
-  json['columnStroke'] = anychart.color.serialize(this.columnStroke_);
-  json['headerFill'] = anychart.color.serialize(this.headerFill_);
+  anychart.core.settings.serialize(this, anychart.ganttModule.DataGrid.COLOR_DESCRIPTORS, json);
+  //json['columnStroke'] = anychart.color.serialize(this.columnStroke_);
+  //json['headerFill'] = anychart.color.serialize(this.headerFill_);
   json['horizontalOffset'] = this.horizontalOffset();
 
   json['columns'] = [];
@@ -886,8 +853,9 @@ anychart.ganttModule.DataGrid.prototype.serialize = function() {
 anychart.ganttModule.DataGrid.prototype.setupByJSON = function(config, opt_default) {
   anychart.ganttModule.DataGrid.base(this, 'setupByJSON', config, opt_default);
 
-  this.columnStroke(config['columnStroke']);
-  this.headerFill(config['headerFill']);
+  anychart.core.settings.deserialize(this, anychart.ganttModule.DataGrid.COLOR_DESCRIPTORS, config);
+  //this.columnStroke(config['columnStroke']);
+  //this.headerFill(config['headerFill']);
   this.horizontalOffset(config['horizontalOffset']);
 
   if ('defaultColumnSettings' in config)
@@ -1369,7 +1337,7 @@ anychart.ganttModule.DataGrid.Column.prototype.getTitlePath_ = function() {
   if (!this.titlePath_) {
     this.titlePath_ = acgraph.path();
     this.getTitleLayer_().addChildAt(this.titlePath_, 0);
-    this.titlePath_.fill(/** @type {acgraph.vector.Fill} */ (this.dataGrid_.headerFill()));
+    this.titlePath_.fill(/** @type {acgraph.vector.Fill} */ (this.dataGrid_.getOption('headerFill')));
     this.titlePath_.stroke(null);
     this.registerDisposable(this.titlePath_);
   }
@@ -1654,7 +1622,7 @@ anychart.ganttModule.DataGrid.Column.prototype.draw = function() {
     }
 
     if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
-      this.getTitlePath_().fill(/** @type {acgraph.vector.Fill} */ (this.dataGrid_.headerFill()));
+      this.getTitlePath_().fill(/** @type {acgraph.vector.Fill} */ (this.dataGrid_.getOption('headerFill')));
       this.invalidate(anychart.ConsistencyState.DATA_GRID_COLUMN_TITLE);
       this.markConsistent(anychart.ConsistencyState.APPEARANCE);
     }
@@ -1913,7 +1881,10 @@ anychart.standalones.dataGrid = function() {
   proto['editing'] = proto.editing;
 
   proto['column'] = proto.column;
-  proto['columnStroke'] = proto.columnStroke;
+
+  //auto generated
+  //proto['columnStroke'] = proto.columnStroke;
+  //proto['headerFill'] = proto.headerFill;
 
   proto['data'] = proto.data;
   proto['startIndex'] = proto.startIndex;
