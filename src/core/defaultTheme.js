@@ -1992,7 +1992,7 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'rowOddFill': '#fff',
     'rowEvenFill': '#fff',
     'rowFill': '#fff',
-    'hoverFill': '#F8FAFB',
+    'rowHoverFill': '#F8FAFB',
     'rowSelectedFill': '#ebf1f4',
     'zIndex': 5,
     'editing': false,
@@ -2108,7 +2108,7 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'rowEvenFill': '#fff',
     'rowFill': '#fff',
 
-    'hoverFill': '#F8FAFB',
+    'rowHoverFill': '#F8FAFB',
     'rowSelectedFill': '#ebf1f4',
 
     'zIndex': 5,
