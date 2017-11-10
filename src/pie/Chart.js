@@ -3874,40 +3874,6 @@ anychart.pieModule.Chart.prototype.explodeSlices = function(value) {
 };
 
 
-/**
- * Explode or implode pie slice.
- * @protected
- */
-anychart.pieModule.Chart.prototype.updateLabels = function() {
-  var iterator = this.getIterator();
-  var pointState = this.state.getPointStateByIndex(iterator.getIndex());
-  var currentPointExplode = /** @type {number} */(iterator.meta('explode'));
-  var sweep = /** @type {number} */(iterator.meta('sweep'));
-
-  // if only 1 point in Pie was drawn - forbid to explode it
-  if (iterator.getRowsCount() == 1 || sweep == 360)
-    return;
-
-  var explodeChanged = currentPointExplode != this.getExplode(pointState);
-
-  if (explodeChanged) {
-    if (this.isOutsideLabels()) {
-      this.recalculateBounds_ = false;
-      this.labels().suspendSignalsDispatching();
-      this.labels().clear();
-      this.calculateOutsideLabels();
-      this.labels().draw();
-      this.labels().resumeSignalsDispatching(false);
-    } else {
-      this.labels().clear();
-    }
-  } else {
-    this.drawLabel_(pointState);
-    this.labels().draw();
-  }
-};
-
-
 /** @inheritDoc */
 anychart.pieModule.Chart.prototype.getSeriesStatus = function(event) {
   //todo (blackart) coming soon.
@@ -4131,7 +4097,6 @@ anychart.pieModule.Chart.prototype.unhover = function(opt_indexOrIndexes) {
     this.state.removePointState(anychart.PointState.HOVER, true);
   }
 
-  console.log('unhover', this.getIterator().getIndex(), opt_indexOrIndexes);
 
   this.hideTooltip();
 };
@@ -4279,11 +4244,8 @@ anychart.pieModule.Chart.prototype.unselect = function(opt_indexOrIndexes) {
 };
 
 
-/**
- * Apply appearance to point.
- * @param {anychart.PointState|number} pointState
- */
-anychart.pieModule.Chart.prototype.applyAppearanceToPoint = function(pointState) {
+/** @inheritDoc */
+anychart.pieModule.Chart.prototype.applyAppearanceToPoint = function(pointState, opt_value) {
   var mode3d = /** @type {boolean} */ (this.getOption('mode3d'));
   if (mode3d) {
     this.prepare3DSlice_();
@@ -4291,26 +4253,52 @@ anychart.pieModule.Chart.prototype.applyAppearanceToPoint = function(pointState)
   } else {
     this.drawSlice_(pointState, true);
   }
+
+  var iterator = this.getIterator();
+  var currentPointExplode = /** @type {number} */(iterator.meta('explode'));
+
+  return opt_value || (currentPointExplode != this.getExplode(pointState));
 };
 
 
-/**
- * Finalization point appearance. For drawing labels and markers.
- */
-anychart.pieModule.Chart.prototype.finalizePointAppearance = function() {
-  console.log(this.getIterator().getIndex());
-  debugger;
-  this.updateLabels();
+/** @inheritDoc */
+anychart.pieModule.Chart.prototype.finalizePointAppearance = function(opt_value) {
+  var iterator = this.getIterator();
+  var sweep = /** @type {number} */(iterator.meta('sweep'));
+
+  // if only 1 point in Pie was drawn - forbid to explode it
+  if (iterator.getRowsCount() == 1 || sweep == 360)
+    return;
+
+  var explodeChanged = !!opt_value;
+
+  if (explodeChanged) {
+    if (this.isOutsideLabels()) {
+      this.recalculateBounds_ = false;
+      this.labels().suspendSignalsDispatching();
+      this.labels().clear();
+      this.calculateOutsideLabels();
+      this.labels().draw();
+      this.labels().resumeSignalsDispatching(false);
+    } else {
+      this.labels().clear();
+    }
+  } else {
+    var index = iterator.getIndex();
+    var pointState = this.state.getPointStateByIndex(index);
+
+    this.drawLabel_(pointState);
+    this.labels().draw();
+  }
 };
 
 
-/**
- * Apply appearance to series.
- * @param {anychart.PointState|number} pointState .
- */
-anychart.pieModule.Chart.prototype.applyAppearanceToSeries = function(pointState) {
+/** @inheritDoc */
+anychart.pieModule.Chart.prototype.applyAppearanceToSeries = goog.nullFunction;
 
-};
+
+/** @inheritDoc */
+anychart.pieModule.Chart.prototype.getStartValueForAppearanceReduction = goog.nullFunction;
 
 
 //endregion
