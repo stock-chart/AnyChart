@@ -311,8 +311,8 @@ anychart.ganttModule.DataGrid.COLOR_DESCRIPTORS = (function() {
   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
   var map = {};
   anychart.core.settings.createDescriptors(map, [
-    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'headerFill', anychart.core.settings.fillOrFunctionNormalizer],
-    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'columnStroke', anychart.core.settings.strokeOrFunctionNormalizer]
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'columnStroke', anychart.core.settings.strokeNormalizer],
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'headerFill', anychart.core.settings.fillNormalizer]
   ]);
   return map;
 })();

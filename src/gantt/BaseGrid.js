@@ -1205,16 +1205,148 @@ anychart.core.settings.populate(anychart.ganttModule.BaseGrid, anychart.ganttMod
 
 
 /**
- * @param {string} colorName
- * @param {string} colorType
+ * Annotations cache of resolver functions.
+ * @type {Object.<string, function(anychart.ganttModule.BaseGrid):(acgraph.vector.Fill|acgraph.vector.Stroke|acgraph.vector.PatternFill)>}
+ * @private
  */
-anychart.ganttModule.BaseGrid.getColorResolver = function(colorName, colorType) {};
+anychart.ganttModule.BaseGrid.colorResolversCache_ = {};
 
 
 /**
+ * Returns a color resolver for passed color names and type.
+ * @param {(string|null|boolean)} colorName
+ * @param {anychart.enums.ColorType} colorType
+ * @param {boolean} canBeHoveredSelected Whether need to resolve hovered selected colors
+ * @return {function(anychart.ganttModule.BaseGrid, number):acgraph.vector.AnyColor}
+ */
+anychart.ganttModule.BaseGrid.getColorResolver = function(colorName, colorType, canBeHoveredSelected) {
+  if (!colorName) return anychart.color.getNullColor;
+  var hash = colorType + '|' + colorName + '|' + canBeHoveredSelected;
+  var result = anychart.ganttModule.BaseGrid.colorResolversCache_[hash];
+  if (!result) {
+    /** @type {!Function} */
+    var normalizerFunc;
+    switch (colorType) {
+      case anychart.enums.ColorType.STROKE:
+        normalizerFunc = anychart.core.settings.strokeOrFunctionSimpleNormalizer;
+        break;
+      case anychart.enums.ColorType.HATCH_FILL:
+        normalizerFunc = anychart.core.settings.hatchFillOrFunctionSimpleNormalizer;
+        break;
+      default:
+      case anychart.enums.ColorType.FILL:
+        normalizerFunc = anychart.core.settings.fillOrFunctionSimpleNormalizer;
+        break;
+    }
+    anychart.ganttModule.BaseGrid.colorResolversCache_[hash] = result = goog.partial(anychart.ganttModule.BaseGrid.getColor_,
+        colorName, normalizerFunc, colorType == anychart.enums.ColorType.HATCH_FILL, canBeHoveredSelected);
+  }
+  return result;
+};
+
+
+/**
+ * Returns final color or hatch fill for passed params.
+ * @param {string} colorName
+ * @param {!Function} normalizer
+ * @param {boolean} isHatchFill
+ * @param {boolean} canBeHoveredSelected
+ * @param {anychart.ganttModule.BaseGrid} baseGrid
+ * @param {number} state
+ * @return {acgraph.vector.Fill|acgraph.vector.Stroke|acgraph.vector.PatternFill}
  * @private
  */
-anychart.ganttModule.BaseGrid.getColor_ = function() {};
+anychart.ganttModule.BaseGrid.getColor_ = function(colorName, normalizer, isHatchFill, canBeHoveredSelected, baseGrid, state) {
+  var stateColor, context;
+  state = anychart.core.utils.InteractivityState.clarifyState(state);
+  if (canBeHoveredSelected && (state != anychart.PointState.NORMAL)) {
+    stateColor = baseGrid.resolveOption(colorName, state, normalizer);
+    if (isHatchFill && stateColor === true)
+      stateColor = normalizer(baseGrid.getAutoHatchFill());
+    if (goog.isDef(stateColor)) {
+      if (!goog.isFunction(stateColor))
+        return /** @type {acgraph.vector.Fill|acgraph.vector.Stroke|acgraph.vector.PatternFill} */(stateColor);
+      else if (isHatchFill) { // hatch fills set as function some why cannot nest by initial implementation
+        context = baseGrid.getHatchFillResolutionContext();
+        return /** @type {acgraph.vector.PatternFill} */(normalizer(stateColor.call(context, context)));
+      }
+    }
+  }
+  // we can get here only if state color is undefined or is a function
+  var color = baseGrid.resolveOption(colorName, 0, normalizer);
+  if (isHatchFill && color === true)
+    color = normalizer(baseGrid.getAutoHatchFill());
+  if (goog.isFunction(color)) {
+    context = isHatchFill ?
+        baseGrid.getHatchFillResolutionContext() :
+        baseGrid.getColorResolutionContext(colorName);
+    color = /** @type {acgraph.vector.Fill|acgraph.vector.Stroke|acgraph.vector.PatternFill} */(normalizer(color.call(context, context)));
+  }
+  if (stateColor) { // it is a function and not a hatch fill here
+    context = baseGrid.getColorResolutionContext(/** @type {acgraph.vector.Fill|acgraph.vector.Stroke} */(color));
+    color = normalizer(stateColor.call(context, context));
+  }
+  return /** @type {acgraph.vector.Fill|acgraph.vector.Stroke|acgraph.vector.PatternFill} */(color);
+};
+
+
+/**
+ * Implements option inheritance from base bar settings.
+ * @param {string} name - .
+ * @param {string} defaultName - .
+ * @return {*}
+ */
+anychart.ganttModule.BaseGrid.prototype.getInheritedOption = function(name, defaultName) {
+  var val = this.getOption(name);
+  return /** @type {anychart.enums.Anchor} */ (goog.isDefAndNotNull(val) ? val : this.getOption(defaultName));
+};
+
+
+/**
+ * Resolve annotation color option.
+ * @param {string} name
+ * @param {number} state
+ * @param {Function} normalizer
+ * @return {*}
+ */
+anychart.ganttModule.BaseGrid.prototype.resolveOption = function(name, state, normalizer) {
+  var isFill = goog.string.contains(name, 'Fill');
+  return normalizer(this.getInheritedOption(name, isFill ? 'baseFill' : 'baseStroke'));
+};
+
+
+/**
+ * Returns color resolution context.
+ * This context is used to resolve a fill or stroke set as a function for current point.
+ * @param {(acgraph.vector.Fill|acgraph.vector.Stroke)=} opt_baseColor
+ * @return {Object}
+ */
+anychart.ganttModule.BaseGrid.prototype.getColorResolutionContext = function(opt_baseColor) {
+  return {
+    'sourceColor': opt_baseColor || 'blue'
+  };
+};
+
+
+/**
+ * Returns hatch fill resolution context.
+ * This context is used to resolve a hatch fill set as a function for current point.
+ * @return {Object}
+ */
+anychart.ganttModule.BaseGrid.prototype.getHatchFillResolutionContext = function() {
+  return {
+    'sourceHatchFill': this.getAutoHatchFill()
+  };
+};
+
+
+/**
+ * Returns default hatch fill.
+ * @return {acgraph.vector.PatternFill}
+ */
+anychart.ganttModule.BaseGrid.prototype.getAutoHatchFill = function() {
+  return /*this.autoHatchFill || */acgraph.vector.normalizeHatchFill(acgraph.vector.HatchFill.HatchFillType.DIAGONAL_BRICK);
+};
 //endregion
 
 
@@ -2358,7 +2490,7 @@ anychart.ganttModule.BaseGrid.prototype.setupByJSON = function(config, opt_defau
 };
 
 
-
+//region --- Base Grid Dragger
 /**
  * Dragger.
  * @param {acgraph.vector.Element} target - Target element.
@@ -2425,6 +2557,8 @@ anychart.ganttModule.BaseGrid.Dragger.prototype.reset = function() {
 
 
 
+//endregion
+//region --- Base Grid KeyHandler
 /**
  * Key handler.
  * @param {anychart.ganttModule.IInteractiveGrid} grid - Base grid itself.
@@ -2454,6 +2588,8 @@ anychart.ganttModule.BaseGrid.KeyHandler.prototype.resetState = function() {
 
 
 
+//endregion
+//region --- Base Grid Element
 /**
  * Actually is a path to be drawn on drawLayer.
  * Used to draw some elements as Timeline's bars with additional data.
@@ -2548,4 +2684,4 @@ anychart.ganttModule.BaseGrid.Element.prototype.period = null;
  * @type {number|undefined}
  */
 anychart.ganttModule.BaseGrid.Element.prototype.periodIndex = void 0;
-
+//endregion

@@ -677,7 +677,7 @@ anychart.ganttModule.TimeLine.COLOR_DESCRIPTORS = (function() {
   var map = {};
   anychart.core.settings.createDescriptors(map, [
     // timeline coloring
-    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'columnStroke', anychart.core.settings.strokeOrFunctionNormalizer],
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'columnStroke', anychart.core.settings.strokeNormalizer],
 
     // elements coloring
     [anychart.enums.PropertyHandlerType.MULTI_ARG, 'baseFill', anychart.core.settings.fillOrFunctionNormalizer],
@@ -5103,14 +5103,6 @@ anychart.standalones.resourceTimeline = function() {
   //proto['rowHoverFill'] = proto.rowHoverFill;
   //proto['rowSelectedFill'] = proto.rowSelectedFill;
 
-
-  proto['editing'] = proto.editing;
-
-  proto['baselineAbove'] = proto.baselineAbove;
-
-  proto['horizontalScrollBar'] = proto.horizontalScrollBar;
-  proto['verticalScrollBar'] = proto.verticalScrollBar;
-
   // bar coloring
   //proto['baseFill'] = proto.baseFill;
   //proto['baseStroke'] = proto.baseStroke;
@@ -5136,6 +5128,14 @@ anychart.standalones.resourceTimeline = function() {
   // full bar stack coloring (bar progress parent milestone)
   //proto['selectedElementFill'] = proto.selectedElementFill;
   //proto['selectedElementStroke'] = proto.selectedElementStroke;
+
+
+  proto['editing'] = proto.editing;
+
+  proto['baselineAbove'] = proto.baselineAbove;
+
+  proto['horizontalScrollBar'] = proto.horizontalScrollBar;
+  proto['verticalScrollBar'] = proto.verticalScrollBar;
   proto['tooltip'] = proto.tooltip;
 
   proto['labels'] = proto.labels;
