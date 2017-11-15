@@ -193,75 +193,24 @@ anychart.stockModule.eventMarkers.Group.prototype.getParentState = function(stat
 //
 //------------------------------------------------------------------------------
 /**
- * Gets and sets data for the series.
- * @param {(anychart.stockModule.data.TableMapping|anychart.stockModule.data.Table|Array.<Array.<*>>|string)=} opt_value
- * @param {Object.<({column: (number|string), type: anychart.enums.AggregationType, weights: (number|string)}|number|string)>=} opt_mappingSettings
- *   An object where keys are field names and values are objects with fields:
- *      - 'column': number - Column index, that the field should get values from;
- *      - 'type': anychart.enums.AggregationType - How to group values for the field. Defaults to 'close'.
- *      - 'weights': number - Column to get weights from for 'weightedAverage' grouping type. Note: If type set to
- *          'weightedAverage', but opt_weightsColumn is not passed - uses 'average' grouping instead.
- *   or numbers - just the column index to get values from. In this case the grouping type will be set to 'close'.
- * @param {Object=} opt_csvSettings CSV parser settings if the string is passed.
- * @return {anychart.stockModule.data.TableMapping|anychart.stockModule.data.Table|Array.<Array.<*>>|string|anychart.stockModule.eventMarkers.Group}
+ * @typedef {{
+ *   data: Array.<(number|Date|{date:(number|Date)})>,
+ *   dateTimePattern: (string|null|undefined),
+ *   timeOffset: (number|null|undefined),
+ *   baseDate: (number|Data|null|undefined),
+ *   locale: (string|anychart.format.Locale|null|undefined)
+ * }|Array.<(number|Date|{date:(number|Date)})>}
  */
-anychart.stockModule.eventMarkers.Group.prototype.data = function(opt_value, opt_mappingSettings, opt_csvSettings) {
-  // if (goog.isDef(opt_value)) {
-  //   var chart = this.getMainChart();
-  //   chart.suspendSignalsDispatching();
-  //   var data;
-  //   // deregistering data source
-  //   if (this.data_) {
-  //     data = this.data_;
-  //     // we need this zeroing to let the chart check if the data source is still relevant
-  //     this.data_ = null;
-  //     chart.deregisterSource(/** @type {!anychart.stockModule.data.TableSelectable} */(data));
-  //   }
-  //
-  //   // disposing previously created data
-  //   if (this.dataToDispose_) {
-  //     goog.dispose(this.dataToDispose_);
-  //     this.dataToDispose_ = null;
-  //   }
-  //
-  //   // saving source value here
-  //   this.dataSource_ = opt_value;
-  //
-  //   // creating data table if needed
-  //   if (!(anychart.utils.instanceOf(opt_value, anychart.stockModule.data.Table)) && !(anychart.utils.instanceOf(opt_value, anychart.stockModule.data.TableMapping))) {
-  //     data = new anychart.stockModule.data.Table();
-  //     if (opt_value)
-  //       data.addData(/** @type {!(Array.<Array.<*>>|string)} */(opt_value), false, opt_csvSettings);
-  //     this.dataToDispose_ = opt_value = data;
-  //   }
-  //
-  //   // creating data mapping if needed
-  //   if (anychart.utils.instanceOf(opt_value, anychart.stockModule.data.Table)) {
-  //     opt_value = opt_value.mapAs(opt_mappingSettings);
-  //     if (!opt_mappingSettings) {
-  //       opt_value.addField('value', 1, anychart.enums.AggregationType.AVERAGE);
-  //       opt_value.addField('size', 2, anychart.enums.AggregationType.SUM);
-  //       opt_value.addField('open', 1, anychart.enums.AggregationType.FIRST);
-  //       opt_value.addField('high', 2, anychart.enums.AggregationType.MAX);
-  //       opt_value.addField('low', 3, anychart.enums.AggregationType.MIN);
-  //       opt_value.addField('close', 4, anychart.enums.AggregationType.LAST);
-  //       opt_value.addField('volume', 5, anychart.enums.AggregationType.SUM);
-  //     }
-  //     if (!this.dataToDispose_)
-  //       this.dataToDispose_ = opt_value;
-  //   }
-  //
-  //   // applying passed value if it is suitable.
-  //   if (anychart.utils.instanceOf(opt_value, anychart.stockModule.data.TableMapping)) {
-  //     this.data_ = opt_value.createSelectable();
-  //     this.registerDataSource();
-  //   } else {
-  //     this.dataSource_ = null;
-  //   }
-  //   chart.resumeSignalsDispatching(true);
-  //   return this;
-  // }
-  // return this.dataSource_;
+anychart.stockModule.eventMarkers.Group.DataFormat;
+
+
+/**
+ * Gets and sets data for the series.
+ * @param {anychart.stockModule.eventMarkers.Group.DataFormat} opt_value
+ * @return {anychart.stockModule.eventMarkers.Group|Array.<Object>}
+ */
+anychart.stockModule.eventMarkers.Group.prototype.data = function(opt_value) {
+
 };
 
 
