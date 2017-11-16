@@ -1399,7 +1399,7 @@ anychart.ganttModule.TimeLine.prototype.getSeparationPath_ = function() {
   if (!this.separationPath_) {
     this.separationPath_ = /** @type {acgraph.vector.Path} */ (this.getClipLayer().path());
     this.separationPath_.zIndex(6);
-    this.separationPath_.stroke(/** @type {acgraph.vector.Stroke} */(this.getOption('columnStroke')));
+    this.separationPath_.stroke(/** @type {acgraph.vector.Stroke} */(anychart.ganttModule.BaseGrid.getColorResolver('columnStroke', anychart.enums.ColorType.STROKE, false)(this, 0)));
     this.registerDisposable(this.separationPath_);
   }
   return this.separationPath_;
@@ -3142,24 +3142,30 @@ anychart.ganttModule.TimeLine.prototype.drawBar_ = function(bounds, item, type, 
       (this.selectedPeriodId_ == period[anychart.enums.GanttDataFields.ID]);
 
   var zIndex, defaultFill, defaultStroke;
+  var resolver = anychart.ganttModule.BaseGrid.getColorResolver;
 
   switch (opt_field) {
     case anychart.enums.GanttDataFields.BASELINE:
       zIndex = anychart.ganttModule.TimeLine.BASELINE_Z_INDEX;
-      defaultFill = this.getOption('baselineFill');
-      defaultStroke = this.getOption('baselineStroke');
+      defaultFill = resolver('baselineFill', anychart.enums.ColorType.FILL, false)(this, 0, item);
+      defaultStroke = resolver('baselineStroke', anychart.enums.ColorType.STROKE, false)(this, 0, item);
       break;
     case anychart.enums.GanttDataFields.PROGRESS:
       zIndex = anychart.ganttModule.TimeLine.PROGRESS_Z_INDEX;
-      defaultFill = this.getOption('progressFill');
-      defaultStroke = this.getOption('progressStroke');
+      defaultFill = resolver('progressFill', anychart.enums.ColorType.FILL, false)(this, 0, item);
+      defaultStroke = resolver('progressStroke', anychart.enums.ColorType.STROKE, false)(this, 0, item);
       isProgress = true;
       break;
     default:
       zIndex = anychart.ganttModule.TimeLine.BASE_Z_INDEX;
       isParent = (isTreeDataItem && item.numChildren());
-      defaultFill = isParent ? this.getOption('parentFill') : this.getOption('baseFill');
-      defaultStroke = isParent ? this.getOption('parentStroke') : this.getOption('baseStroke');
+      if (isParent) {
+        defaultFill = resolver('parentFill', anychart.enums.ColorType.FILL, false)(this, 0, item);
+        defaultStroke = resolver('parentStroke', anychart.enums.ColorType.FILL, false)(this, 0, item);
+      } else {
+        defaultFill = resolver('baseFill', anychart.enums.ColorType.FILL, false)(this, 0, item);
+        defaultStroke = resolver('baseStroke', anychart.enums.ColorType.FILL, false)(this, 0, item);
+      }
       if (isTreeDataItem) {
         this.controller.data().suspendSignalsDispatching();//this.controller.data() can be Tree or TreeView.
         item.meta('relBounds', bounds);
@@ -3226,6 +3232,11 @@ anychart.ganttModule.TimeLine.prototype.drawBar_ = function(bounds, item, type, 
   }
   bar.close();
 
+  if (selectedBar) {
+    var selectedElementFill = resolver('selectedElementFill', anychart.enums.ColorType.FILL, false)(this, 0, this.selectedItem);
+    var selectedElementStroke = resolver('selectedElementStroke', anychart.enums.ColorType.STROKE, false)(this, 0, this.selectedItem);
+  }
+
   if (settings) {
     var rawStartMarker = settings[anychart.enums.GanttDataFields.START_MARKER];
     if (rawStartMarker) {
@@ -3245,8 +3256,8 @@ anychart.ganttModule.TimeLine.prototype.drawBar_ = function(bounds, item, type, 
 
     var fill;
     if (selectedBar) {
-      fill = this.getOption('selectedElementFill');
-      stroke = this.getOption('selectedElementStroke');
+      fill = selectedElementFill;
+      stroke = selectedElementStroke;
     } else {
       fill = goog.isDef(settings[anychart.enums.GanttDataFields.FILL]) ?
           acgraph.vector.normalizeFill(settings[anychart.enums.GanttDataFields.FILL]) :
@@ -3256,8 +3267,8 @@ anychart.ganttModule.TimeLine.prototype.drawBar_ = function(bounds, item, type, 
     bar.fill(/** @type {acgraph.vector.Fill} */(fill)).stroke(/** @type {acgraph.vector.Stroke} */(stroke));
   } else { //Default coloring.
     bar
-        .fill(/** @type {acgraph.vector.Fill} */(selectedBar ? this.getOption('selectedElementFill') : defaultFill))
-        .stroke(/** @type {acgraph.vector.Stroke} */(selectedBar ? this.getOption('selectedElementStroke') : defaultStroke));
+        .fill(/** @type {acgraph.vector.Fill} */(selectedBar ? selectedElementFill : defaultFill))
+        .stroke(/** @type {acgraph.vector.Stroke} */(selectedBar ? selectedElementStroke : defaultStroke));
   }
 
   return bar;
@@ -3554,7 +3565,7 @@ anychart.ganttModule.TimeLine.prototype.drawAsMilestone_ = function(dataItem, to
 
     var stroke = /** @type {acgraph.vector.Stroke} */ (settings && goog.isDef(settings[anychart.enums.GanttDataFields.STROKE]) ?
         acgraph.vector.normalizeStroke(settings[anychart.enums.GanttDataFields.STROKE]) :
-        this.getOption('milestoneStroke'));
+        anychart.ganttModule.BaseGrid.getColorResolver('milestoneStroke', anychart.enums.ColorType.STROKE, false)(this, 0, dataItem));
 
     var lineThickness = anychart.utils.isNone(stroke) ? 0 :
         goog.isString(stroke) ? 1 :
@@ -3596,24 +3607,29 @@ anychart.ganttModule.TimeLine.prototype.drawAsMilestone_ = function(dataItem, to
     this.controller.data().resumeSignalsDispatching(false);
 
     var isSelected = dataItem == this.selectedItem;
-
+    var resolver = anychart.ganttModule.BaseGrid.getColorResolver;
+    if (isSelected) {
+      var selectedElementFill = resolver('selectedElementFill', anychart.enums.ColorType.FILL, false)(this, 0, this.selectedItem);
+      var selectedElementStroke = resolver('selectedElementStroke', anychart.enums.ColorType.STROKE, false)(this, 0, this.selectedItem);
+    }
+    var milestoneFill = resolver('milestoneFill', anychart.enums.ColorType.FILL, false)(this, 0, dataItem);
+    var milestoneStroke = resolver('milestoneStroke', anychart.enums.ColorType.FILL, false)(this, 0, dataItem);
     if (settings) {
       var fill;
       if (isSelected) {
-        fill = this.getOption('selectedElementFill');
-        stroke = this.getOption('selectedElementStroke');
-
+        fill = selectedElementFill;
+        stroke = selectedElementStroke;
       } else {
         fill = goog.isDef(settings[anychart.enums.GanttDataFields.FILL]) ?
             acgraph.vector.normalizeFill(settings[anychart.enums.GanttDataFields.FILL]) :
-            this.getOption('milestoneFill');
+            milestoneFill;
       }
 
       milestone.fill(/** @type {acgraph.vector.Fill} */(fill)).stroke(/** @type {acgraph.vector.Stroke} */(stroke));
     } else {
       milestone
-          .fill(/** @type {acgraph.vector.Fill} */(isSelected ? this.getOption('selectedElementFill') : this.getOption('milestoneFill')))
-          .stroke(/** @type {acgraph.vector.Stroke} */(isSelected ? this.getOption('selectedElementStroke') : this.getOption('milestoneStroke')));
+          .fill(/** @type {acgraph.vector.Fill} */(isSelected ? selectedElementFill : milestoneFill))
+          .stroke(/** @type {acgraph.vector.Stroke} */(isSelected ? selectedElementStroke : milestoneStroke));
     }
 
   }
@@ -4174,7 +4190,7 @@ anychart.ganttModule.TimeLine.prototype.boundsInvalidated = function() {
  * @override
  */
 anychart.ganttModule.TimeLine.prototype.appearanceInvalidated = function() {
-  this.getSeparationPath_().stroke(/** @type {acgraph.vector.Stroke} */(this.getOption('columnStroke')));
+  this.getSeparationPath_().stroke(/** @type {acgraph.vector.Stroke} */(anychart.ganttModule.BaseGrid.getColorResolver('columnStroke', anychart.enums.ColorType.STROKE, false)(this, 0)));
 
   this.getEditConnectorPreviewPath_()
       .stroke(this.connectorPreviewStroke_);

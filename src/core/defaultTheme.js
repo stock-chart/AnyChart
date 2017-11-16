@@ -1986,14 +1986,17 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
   'defaultDataGrid': {
     'isStandalone': true,
     'headerHeight': 25,
-    'backgroundFill': '#fff',
+
+    'backgroundFill': 'none',
     'columnStroke': '#cecece',
+
     'rowStroke': '#cecece',
     'rowOddFill': '#fff',
     'rowEvenFill': '#fff',
     'rowFill': '#fff',
     'rowHoverFill': '#F8FAFB',
     'rowSelectedFill': '#ebf1f4',
+
     'zIndex': 5,
     'editing': false,
     'editStructurePreviewFill': {
@@ -2101,13 +2104,14 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
 
   'defaultTimeline': {
     'isStandalone': true,
+
     'columnStroke': '#cecece',
-    'rowStroke': '#cecece',
     'backgroundFill': 'none',
+
+    'rowStroke': '#cecece',
     'rowOddFill': '#fff',
     'rowEvenFill': '#fff',
     'rowFill': '#fff',
-
     'rowHoverFill': '#F8FAFB',
     'rowSelectedFill': '#ebf1f4',
 
@@ -2152,14 +2156,6 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
       'dash': '4 4'
     },
 
-    'baseFill': '#7ec1f5',
-    'baseStroke': '#74b2e2',
-    'progressFill': '#1976d2',
-    'progressStroke': {
-      'color': '#fff',
-      'opacity': 0.00001
-    },
-
     'editStartConnectorMarkerType': 'circle',
     'editStartConnectorMarkerSize': 10,
     'editStartConnectorMarkerHorizontalOffset': 0,
@@ -2170,17 +2166,31 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'editFinishConnectorMarkerVerticalOffset': 0,
     'editIntervalWidth': 3,
 
-    'baselineFill': '#d5ebfc',
-    'baselineStroke': '#bfd1e0',
-    'parentFill': '#455a64',
-    'parentStroke': '#2f3f46',
-    'milestoneFill': '#ffa000',
-    'milestoneStroke': '#d26104',
-    'connectorFill': '#545f69',
-    'connectorStroke': '#545f69',
-    'selectedElementFill': '#ef6c00',
-    'selectedElementStroke': '#bc5704',
-    'selectedConnectorStroke': '2 #bc5704',
+    'baseFill': anychart.core.defaultTheme.returnSourceColor, // rework to palette.itemAt(0)
+    'baseStroke': anychart.core.defaultTheme.returnSourceColor, // no palette, neither lighten/darken
+
+    /*'progressFill': '#1976d2', // palette.itemAt(1)
+    'progressStroke': {
+      'color': '#fff',
+      'opacity': 0.00001
+    }, // custom
+
+    'baselineFill': '#d5ebfc', // no palette
+    'baselineStroke': '#bfd1e0', // no palette, neither lighten/darken
+
+    'parentFill': '#455a64', // palette.itemAt(4)
+    'parentStroke': '#2f3f46', // no palette, neither lighten/darken
+
+    'milestoneFill': '#ffa000', // palette.itemAt(9)
+    'milestoneStroke': '#d26104', // no palette, neither lighten/darken
+
+
+    'selectedElementFill': '#ef6c00', // palette.itemAt(2)
+    'selectedElementStroke': '#bc5704', // no palette, neither lighten/darken
+    'selectedConnectorStroke': '2 #bc5704', // no palette, neither lighten/darken*/
+
+    'connectorFill': '#545f69', // anychart.core.defaultTheme.fontColorBright
+    'connectorStroke': '#545f69', // anychart.core.defaultTheme.fontColorBright
     'baselineAbove': false,
     'tooltip': {
       'padding': 5,

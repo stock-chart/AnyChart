@@ -319,6 +319,13 @@ anychart.ganttModule.DataGrid.COLOR_DESCRIPTORS = (function() {
 anychart.core.settings.populate(anychart.ganttModule.DataGrid, anychart.ganttModule.DataGrid.COLOR_DESCRIPTORS);
 
 
+/**
+ * Resolve header fill.
+ * @return {acgraph.vector.AnyColor}
+ */
+anychart.ganttModule.DataGrid.prototype.resolveHeaderFill = function() {
+  return anychart.ganttModule.BaseGrid.getColorResolver('headerFill', anychart.enums.ColorType.FILL, false)(this, 0);
+};
 //endregion
 
 
@@ -415,7 +422,7 @@ anychart.ganttModule.DataGrid.prototype.addSplitter_ = function() {
   if (columnsCount > this.splitters_.length) {
     var newSplitter = new anychart.core.ui.SimpleSplitter();
     this.registerDisposable(newSplitter);
-    newSplitter.stroke(/** @type {acgraph.vector.Stroke} */(this.getOption('columnStroke')));
+    newSplitter.stroke(/** @type {acgraph.vector.Stroke} */(anychart.ganttModule.BaseGrid.getColorResolver('columnStroke', anychart.enums.ColorType.STROKE, false)(this, 0)));
     newSplitter.container(this.getClipLayer());
     newSplitter.listenSignals(function() {
       newSplitter.draw();
@@ -643,7 +650,7 @@ anychart.ganttModule.DataGrid.prototype.boundsInvalidated = function() {
       .lineTo(this.pixelBoundsCache.left, headerHeight)
       .close();
 
-  var splitterWidth = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke|string} */ (this.getOption('columnStroke')));
+  var splitterWidth = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke|string} */ (anychart.ganttModule.BaseGrid.getColorResolver('columnStroke', anychart.enums.ColorType.STROKE, false)(this, 0)));
 
   var totalWidth = 0;
 
@@ -665,7 +672,7 @@ anychart.ganttModule.DataGrid.prototype.boundsInvalidated = function() {
  * @override
  */
 anychart.ganttModule.DataGrid.prototype.appearanceInvalidated = function() {
-  this.getHeaderPath_().fill(/** @type {acgraph.vector.Fill} */(this.getOption('headerFill')));
+  this.getHeaderPath_().fill(/** @type {acgraph.vector.Fill} */(this.resolveHeaderFill()));
 
   this.forEachVisibleColumn_(function(col) {
     col.invalidate(anychart.ConsistencyState.APPEARANCE);
@@ -698,7 +705,8 @@ anychart.ganttModule.DataGrid.prototype.specialInvalidated = function() {
     var totalWidth = 0;
     left = this.pixelBoundsCache.left;
     top = this.pixelBoundsCache.top;
-    var splitterWidth = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke|string} */ (this.getOption('columnStroke')));
+    var columnStroke = anychart.ganttModule.BaseGrid.getColorResolver('columnStroke', anychart.enums.ColorType.STROKE, false)(this, 0);
+    var splitterWidth = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke|string} */ (columnStroke));
 
     var enabledColumns = [];
     var i, l, col, colWidth;
@@ -736,7 +744,7 @@ anychart.ganttModule.DataGrid.prototype.specialInvalidated = function() {
 
       if (splitter) { //Amount of splitters is (amountOfColumns - 1).
         splitter.suspendSignalsDispatching();
-        splitter.stroke(/** @type {acgraph.vector.Stroke} */(this.getOption('columnStroke')));
+        splitter.stroke(/** @type {acgraph.vector.Stroke} */(columnStroke));
 
         splitter.enabled(true);
 
@@ -1337,7 +1345,7 @@ anychart.ganttModule.DataGrid.Column.prototype.getTitlePath_ = function() {
   if (!this.titlePath_) {
     this.titlePath_ = acgraph.path();
     this.getTitleLayer_().addChildAt(this.titlePath_, 0);
-    this.titlePath_.fill(/** @type {acgraph.vector.Fill} */ (this.dataGrid_.getOption('headerFill')));
+    this.titlePath_.fill(/** @type {acgraph.vector.Fill} */ (this.dataGrid_.resolveHeaderFill()));
     this.titlePath_.stroke(null);
     this.registerDisposable(this.titlePath_);
   }
@@ -1622,7 +1630,7 @@ anychart.ganttModule.DataGrid.Column.prototype.draw = function() {
     }
 
     if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
-      this.getTitlePath_().fill(/** @type {acgraph.vector.Fill} */ (this.dataGrid_.getOption('headerFill')));
+      this.getTitlePath_().fill(/** @type {acgraph.vector.Fill} */ (this.dataGrid_.resolveHeaderFill()));
       this.invalidate(anychart.ConsistencyState.DATA_GRID_COLUMN_TITLE);
       this.markConsistent(anychart.ConsistencyState.APPEARANCE);
     }
