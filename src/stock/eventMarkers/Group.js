@@ -305,21 +305,20 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
+
     this.markConsistent(anychart.ConsistencyState.EVENT_MARKERS_DATA);
   }
 
-  acgraph.rect(
-      this.pixelBoundsCache.left,
-      this.pixelBoundsCache.top,
-      this.pixelBoundsCache.width,
-      this.pixelBoundsCache.height)
-      .parent(/** @type {acgraph.vector.ILayer} */(this.container()))
-      .fill('red', 0.5)
-      .stroke('blue', 5)
-      .zIndex(this.zIndex());
-  this.markConsistent(anychart.ConsistencyState.EVENT_MARKERS_DATA | anychart.ConsistencyState.EVENT_MARKERS_CLIP);
+  if (this.hasInvalidationState(anychart.ConsistencyState.Z_INDEX)) {
 
-  //
+    this.markConsistent(anychart.ConsistencyState.Z_INDEX);
+  }
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.CONTAINER)) {
+
+    this.markConsistent(anychart.ConsistencyState.CONTAINER);
+  }
+
   // if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
   //   var columns = this.retrieveDataColumns();
   //   var iterator;
