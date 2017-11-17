@@ -1459,7 +1459,7 @@ anychart.ganttModule.BaseGrid.prototype.setupPalette_ = function(cls, opt_cloneF
       this.palette_.setup(opt_cloneFrom);
     this.palette_.listenSignals(this.paletteInvalidated_, this);
     if (doDispatch)
-      this.invalidate(anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW);
+      this.invalidate(anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW);
   }
 };
 
@@ -1471,7 +1471,7 @@ anychart.ganttModule.BaseGrid.prototype.setupPalette_ = function(cls, opt_cloneF
  */
 anychart.ganttModule.BaseGrid.prototype.paletteInvalidated_ = function(event) {
   if (event.hasSignal(anychart.Signal.NEEDS_REAPPLICATION)) {
-    this.invalidate(anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW);
+    this.invalidate(anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW);
   }
 };
 //endregion

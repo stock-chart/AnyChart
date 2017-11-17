@@ -1108,8 +1108,12 @@ anychart.ganttModule.Chart.prototype.setupPalette_ = function(cls, opt_cloneFrom
     if (opt_cloneFrom)
       this.palette_.setup(opt_cloneFrom);
     this.palette_.listenSignals(this.paletteInvalidated_, this);
-    if (doDispatch)
-      this.invalidate(anychart.ConsistencyState.ONLY_DISPATCHING, anychart.Signal.NEEDS_REDRAW);
+    if (doDispatch) {
+      this.getDataGrid_().invalidate(anychart.ConsistencyState.BASE_GRID_REDRAW);
+      this.getTimeline().invalidate(anychart.ConsistencyState.BASE_GRID_REDRAW);
+      // runs controller
+      this.invalidate(anychart.ConsistencyState.GANTT_POSITION, anychart.Signal.NEEDS_REDRAW);
+    }
   }
 };
 
@@ -1121,7 +1125,10 @@ anychart.ganttModule.Chart.prototype.setupPalette_ = function(cls, opt_cloneFrom
  */
 anychart.ganttModule.Chart.prototype.paletteInvalidated_ = function(event) {
   if (event.hasSignal(anychart.Signal.NEEDS_REAPPLICATION)) {
-    this.invalidate(anychart.ConsistencyState.ONLY_DISPATCHING, anychart.Signal.NEEDS_REDRAW);
+    this.getDataGrid_().invalidate(anychart.ConsistencyState.BASE_GRID_REDRAW);
+    this.getTimeline().invalidate(anychart.ConsistencyState.BASE_GRID_REDRAW);
+    // runs controller
+    this.invalidate(anychart.ConsistencyState.GANTT_POSITION, anychart.Signal.NEEDS_REDRAW);
   }
 };
 
