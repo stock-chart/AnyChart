@@ -2433,7 +2433,7 @@ anychart.standalones.Legend.prototype.dependsOnContainerSize = function() {
   return anychart.utils.isPercent(width) || anychart.utils.isPercent(height) || goog.isNull(width) || goog.isNull(height);
 };
 
-
+ 
 //endregion
 /**
  * Removes signal listeners.
