@@ -44,10 +44,10 @@ anychart.stockModule.eventMarkers.PlotController = function(plot, chartControlle
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW],
     ['fill',
-      anychart.ConsistencyState.APPEARANCE,
+      anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW],
     ['stroke',
-      anychart.ConsistencyState.APPEARANCE,
+      anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW],
     ['format',
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
@@ -59,7 +59,7 @@ anychart.stockModule.eventMarkers.PlotController = function(plot, chartControlle
   anychart.core.settings.createTextPropertiesDescriptorsMeta(
       normalDescriptorsMeta,
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.ConsistencyState.APPEARANCE,
+      anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW,
       anychart.Signal.NEEDS_REDRAW);
   this.normal_ = new anychart.core.StateSettings(this, normalDescriptorsMeta, anychart.PointState.NORMAL, descriptorOverride);
@@ -116,7 +116,7 @@ anychart.core.settings.populateAliases(anychart.stockModule.eventMarkers.PlotCon
  */
 anychart.stockModule.eventMarkers.PlotController.prototype.SUPPORTED_CONSISTENCY_STATES =
     anychart.core.VisualBase.prototype.SUPPORTED_CONSISTENCY_STATES |
-    anychart.ConsistencyState.APPEARANCE;
+    anychart.ConsistencyState.EVENT_MARKERS_DATA;
 
 
 /**
@@ -217,7 +217,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.group = function(opt_
     group = new anychart.stockModule.eventMarkers.Group(this.plot_);
     this.groups_[index] = group;
     group.listenSignals(this.onSignal_, this);
-    this.invalidate(anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW);
+    this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA, anychart.Signal.NEEDS_REDRAW);
   }
 
   if (goog.isDef(value)) {
@@ -255,11 +255,11 @@ anychart.stockModule.eventMarkers.PlotController.prototype.draw = function() {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
-    this.invalidate(anychart.ConsistencyState.APPEARANCE);
+    this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
 
-  if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
+  if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
     this.partialChains_.length = 0;
     var bounds = /** @type {anychart.math.Rect} */(this.parentBounds());
     for (var i = 0; i < this.groups_.length; i++) {
@@ -267,10 +267,11 @@ anychart.stockModule.eventMarkers.PlotController.prototype.draw = function() {
       group.suspendSignalsDispatching();
       group.parentBounds(bounds);
       group.container(this.rootLayer_);
+      group.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA);
       group.draw();
       group.resumeSignalsDispatching(false);
     }
-    this.markConsistent(anychart.ConsistencyState.APPEARANCE);
+    this.markConsistent(anychart.ConsistencyState.EVENT_MARKERS_DATA);
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.CONTAINER)) {
@@ -293,7 +294,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.draw = function() {
  * @private
  */
 anychart.stockModule.eventMarkers.PlotController.prototype.onSignal_ = function(event) {
-  this.invalidate(anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW);
+  this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA, anychart.Signal.NEEDS_REDRAW);
 };
 
 

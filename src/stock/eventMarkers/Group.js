@@ -4,6 +4,7 @@ goog.require('anychart.core.StateSettings');
 goog.require('anychart.core.VisualBase');
 goog.require('anychart.core.shapeManagers.PerPoint');
 goog.require('anychart.enums');
+goog.require('anychart.stockModule.eventMarkers.Table');
 
 
 
@@ -23,6 +24,13 @@ anychart.stockModule.eventMarkers.Group = function(plot) {
    * @private
    */
   this.plot_ = plot;
+
+  /**
+   * Data table.
+   * @type {anychart.stockModule.eventMarkers.Table}
+   * @private
+   */
+  this.dataTable_ = new anychart.stockModule.eventMarkers.Table();
 
   /**
    * Shape manager instance.
@@ -45,10 +53,10 @@ anychart.stockModule.eventMarkers.Group = function(plot) {
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW],
     ['fill',
-      anychart.ConsistencyState.APPEARANCE,
+      anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW],
     ['stroke',
-      anychart.ConsistencyState.APPEARANCE,
+      anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW],
     ['format',
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
@@ -60,7 +68,7 @@ anychart.stockModule.eventMarkers.Group = function(plot) {
   anychart.core.settings.createTextPropertiesDescriptorsMeta(
       normalDescriptorsMeta,
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.ConsistencyState.APPEARANCE,
+      anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW,
       anychart.Signal.NEEDS_REDRAW);
   this.normal_ = new anychart.core.StateSettings(this, normalDescriptorsMeta, anychart.PointState.NORMAL, descriptorOverride);
@@ -163,10 +171,7 @@ anychart.stockModule.eventMarkers.Group.prototype.SUPPORTED_SIGNALS =
  * @private
  */
 anychart.stockModule.eventMarkers.Group.prototype.connectorInvalidated_ = function(e) {
-  var c = anychart.ConsistencyState.APPEARANCE;
-  if (e.hasSignal(anychart.Signal.BOUNDS_CHANGED))
-    c |= anychart.ConsistencyState.EVENT_MARKERS_DATA;
-  this.invalidate(c, anychart.Signal.NEEDS_REDRAW);
+  this.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.EVENT_MARKERS_DATA, anychart.Signal.NEEDS_REDRAW);
 };
 
 
@@ -197,7 +202,7 @@ anychart.stockModule.eventMarkers.Group.prototype.getParentState = function(stat
  *   data: Array.<(number|Date|{date:(number|Date)})>,
  *   dateTimePattern: (string|null|undefined),
  *   timeOffset: (number|null|undefined),
- *   baseDate: (number|Data|null|undefined),
+ *   baseDate: (number|Date|null|undefined),
  *   locale: (string|anychart.format.Locale|null|undefined)
  * }|Array.<(number|Date|{date:(number|Date)})>}
  */
@@ -206,11 +211,28 @@ anychart.stockModule.eventMarkers.Group.DataFormat;
 
 /**
  * Gets and sets data for the series.
- * @param {anychart.stockModule.eventMarkers.Group.DataFormat} opt_value
+ * @param {anychart.stockModule.eventMarkers.Group.DataFormat=} opt_value
  * @return {anychart.stockModule.eventMarkers.Group|Array.<Object>}
  */
 anychart.stockModule.eventMarkers.Group.prototype.data = function(opt_value) {
-
+  if (goog.isDef(opt_value)) {
+    var dateTimePattern, timeOffset, baseDate, locale, data;
+    if (goog.isObject(opt_value)) {
+      dateTimePattern = opt_value['dateTimePattern'];
+      timeOffset = opt_value['timeOffset'];
+      baseDate = opt_value['baseDate'];
+      locale = opt_value['locale'];
+      data = opt_value['data'];
+    } else {
+      data = opt_value;
+    }
+    if (!goog.isArray(data))
+      data = [];
+    this.dataTable_.setData(data, dateTimePattern, timeOffset, baseDate, locale);
+    this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA, anychart.Signal.NEEDS_REDRAW);
+    return this;
+  }
+  return this.dataTable_.getData();
 };
 
 
@@ -273,12 +295,17 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
         this.axesLinesSpace_.tightenBounds(this.pixelBoundsCache) :
         this.pixelBoundsCache;
     this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_CLIP |
-        anychart.ConsistencyState.EVENT_MARKERS_DATA |
-        anychart.ConsistencyState.APPEARANCE);
+        anychart.ConsistencyState.EVENT_MARKERS_DATA);
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
     this.partialChains_.length = 0;
+    this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA);
+    this.markConsistent(anychart.ConsistencyState.APPEARANCE);
+  }
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
+    this.markConsistent(anychart.ConsistencyState.EVENT_MARKERS_DATA);
   }
 
   acgraph.rect(
@@ -290,7 +317,7 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
       .fill('red', 0.5)
       .stroke('blue', 5)
       .zIndex(this.zIndex());
-  this.markConsistent(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.EVENT_MARKERS_DATA | anychart.ConsistencyState.EVENT_MARKERS_CLIP);
+  this.markConsistent(anychart.ConsistencyState.EVENT_MARKERS_DATA | anychart.ConsistencyState.EVENT_MARKERS_CLIP);
 
   //
   // if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {

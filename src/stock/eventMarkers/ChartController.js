@@ -35,10 +35,10 @@ anychart.stockModule.eventMarkers.ChartController = function(chart) {
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW],
     ['fill',
-      anychart.ConsistencyState.APPEARANCE,
+      anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW],
     ['stroke',
-      anychart.ConsistencyState.APPEARANCE,
+      anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW],
     ['format',
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
@@ -50,7 +50,7 @@ anychart.stockModule.eventMarkers.ChartController = function(chart) {
   anychart.core.settings.createTextPropertiesDescriptorsMeta(
       normalDescriptorsMeta,
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.ConsistencyState.APPEARANCE,
+      anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW,
       anychart.Signal.NEEDS_REDRAW);
   this.normal_ = new anychart.core.StateSettings(this, normalDescriptorsMeta, anychart.PointState.NORMAL, descriptorOverride);

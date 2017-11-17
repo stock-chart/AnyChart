@@ -7,14 +7,44 @@ goog.require('goog.array');
 
 
 /**
- *
+ * Event markers data table.
+ * @constructor
+ */
+anychart.stockModule.eventMarkers.Table = function() {
+  this.dataReducer_ = goog.bind(this.dataReducer_, this);
+};
+
+
+/**
+ * @typedef {{
+ *    key: number,
+ *    index: number,
+ *    data: (*|undefined)
+ * }}
+ */
+anychart.stockModule.eventMarkers.Table.DataItem;
+
+
+/**
+ * @typedef {{
+ *    key: number,
+ *    index: number,
+ *    items: Array.<anychart.stockModule.eventMarkers.Table.DataItem>
+ * }}
+ */
+anychart.stockModule.eventMarkers.Table.DataItemAggregate;
+
+
+
+/**
+ * Sets data to the table.
+ * @param {Array} value
  * @param {?string=} opt_dateTimePattern Key column parsing pattern. Null means default behaviour, undefined - default pattern.
  * @param {number=} opt_timeOffset Shifts all input dates timeOffset hours forward. Defaults to zero.
  * @param {?(number|Date)=} opt_baseDate Base date for the key column.
  * @param {?(string|anychart.format.Locale)=} opt_locale Locale for the key column parsing.
- * @constructor
  */
-anychart.stockModule.eventMarkers.Table = function(opt_dateTimePattern, opt_timeOffset, opt_baseDate, opt_locale) {
+anychart.stockModule.eventMarkers.Table.prototype.setData = function(value, opt_dateTimePattern, opt_timeOffset, opt_baseDate, opt_locale) {
   /**
    * Key column parsing pattern.
    * @type {string|null|undefined}
@@ -52,42 +82,23 @@ anychart.stockModule.eventMarkers.Table = function(opt_dateTimePattern, opt_time
    */
   this.lastDataCache_ = null;
 
-  this.dataReducer_ = goog.bind(this.dataReducer_, this);
-};
-
-
-/**
- * @typedef {{
- *    key: number,
- *    index: number,
- *    data: (*|undefined)
- * }}
- */
-anychart.stockModule.eventMarkers.Table.DataItem;
-
-
-/**
- * @typedef {{
- *    key: number,
- *    index: number,
- *    items: Array.<anychart.stockModule.eventMarkers.Table.DataItem>
- * }}
- */
-anychart.stockModule.eventMarkers.Table.DataItemAggregate;
-
-
-
-/**
- * Sets data to the table.
- * @param {Array} value
- */
-anychart.stockModule.eventMarkers.Table.prototype.setData = function(value) {
   /**
    * @type {Array.<anychart.stockModule.eventMarkers.Table.DataItem>}
    * @private
    */
   this.data_ = goog.array.reduce(value, this.dataReducer_, []);
   this.data_.sort(anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR);
+};
+
+
+/**
+ * Getter for data array.
+ * @return {Array}
+ */
+anychart.stockModule.eventMarkers.Table.prototype.getData = function() {
+  return goog.array.map(this.data_ || [], function(item) {
+    return item.data;
+  });
 };
 
 
@@ -142,6 +153,11 @@ anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, t
         });
       }
     }
+    this.lastDataCache_ = {
+      fromIndex: fromIndex,
+      toIndex: toIndex,
+      data: data
+    };
   }
 
   return new anychart.stockModule.eventMarkers.Table.Iterator(data);
