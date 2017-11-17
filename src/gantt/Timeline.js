@@ -173,29 +173,6 @@ anychart.ganttModule.TimeLine = function(opt_controller, opt_isResources) {
   this.editConnectorThumbStroke_;
 
   /**
-   * Selected element stroke.
-   * @type {!acgraph.vector.Stroke}
-   * @private
-   */
-  this.selectedConnectorStroke_;
-
-
-  /**
-   * Connector arrow fill.
-   * @type {acgraph.vector.Fill}
-   * @private
-   */
-  this.connectorFill_;
-
-
-  /**
-   * Connector line stroke.
-   * @type {acgraph.vector.Stroke}
-   * @private
-   */
-  this.connectorStroke_;
-
-  /**
    * Selected period.
    * @type {(string|number|undefined)}
    * @private
@@ -469,10 +446,11 @@ anychart.ganttModule.TimeLine = function(opt_controller, opt_isResources) {
     ['columnStroke', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
 
     // elements coloring
-    //['connectorFill', anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW],
-    //['connectorStroke', anychart.ConsistencyState.GRIDS_POSITION, anychart.Signal.NEEDS_REDRAW],
-    //['selectedConnectorStroke', anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW],
+    ['connectorFill', anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW],
+    ['connectorStroke', anychart.ConsistencyState.GRIDS_POSITION, anychart.Signal.NEEDS_REDRAW],
+    ['selectedConnectorStroke', anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW],
 
+    // element's fills and strokes
     ['baseFill', anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW],
     ['baseStroke', anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW],
     ['baselineFill', anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW],
@@ -678,6 +656,11 @@ anychart.ganttModule.TimeLine.COLOR_DESCRIPTORS = (function() {
   anychart.core.settings.createDescriptors(map, [
     // timeline coloring
     [anychart.enums.PropertyHandlerType.MULTI_ARG, 'columnStroke', anychart.core.settings.strokeNormalizer],
+
+    // connectors
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'connectorFill', anychart.core.settings.fillOrFunctionNormalizer],
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'connectorStroke', anychart.core.settings.strokeOrFunctionNormalizer],
+    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'selectedConnectorStroke', anychart.core.settings.strokeOrFunctionNormalizer],
 
     // elements coloring
     [anychart.enums.PropertyHandlerType.MULTI_ARG, 'baseFill', anychart.core.settings.fillOrFunctionNormalizer],
@@ -966,76 +949,6 @@ anychart.ganttModule.TimeLine.prototype.editConnectorThumbStroke = function(opt_
     return this;
   }
   return this.editConnectorThumbStroke_ || 'none';
-};
-
-
-/**
- * Gets/sets a connector arrow fill.
- * Connector fill is a fill of arrow of connector on timeline.
- * @param {(!acgraph.vector.Fill|!Array.<(acgraph.vector.GradientKey|string)>|null)=} opt_fillOrColorOrKeys .
- * @param {number=} opt_opacityOrAngleOrCx .
- * @param {(number|boolean|!anychart.math.Rect|!{left:number,top:number,width:number,height:number})=} opt_modeOrCy .
- * @param {(number|!anychart.math.Rect|!{left:number,top:number,width:number,height:number}|null)=} opt_opacityOrMode .
- * @param {number=} opt_opacity .
- * @param {number=} opt_fx .
- * @param {number=} opt_fy .
- * @return {acgraph.vector.Fill|anychart.ganttModule.TimeLine|string} - Current value or itself for method chaining.
- */
-anychart.ganttModule.TimeLine.prototype.connectorFill = function(opt_fillOrColorOrKeys, opt_opacityOrAngleOrCx, opt_modeOrCy, opt_opacityOrMode, opt_opacity, opt_fx, opt_fy) {
-  if (goog.isDef(opt_fillOrColorOrKeys)) {
-    var val = acgraph.vector.normalizeFill.apply(null, arguments);
-    if (!anychart.color.equals(/** @type {acgraph.vector.Fill} */ (this.connectorFill_), val)) {
-      this.connectorFill_ = val;
-      this.invalidate(anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW);
-    }
-    return this;
-  }
-  return this.connectorFill_ || 'none';
-};
-
-
-/**
- * Gets/sets a connector stroke.
- * Connector stroke is a stroke of connector's line on timeline.
- * @param {(acgraph.vector.Stroke|acgraph.vector.ColoredFill|string|null)=} opt_strokeOrFill .
- * @param {number=} opt_thickness .
- * @param {string=} opt_dashpattern .
- * @param {acgraph.vector.StrokeLineJoin=} opt_lineJoin .
- * @param {acgraph.vector.StrokeLineCap=} opt_lineCap .
- * @return {acgraph.vector.Stroke|anychart.ganttModule.TimeLine|string} - Current value or itself for chaining.
- */
-anychart.ganttModule.TimeLine.prototype.connectorStroke = function(opt_strokeOrFill, opt_thickness, opt_dashpattern, opt_lineJoin, opt_lineCap) {
-  if (goog.isDef(opt_strokeOrFill)) {
-    var val = acgraph.vector.normalizeStroke.apply(null, arguments);
-    if (!anychart.color.equals(this.connectorStroke_, val)) {
-      this.connectorStroke_ = val;
-      this.invalidate(anychart.ConsistencyState.GRIDS_POSITION, anychart.Signal.NEEDS_REDRAW);
-    }
-    return this;
-  }
-  return this.connectorStroke_ || 'none';
-};
-
-
-/**
- * Gets/sets selected connector stroke.
- * @param {(acgraph.vector.Stroke|acgraph.vector.ColoredFill|string|null)=} opt_strokeOrFill .
- * @param {number=} opt_thickness .
- * @param {string=} opt_dashpattern .
- * @param {acgraph.vector.StrokeLineJoin=} opt_lineJoin .
- * @param {acgraph.vector.StrokeLineCap=} opt_lineCap .
- * @return {acgraph.vector.Stroke|anychart.ganttModule.TimeLine|string} - Current value or itself for chaining.
- */
-anychart.ganttModule.TimeLine.prototype.selectedConnectorStroke = function(opt_strokeOrFill, opt_thickness, opt_dashpattern, opt_lineJoin, opt_lineCap) {
-  if (goog.isDef(opt_strokeOrFill)) {
-    var val = acgraph.vector.normalizeStroke.apply(null, arguments);
-    if (!anychart.color.equals(this.selectedConnectorStroke_, val)) {
-      this.selectedConnectorStroke_ = val;
-      this.invalidate(anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW);
-    }
-    return this;
-  }
-  return this.selectedConnectorStroke_ || 'none';
 };
 
 
@@ -3744,13 +3657,15 @@ anychart.ganttModule.TimeLine.prototype.connectItems_ = function(from, to, opt_c
   if (fromBounds && toBounds) {
     var fill, stroke;
 
+    var connectorFill = anychart.ganttModule.BaseGrid.getColorResolver('connectorFill', anychart.enums.ColorType.FILL, false)(this, 0, fromItem, toItem);
+    var connectorStroke = anychart.ganttModule.BaseGrid.getColorResolver('connectorStroke', anychart.enums.ColorType.STROKE, false)(this, 0, fromItem, toItem);
     fill = (opt_connSettings && opt_connSettings[anychart.enums.GanttDataFields.FILL]) ?
         acgraph.vector.normalizeFill(opt_connSettings[anychart.enums.GanttDataFields.FILL]) :
-        this.connectorFill_;
+        connectorFill;
 
     stroke = (opt_connSettings && opt_connSettings[anychart.enums.GanttDataFields.STROKE]) ?
         acgraph.vector.normalizeStroke(opt_connSettings[anychart.enums.GanttDataFields.STROKE]) :
-        this.connectorStroke_;
+        connectorStroke;
 
     var drawPreview = goog.isDefAndNotNull(opt_path);
 
@@ -4606,9 +4521,9 @@ anychart.ganttModule.TimeLine.prototype.serialize = function() {
   //json['progressStroke'] = anychart.color.serialize(this.progressStroke_);
   //json['selectedElementFill'] = anychart.color.serialize(this.selectedElementFill_);
   //json['selectedElementStroke'] = anychart.color.serialize(this.selectedElementStroke_);
-  json['connectorFill'] = anychart.color.serialize(this.connectorFill_);
-  json['connectorStroke'] = anychart.color.serialize(this.connectorStroke_);
-  json['selectedConnectorStroke'] = anychart.color.serialize(this.selectedConnectorStroke_);
+  //json['connectorFill'] = anychart.color.serialize(this.connectorFill_);
+  //json['connectorStroke'] = anychart.color.serialize(this.connectorStroke_);
+  //json['selectedConnectorStroke'] = anychart.color.serialize(this.selectedConnectorStroke_);
 
   json['connectorPreviewStroke'] = anychart.color.serialize(this.connectorPreviewStroke_);
   json['editPreviewFill'] = anychart.color.serialize(this.editPreviewFill_);
@@ -4693,9 +4608,9 @@ anychart.ganttModule.TimeLine.prototype.setupByJSON = function(config, opt_defau
   //this.progressStroke(config['progressStroke']);
   //this.selectedElementFill(config['selectedElementFill']);
   //this.selectedElementStroke(config['selectedElementStroke']);
-  this.connectorFill(config['connectorFill']);
-  this.connectorStroke(config['connectorStroke']);
-  this.selectedConnectorStroke(config['selectedConnectorStroke']);
+  //this.connectorFill(config['connectorFill']);
+  //this.connectorStroke(config['connectorStroke']);
+  //this.selectedConnectorStroke(config['selectedConnectorStroke']);
 
   this.connectorPreviewStroke(config['connectorPreviewStroke']);
   this.editPreviewFill(config['editPreviewFill']);
