@@ -120,6 +120,13 @@ anychart.stockModule.eventMarkers.PlotController.prototype.SUPPORTED_CONSISTENCY
 
 
 /**
+ * Z index multiplier for default group zIndex.
+ * @type {number}
+ */
+anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MULTIPLIER = 0.001;
+
+
+/**
  * Normal state settings.
  * @param {!Object=} opt_value
  * @return {anychart.core.StateSettings|anychart.stockModule.eventMarkers.PlotController}
@@ -215,6 +222,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.group = function(opt_
   var group = this.groups_[index];
   if (!group) {
     group = new anychart.stockModule.eventMarkers.Group(this.plot_);
+    group.autoZIndex(/** @type {number} */(this.zIndex()) + this.groups_.length * anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MULTIPLIER);
     this.groups_[index] = group;
     group.listenSignals(this.onSignal_, this);
     this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA, anychart.Signal.NEEDS_REDRAW);

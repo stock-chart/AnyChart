@@ -29,7 +29,8 @@ anychart.stockModule.eventMarkers.Table.DataItem;
  * @typedef {{
  *    key: number,
  *    index: number,
- *    items: Array.<anychart.stockModule.eventMarkers.Table.DataItem>
+ *    items: Array.<anychart.stockModule.eventMarkers.Table.DataItem>,
+ *    count: number
  * }}
  */
 anychart.stockModule.eventMarkers.Table.DataItemAggregate;
@@ -113,11 +114,12 @@ anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, t
   var fromIndex = ~goog.array.binarySearch(this.data_, {key: from, index: -1}, anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR);
   var toIndex = ~goog.array.binarySearch(this.data_, {key: to, index: -Infinity}, anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR);
 
-  var data;
+  var data, count;
   if (this.lastDataCache_ && this.lastDataCache_.fromIndex == fromIndex && this.lastDataCache_.toIndex == toIndex) {
     data = this.lastDataCache_.data;
   } else {
     data = [];
+    count = 0;
     var i = fromIndex;
     var prevIterKey = NaN;
     var prevIterIndex = NaN;
@@ -129,12 +131,13 @@ anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, t
         items.push(currItem);
         i++;
       }
-      if (items.length) {
+      if (items.length && !isNaN(prevIterKey)) {
         data.push({
           key: prevIterKey,
           index: prevIterIndex,
           items: items
         });
+        count += items.length;
         items = [];
       }
       prevIterKey = coIterator.currentKey();
@@ -151,16 +154,18 @@ anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, t
           index: prevIterIndex,
           items: items
         });
+        count += items.length;
       }
     }
     this.lastDataCache_ = {
       fromIndex: fromIndex,
       toIndex: toIndex,
-      data: data
+      data: data,
+      count: count
     };
   }
 
-  return new anychart.stockModule.eventMarkers.Table.Iterator(data);
+  return new anychart.stockModule.eventMarkers.Table.Iterator(data, count);
 };
 
 
@@ -210,22 +215,36 @@ anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR = function(a, b) {
 /**
  * Iterator class.
  * @param {Array.<anychart.stockModule.eventMarkers.Table.DataItemAggregate>} data
+ * @param {number} count
  * @constructor
+ * @implements {anychart.data.IIterator}
  */
-anychart.stockModule.eventMarkers.Table.Iterator = function(data) {
+anychart.stockModule.eventMarkers.Table.Iterator = function(data, count) {
   /**
    * Data items array.
-   * @type {Array.<anychart.stockModule.eventMarkers.Table.DataItem>}
+   * @type {Array.<anychart.stockModule.eventMarkers.Table.DataItemAggregate>}
    * @private
    */
   this.data_ = data;
 
   /**
-   * Current index.
+   * Total rows count.
    * @type {number}
    * @private
    */
-  this.currentIndex_ = -1;
+  this.rowsCount_ = count;
+
+  /**
+   * Meta holder.
+   * @type {Array}
+   * @private
+   */
+  this.meta_ = [];
+  for (var i = 0; i < count; i++) {
+    this.meta_.push({});
+  }
+
+  this.reset();
 };
 
 
@@ -234,7 +253,8 @@ anychart.stockModule.eventMarkers.Table.Iterator = function(data) {
  * @return {anychart.stockModule.eventMarkers.Table.Iterator}
  */
 anychart.stockModule.eventMarkers.Table.Iterator.prototype.reset = function() {
-  this.currentIndex_ = -1;
+  this.currentIndex_ = this.currentItemIndex_ = -1;
+  this.currentSubIndex_ = this.currentItemLength_ = 0;
 };
 
 
@@ -243,7 +263,13 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.reset = function() {
  * @return {boolean}
  */
 anychart.stockModule.eventMarkers.Table.Iterator.prototype.advance = function() {
-  return ++this.currentIndex_ < this.data_.length;
+  if (++this.currentSubIndex_ > this.currentItemLength_) {
+    this.currentSubIndex_ = 0;
+    this.currentItemLength_ = (++this.currentItemIndex_ < this.data_.length) ?
+        this.data_[this.currentIndex_].items.length : 0;
+  }
+  this.currentIndex_++;
+  return this.currentSubIndex_ < this.currentItemLength_;
 };
 
 
@@ -252,7 +278,7 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.advance = function() 
  * @return {number}
  */
 anychart.stockModule.eventMarkers.Table.Iterator.prototype.getRowsCount = function() {
-  return this.data_.length;
+  return this.rowsCount_;
 };
 
 
@@ -260,7 +286,7 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.getRowsCount = functi
  * Returns current index.
  * @return {number}
  */
-anychart.stockModule.eventMarkers.Table.Iterator.prototype.getCurrentIndex = function() {
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.getIndex = function() {
   return this.currentIndex_ < this.data_.length ? this.data_[this.currentIndex_].index : NaN;
 };
 
@@ -269,16 +295,45 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.getCurrentIndex = fun
  * Returns current key.
  * @return {number}
  */
-anychart.stockModule.eventMarkers.Table.Iterator.prototype.getCurrentKey = function() {
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.getX = function() {
   return this.currentIndex_ < this.data_.length ? this.data_[this.currentIndex_].key : NaN;
 };
 
 
 /**
- * @return {Array.<anychart.stockModule.eventMarkers.Table.DataItem>}
+ * Item getter.
+ * @param {string} name
+ * @return {*}
  */
-anychart.stockModule.eventMarkers.Table.Iterator.prototype.getCurrentItems = function() {
-  return this.currentIndex_ < this.data_.length ? this.data_[this.currentIndex_].data : null;
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.get = function(name) {
+  var data = this.data_[this.currentItemIndex_].items[this.currentSubIndex_].data;
+  return goog.isObject(data) ? data[name] : void 0;
+};
+
+
+/**
+ * Dummy.
+ * @param {number} index
+ * @return {*}
+ */
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.getColumn = function(index) {
+  return void 0;
+};
+
+
+/**
+ * Meta getter-setter.
+ * @param {string} name
+ * @param {*=} opt_value
+ * @return {*}
+ */
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.meta = function(name, opt_value) {
+  var obj = this.meta_[this.currentIndex_];
+  if (goog.isDef(opt_value)) {
+    obj[name] = opt_value;
+    return this;
+  }
+  return obj[name];
 };
 
 

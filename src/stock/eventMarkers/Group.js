@@ -105,6 +105,13 @@ anychart.stockModule.eventMarkers.Group = function(plot) {
    * @private
    */
   this.partialChains_ = [];
+
+  /**
+   * Shapes array.
+   * @type {Array}
+   * @private
+   */
+  this.shapes_ = [];
 };
 goog.inherits(anychart.stockModule.eventMarkers.Group, anychart.core.VisualBase);
 anychart.core.settings.populateAliases(anychart.core.series.Base, [
@@ -296,6 +303,7 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
         this.pixelBoundsCache;
     this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_CLIP |
         anychart.ConsistencyState.EVENT_MARKERS_DATA);
+    this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
@@ -305,18 +313,24 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
+    this.shapeManager_.clearShapes();
+  }
 
-    this.markConsistent(anychart.ConsistencyState.EVENT_MARKERS_DATA);
+  if (this.hasInvalidationState(anychart.ConsistencyState.CONTAINER)) {
+    this.shapeManager_.setContainer(/** @type {acgraph.vector.Layer} */(this.container()));
+    this.markConsistent(anychart.ConsistencyState.CONTAINER);
+  }
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
+    this.shapes_.length = 0;
+
+    this.markConsistent(anychart.ConsistencyState.EVENT_MARKERS_DATA | anychart.ConsistencyState.Z_INDEX);
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.Z_INDEX)) {
 
+    // this.shapeManager_.updateZIndex(/** @type {number} */(this.zIndex()), );
     this.markConsistent(anychart.ConsistencyState.Z_INDEX);
-  }
-
-  if (this.hasInvalidationState(anychart.ConsistencyState.CONTAINER)) {
-
-    this.markConsistent(anychart.ConsistencyState.CONTAINER);
   }
 
   // if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
@@ -366,24 +380,6 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
   //   }
   //   this.markConsistent(anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.Z_INDEX);
   // }
-  //
-  // // if the series had only color settings changed, than we get here
-  // if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_COLOR)) {
-  //   this.updateColors();
-  //   this.markConsistent(anychart.ConsistencyState.SERIES_COLOR);
-  // }
-  //
-  // if (this.hasInvalidationState(anychart.ConsistencyState.Z_INDEX)) {
-  //   this.applyZIndex();
-  //   this.markConsistent(anychart.ConsistencyState.Z_INDEX);
-  // }
-  //
-  // if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_CLIP)) {
-  //   this.applyClip();
-  //   this.markConsistent(anychart.ConsistencyState.SERIES_CLIP);
-  // }
-
-  this.markConsistent(anychart.ConsistencyState.BOUNDS);
 
   this.resumeSignalsDispatching(false);
 
@@ -403,6 +399,14 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
  */
 anychart.stockModule.eventMarkers.Group.prototype.isDiscreteBased = function() {
   return true;
+};
+
+
+/**
+ * @return {boolean}
+ */
+anychart.stockModule.eventMarkers.Group.prototype.supportsPointSettings = function() {
+  return false;
 };
 
 
