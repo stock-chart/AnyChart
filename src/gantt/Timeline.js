@@ -5127,6 +5127,7 @@ anychart.standalones.resourceTimeline = function() {
   //proto['backgroundFill'] = proto.backgroundFill;
   proto['headerHeight'] = proto.headerHeight;
   proto['defaultRowHeight'] = proto.defaultRowHeight;
+  proto['palette'] = proto.palette;
 
   proto = anychart.standalones.ResourceTimeline.prototype;
   proto['draw'] = proto.draw;
@@ -5137,4 +5138,5 @@ anychart.standalones.resourceTimeline = function() {
   //proto['backgroundFill'] = proto.backgroundFill;
   proto['headerHeight'] = proto.headerHeight;
   proto['defaultRowHeight'] = proto.defaultRowHeight;
+  proto['palette'] = proto.palette;
 })();

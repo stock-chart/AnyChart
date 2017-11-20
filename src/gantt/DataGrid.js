@@ -1932,4 +1932,5 @@ anychart.standalones.dataGrid = function() {
   proto['headerHeight'] = proto.headerHeight;
   proto['verticalScrollBar'] = proto.verticalScrollBar;
   proto['defaultRowHeight'] = proto.defaultRowHeight;
+  proto['palette'] = proto.palette;
 })();

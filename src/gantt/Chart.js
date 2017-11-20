@@ -1200,6 +1200,7 @@ anychart.ganttModule.Chart.prototype.disposeInternal = function() {
   proto['toCsv'] = proto.toCsv;
   proto['xScale'] = proto.xScale;
   proto['defaultRowHeight'] = proto.defaultRowHeight;
+  proto['palette'] = proto.palette;
 
   // auto generated
   // proto['rowHoverFill'] = proto.rowHoverFill;
