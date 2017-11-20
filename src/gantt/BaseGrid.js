@@ -1206,7 +1206,7 @@ anychart.core.settings.populate(anychart.ganttModule.BaseGrid, anychart.ganttMod
 
 /**
  * Annotations cache of resolver functions.
- * @type {Object.<string, function(anychart.ganttModule.BaseGrid, number, (anychart.treeDataModule.Tree.DataItem|anychart.treeDataModule.View.DataItem)=, (anychart.treeDataModule.Tree.DataItem|anychart.treeDataModule.View.DataItem)=):(acgraph.vector.Fill|acgraph.vector.Stroke|acgraph.vector.PatternFill)>}
+ * @type {Object.<string, function(anychart.ganttModule.BaseGrid, number, (anychart.treeDataModule.Tree.DataItem|anychart.treeDataModule.View.DataItem)=, (anychart.treeDataModule.Tree.DataItem|anychart.treeDataModule.View.DataItem)=, anychart.enums.ConnectorType=):(acgraph.vector.Fill|acgraph.vector.Stroke|acgraph.vector.PatternFill)>}
  * @private
  */
 anychart.ganttModule.BaseGrid.colorResolversCache_ = {};
@@ -1217,7 +1217,7 @@ anychart.ganttModule.BaseGrid.colorResolversCache_ = {};
  * @param {(string|null|boolean)} colorName
  * @param {anychart.enums.ColorType} colorType
  * @param {boolean} canBeHoveredSelected Whether need to resolve hovered selected colors
- * @return {function(anychart.ganttModule.BaseGrid, number, (anychart.treeDataModule.Tree.DataItem|anychart.treeDataModule.View.DataItem)=, (anychart.treeDataModule.Tree.DataItem|anychart.treeDataModule.View.DataItem)=):acgraph.vector.AnyColor}
+ * @return {function(anychart.ganttModule.BaseGrid, number, (anychart.treeDataModule.Tree.DataItem|anychart.treeDataModule.View.DataItem)=, (anychart.treeDataModule.Tree.DataItem|anychart.treeDataModule.View.DataItem)=, anychart.enums.ConnectorType=):acgraph.vector.AnyColor}
  */
 anychart.ganttModule.BaseGrid.getColorResolver = function(colorName, colorType, canBeHoveredSelected) {
   if (!colorName) return anychart.color.getNullColor;
@@ -1255,10 +1255,11 @@ anychart.ganttModule.BaseGrid.getColorResolver = function(colorName, colorType, 
  * @param {number} state
  * @param {(anychart.treeDataModule.Tree.DataItem|anychart.treeDataModule.View.DataItem)=} opt_dataItem
  * @param {(anychart.treeDataModule.Tree.DataItem|anychart.treeDataModule.View.DataItem)=} opt_dataItemTo
+ * @param {anychart.enums.ConnectorType=} opt_connType
  * @return {acgraph.vector.Fill|acgraph.vector.Stroke|acgraph.vector.PatternFill}
  * @private
  */
-anychart.ganttModule.BaseGrid.getColor_ = function(colorName, normalizer, isHatchFill, canBeHoveredSelected, baseGrid, state, opt_dataItem,  opt_dataItemTo) {
+anychart.ganttModule.BaseGrid.getColor_ = function(colorName, normalizer, isHatchFill, canBeHoveredSelected, baseGrid, state, opt_dataItem,  opt_dataItemTo, opt_connType) {
   var stateColor, context;
   state = anychart.core.utils.InteractivityState.clarifyState(state);
   if (canBeHoveredSelected && (state != anychart.PointState.NORMAL)) {
@@ -1281,11 +1282,11 @@ anychart.ganttModule.BaseGrid.getColor_ = function(colorName, normalizer, isHatc
   if (goog.isFunction(color)) {
     context = isHatchFill ?
         baseGrid.getHatchFillResolutionContext() :
-        baseGrid.getColorResolutionContext(colorName, opt_dataItem, opt_dataItemTo);
+        baseGrid.getColorResolutionContext(colorName, opt_dataItem, opt_dataItemTo, opt_connType);
     color = /** @type {acgraph.vector.Fill|acgraph.vector.Stroke|acgraph.vector.PatternFill} */(normalizer(color.call(context, context)));
   }
   if (stateColor) { // it is a function and not a hatch fill here
-    context = baseGrid.getColorResolutionContext(colorName, opt_dataItem, opt_dataItemTo);
+    context = baseGrid.getColorResolutionContext(colorName, opt_dataItem, opt_dataItemTo, opt_connType);
     color = normalizer(stateColor.call(context, context));
   }
   return /** @type {acgraph.vector.Fill|acgraph.vector.Stroke|acgraph.vector.PatternFill} */(color);
@@ -1389,19 +1390,24 @@ anychart.ganttModule.BaseGrid.prototype.getSourceColorFor = function(colorName, 
  * @param {string} colorName
  * @param {(anychart.treeDataModule.Tree.DataItem|anychart.treeDataModule.View.DataItem)=} opt_dataItem
  * @param {(anychart.treeDataModule.Tree.DataItem|anychart.treeDataModule.View.DataItem)=} opt_dataItemTo
+ * @param {anychart.enums.ConnectorType=} opt_connType
  * @return {Object}
  */
-anychart.ganttModule.BaseGrid.prototype.getColorResolutionContext = function(colorName, opt_dataItem, opt_dataItemTo) {
+anychart.ganttModule.BaseGrid.prototype.getColorResolutionContext = function(colorName, opt_dataItem, opt_dataItemTo, opt_connType) {
   var palette = (/** @type {anychart.ganttModule.IInteractiveGrid} */(this.interactivityHandler)).palette();
   var sourceColor = this.getSourceColorFor(colorName, /** @type {anychart.palettes.RangeColors|anychart.palettes.DistinctColors} */ (palette));
   var rv = {
     'sourceColor': sourceColor
   };
-  if (goog.isDefAndNotNull(opt_dataItem)) {
-    rv['dataItem'] = opt_dataItem;
-  }
-  if (goog.isDefAndNotNull(opt_dataItemTo)) {
-      rv['dataItemTo'] = opt_dataItemTo;
+  if (goog.isDef(opt_connType)) {
+    rv['fromItem'] = opt_dataItem;
+    rv['fromItemIndex'] = opt_dataItem.meta('index');
+    rv['toItem'] = opt_dataItemTo;
+    rv['toItemIndex'] = opt_dataItemTo.meta('index');
+    rv['connType'] = opt_connType;
+  } else {
+    rv['item'] = opt_dataItem;
+    rv['itemIndex'] = opt_dataItem.meta('index');
   }
   return rv;
 };

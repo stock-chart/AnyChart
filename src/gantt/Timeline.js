@@ -3658,10 +3658,10 @@ anychart.ganttModule.TimeLine.prototype.connectItems_ = function(from, to, opt_c
     var fill, stroke;
 
     if (!(opt_connSettings && opt_connSettings[anychart.enums.GanttDataFields.FILL])) {
-      var connectorFill = anychart.ganttModule.BaseGrid.getColorResolver('connectorFill', anychart.enums.ColorType.FILL, false)(this, 0, fromItem, toItem);
+      var connectorFill = anychart.ganttModule.BaseGrid.getColorResolver('connectorFill', anychart.enums.ColorType.FILL, false)(this, 0, fromItem, toItem, opt_connType);
     }
     if (!(opt_connSettings && opt_connSettings[anychart.enums.GanttDataFields.STROKE])) {
-      var connectorStroke = anychart.ganttModule.BaseGrid.getColorResolver('connectorStroke', anychart.enums.ColorType.STROKE, false)(this, 0, fromItem, toItem);
+      var connectorStroke = anychart.ganttModule.BaseGrid.getColorResolver('connectorStroke', anychart.enums.ColorType.STROKE, false)(this, 0, fromItem, toItem, opt_connType);
     }
     fill = (opt_connSettings && opt_connSettings[anychart.enums.GanttDataFields.FILL]) ?
         acgraph.vector.normalizeFill(opt_connSettings[anychart.enums.GanttDataFields.FILL]) :
@@ -3821,7 +3821,7 @@ anychart.ganttModule.TimeLine.prototype.connectItems_ = function(from, to, opt_c
 
     var selectedConnectorStroke;
     if (connectorHighlight)
-      selectedConnectorStroke = /** @type {acgraph.vector.Stroke} */(anychart.ganttModule.BaseGrid.getColorResolver('selectedConnectorStroke', anychart.enums.ColorType.STROKE, false)(this, 0, fromItem, toItem));
+      selectedConnectorStroke = /** @type {acgraph.vector.Stroke} */(anychart.ganttModule.BaseGrid.getColorResolver('selectedConnectorStroke', anychart.enums.ColorType.STROKE, false)(this, 0, fromItem, toItem, opt_connType));
     if (path && !drawPreview) {
       path.stroke(/** @type {acgraph.vector.Stroke} */ (stroke));
       path.tag = void 0; //Tooltip will not appear on connector mouse over.
