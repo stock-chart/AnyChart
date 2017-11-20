@@ -1331,7 +1331,6 @@ anychart.ganttModule.BaseGrid.prototype.getSourceColorFor = function(colorName, 
       sourceColor = palette.itemAt(0);
       break;
     case 'baseStroke':
-      //sourceColor = '#74b2e2';
       sourceColor = anychart.color.lighten(palette.itemAt(0));
       break;
     case 'progressFill':
@@ -1348,29 +1347,34 @@ anychart.ganttModule.BaseGrid.prototype.getSourceColorFor = function(colorName, 
       sourceColor = palette.itemAt(3);
       break;
     case 'baselineStroke':
-      sourceColor = anychart.color.darken(palette.itemAt(3));//'#bfd1e0';
+      sourceColor = anychart.color.darken(palette.itemAt(3));
       break;
     case 'parentFill':
       sourceColor = palette.itemAt(4);
       break;
     case 'parentStroke':
-      sourceColor = '#2f3f46';
+      sourceColor = '#2f3f46'; // rework to palette
       break;
     case 'milestoneFill':
       sourceColor = palette.itemAt(9);
       break;
     case 'milestoneStroke':
-      //sourceColor = '#d26104';
       sourceColor = anychart.color.darken(palette.itemAt(9));
       break;
     case 'selectedElementFill':
       sourceColor = palette.itemAt(2);
       break;
     case 'selectedElementStroke':
-      sourceColor = '#bc5704';
+      sourceColor = '#bc5704'; // rework to palette
       break;
     case 'selectedConnectorStroke':
-      sourceColor = '2 #bc5704';
+      sourceColor = '2 #bc5704'; // rework to palette
+      break;
+    case 'rowHoverFill':
+      sourceColor = '#f8fafb'; // rework to palette
+      break;
+    case 'rowSelectedFill':
+      sourceColor = '#ebf1f4'; // rework to palette
       break;
     default:
       sourceColor = 'blue';

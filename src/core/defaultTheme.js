@@ -1994,8 +1994,10 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'rowOddFill': '#fff',
     'rowEvenFill': '#fff',
     'rowFill': '#fff',
-    'rowHoverFill': '#F8FAFB',
-    'rowSelectedFill': '#ebf1f4',
+    // 'rowHoverFill': '#F8FAFB',
+    // 'rowSelectedFill': '#ebf1f4',
+    'baseFill': anychart.core.defaultTheme.returnSourceColor,
+    'baseStroke': anychart.core.defaultTheme.returnSourceColor,
 
     'zIndex': 5,
     'editing': false,
@@ -2112,8 +2114,8 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'rowOddFill': '#fff',
     'rowEvenFill': '#fff',
     'rowFill': '#fff',
-    'rowHoverFill': '#F8FAFB',
-    'rowSelectedFill': '#ebf1f4',
+    // 'rowHoverFill': '#F8FAFB',
+    // 'rowSelectedFill': '#ebf1f4',
 
     'zIndex': 5,
     'headerHeight': 70,
@@ -2166,8 +2168,8 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'editFinishConnectorMarkerVerticalOffset': 0,
     'editIntervalWidth': 3,
 
-    'baseFill': anychart.core.defaultTheme.returnSourceColor, // rework to palette.itemAt(0)
-    'baseStroke': anychart.core.defaultTheme.returnSourceColor, // no palette, neither lighten/darken
+    'baseFill': anychart.core.defaultTheme.returnSourceColor,
+    'baseStroke': anychart.core.defaultTheme.returnSourceColor,
 
     /*'progressFill': '#1976d2', // palette.itemAt(1)
     'progressStroke': {
