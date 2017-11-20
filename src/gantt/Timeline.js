@@ -3657,8 +3657,12 @@ anychart.ganttModule.TimeLine.prototype.connectItems_ = function(from, to, opt_c
   if (fromBounds && toBounds) {
     var fill, stroke;
 
-    var connectorFill = anychart.ganttModule.BaseGrid.getColorResolver('connectorFill', anychart.enums.ColorType.FILL, false)(this, 0, fromItem, toItem);
-    var connectorStroke = anychart.ganttModule.BaseGrid.getColorResolver('connectorStroke', anychart.enums.ColorType.STROKE, false)(this, 0, fromItem, toItem);
+    if (!(opt_connSettings && opt_connSettings[anychart.enums.GanttDataFields.FILL])) {
+      var connectorFill = anychart.ganttModule.BaseGrid.getColorResolver('connectorFill', anychart.enums.ColorType.FILL, false)(this, 0, fromItem, toItem);
+    }
+    if (!(opt_connSettings && opt_connSettings[anychart.enums.GanttDataFields.STROKE])) {
+      var connectorStroke = anychart.ganttModule.BaseGrid.getColorResolver('connectorStroke', anychart.enums.ColorType.STROKE, false)(this, 0, fromItem, toItem);
+    }
     fill = (opt_connSettings && opt_connSettings[anychart.enums.GanttDataFields.FILL]) ?
         acgraph.vector.normalizeFill(opt_connSettings[anychart.enums.GanttDataFields.FILL]) :
         connectorFill;
@@ -3679,7 +3683,7 @@ anychart.ganttModule.TimeLine.prototype.connectItems_ = function(from, to, opt_c
     var segmentTop0; //Util variable, temporary segment Y-coordinate storage.
     var aboveSequence = true; //If 'from' bar is above the 'to' bar.
 
-    var lineThickness = anychart.utils.extractThickness(stroke);
+    var lineThickness = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke} */(stroke));
 
     var pixelShift = (lineThickness % 2 && acgraph.type() === acgraph.StageType.SVG) ? 0.5 : 0;
 
@@ -3815,6 +3819,9 @@ anychart.ganttModule.TimeLine.prototype.connectItems_ = function(from, to, opt_c
       }
     }
 
+    var selectedConnectorStroke;
+    if (connectorHighlight)
+      selectedConnectorStroke = /** @type {acgraph.vector.Stroke} */(anychart.ganttModule.BaseGrid.getColorResolver('selectedConnectorStroke', anychart.enums.ColorType.STROKE, false)(this, 0, fromItem, toItem));
     if (path && !drawPreview) {
       path.stroke(/** @type {acgraph.vector.Stroke} */ (stroke));
       path.tag = void 0; //Tooltip will not appear on connector mouse over.
@@ -3823,7 +3830,7 @@ anychart.ganttModule.TimeLine.prototype.connectItems_ = function(from, to, opt_c
       path.cursor(this.editable ? acgraph.vector.Cursor.POINTER : acgraph.vector.Cursor.DEFAULT);
       meta['path'] = path;
       path.meta = meta;
-      path.stroke(connectorHighlight ? this.selectedConnectorStroke_ : /** @type {acgraph.vector.Stroke} */ (stroke));
+      path.stroke(connectorHighlight ? selectedConnectorStroke : /** @type {acgraph.vector.Stroke} */ (stroke));
     }
     if (arrow && !drawPreview) {
       arrow.fill(/** @type {acgraph.vector.Fill} */ (fill)).stroke(/** @type {acgraph.vector.Stroke} */ (stroke));
@@ -3833,7 +3840,7 @@ anychart.ganttModule.TimeLine.prototype.connectItems_ = function(from, to, opt_c
       arrow.cursor(this.editable ? acgraph.vector.Cursor.POINTER : acgraph.vector.Cursor.DEFAULT);
       meta['arrow'] = arrow;
       arrow.meta = meta;
-      arrow.stroke(connectorHighlight ? this.selectedConnectorStroke_ : /** @type {acgraph.vector.Stroke} */ (stroke));
+      arrow.stroke(connectorHighlight ? selectedConnectorStroke : /** @type {acgraph.vector.Stroke} */ (stroke));
     }
   }
 };
@@ -5053,8 +5060,8 @@ anychart.standalones.resourceTimeline = function() {
   //proto['progressStroke'] = proto.progressStroke;
 
   // connector ne sovsem ponyatno coloring
-  proto['connectorFill'] = proto.connectorFill;
-  proto['connectorStroke'] = proto.connectorStroke;
+  // proto['connectorFill'] = proto.connectorFill;
+  // proto['connectorStroke'] = proto.connectorStroke;
 
   // full bar stack coloring (bar progress parent milestone)
   //proto['selectedElementFill'] = proto.selectedElementFill;
