@@ -326,6 +326,15 @@ anychart.core.settings.populate(anychart.ganttModule.DataGrid, anychart.ganttMod
 anychart.ganttModule.DataGrid.prototype.resolveHeaderFill = function() {
   return anychart.ganttModule.BaseGrid.getColorResolver('headerFill', anychart.enums.ColorType.FILL, false)(this, 0);
 };
+
+
+/** @inheritedDOc */
+anychart.ganttModule.DataGrid.prototype.resolveOption = function(name, state, normalizer) {
+  var val = this.getOption(name);
+  if (!goog.isDefAndNotNull(val))
+    val = function () { return this['sourceColor'] };
+  return normalizer(val);
+};
 //endregion
 
 

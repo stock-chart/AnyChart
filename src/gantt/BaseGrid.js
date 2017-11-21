@@ -1301,7 +1301,7 @@ anychart.ganttModule.BaseGrid.getColor_ = function(colorName, normalizer, isHatc
  */
 anychart.ganttModule.BaseGrid.prototype.getInheritedOption = function(name, defaultName) {
   var val = this.getOption(name);
-  return /** @type {anychart.enums.Anchor} */ (goog.isDefAndNotNull(val) ? val : this.getOption(defaultName));
+  return goog.isDefAndNotNull(val) ? val : this.getOption(defaultName);
 };
 
 
@@ -1344,17 +1344,17 @@ anychart.ganttModule.BaseGrid.prototype.getSourceColorFor = function(colorName, 
       };
       break;
     case 'baselineFill':
-      //sourceColor = '#d5ebfc';
-      sourceColor = palette.itemAt(3);
+      // sourceColor = '#d5ebfc';
+      sourceColor = anychart.color.lighten(palette.itemAt(1), 0.7);
       break;
     case 'baselineStroke':
-      sourceColor = anychart.color.darken(palette.itemAt(3));
+      sourceColor = anychart.color.darken(anychart.color.lighten(palette.itemAt(1), 0.7));
       break;
     case 'parentFill':
       sourceColor = palette.itemAt(4);
       break;
     case 'parentStroke':
-      sourceColor = '#2f3f46'; // rework to palette
+      sourceColor = anychart.color.lighten(palette.itemAt(4));
       break;
     case 'milestoneFill':
       sourceColor = palette.itemAt(9);
@@ -1366,16 +1366,16 @@ anychart.ganttModule.BaseGrid.prototype.getSourceColorFor = function(colorName, 
       sourceColor = palette.itemAt(2);
       break;
     case 'selectedElementStroke':
-      sourceColor = '#bc5704'; // rework to palette
+      sourceColor = anychart.color.darken(palette.itemAt(2));
       break;
     case 'selectedConnectorStroke':
-      sourceColor = '2 #bc5704'; // rework to palette
+      sourceColor = anychart.color.setThickness(anychart.color.lighten(palette.itemAt(2)), 2);
       break;
     case 'rowHoverFill':
-      sourceColor = '#f8fafb'; // rework to palette
+      sourceColor = anychart.getFullTheme('ganttBase.defaultRowHoverFill');
       break;
     case 'rowSelectedFill':
-      sourceColor = '#ebf1f4'; // rework to palette
+      sourceColor = anychart.getFullTheme('ganttBase.defaultRowSelectedFill');
       break;
     default:
       sourceColor = 'blue';
@@ -1399,15 +1399,17 @@ anychart.ganttModule.BaseGrid.prototype.getColorResolutionContext = function(col
   var rv = {
     'sourceColor': sourceColor
   };
-  if (goog.isDef(opt_connType)) {
-    rv['fromItem'] = opt_dataItem;
-    rv['fromItemIndex'] = opt_dataItem.meta('index');
-    rv['toItem'] = opt_dataItemTo;
-    rv['toItemIndex'] = opt_dataItemTo.meta('index');
-    rv['connType'] = opt_connType;
-  } else {
-    rv['item'] = opt_dataItem;
-    rv['itemIndex'] = opt_dataItem.meta('index');
+  if (goog.isDefAndNotNull(opt_dataItem)) {
+    if (goog.isDef(opt_connType)) {
+      rv['fromItem'] = opt_dataItem;
+      rv['fromItemIndex'] = opt_dataItem.meta('index');
+      rv['toItem'] = opt_dataItemTo;
+      rv['toItemIndex'] = opt_dataItemTo.meta('index');
+      rv['connType'] = opt_connType;
+    } else {
+      rv['item'] = opt_dataItem;
+      rv['itemIndex'] = opt_dataItem.meta('index');
+    }
   }
   return rv;
 };

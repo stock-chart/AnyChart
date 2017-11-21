@@ -425,13 +425,13 @@ anychart.ganttModule.Chart.PROPERTY_DESCRIPTORS = (function() {
       map,
       anychart.enums.PropertyHandlerType.MULTI_ARG,
       'rowHoverFill',
-      anychart.core.settings.fillNormalizer);
+      anychart.core.settings.fillOrFunctionNormalizer);
 
   anychart.core.settings.createDescriptor(
       map,
       anychart.enums.PropertyHandlerType.MULTI_ARG,
       'rowSelectedFill',
-      anychart.core.settings.fillNormalizer);
+      anychart.core.settings.fillOrFunctionNormalizer);
 
   anychart.core.settings.createDescriptor(
       map,

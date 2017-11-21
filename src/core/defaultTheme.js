@@ -158,6 +158,11 @@ anychart.core.defaultTheme.waterfallRisingStroke = '#467fac';
  */
 anychart.core.defaultTheme.waterfallFallingStroke = '#a74c00';
 
+/**
+ * @const {string}
+ */
+anychart.core.defaultTheme.ganttDefaultStroke = '#cecece';
+
 
 /**
  * @const {string}
@@ -1988,9 +1993,9 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'headerHeight': 25,
 
     'backgroundFill': 'none',
-    'columnStroke': '#cecece',
+    'columnStroke': anychart.core.defaultTheme.ganttDefaultStroke,
 
-    'rowStroke': '#cecece',
+    'rowStroke': anychart.core.defaultTheme.ganttDefaultStroke,
     'rowOddFill': '#fff',
     'rowEvenFill': '#fff',
     'rowFill': '#fff',
@@ -2107,10 +2112,10 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
   'defaultTimeline': {
     'isStandalone': true,
 
-    'columnStroke': '#cecece',
+    'columnStroke': anychart.core.defaultTheme.ganttDefaultStroke,
     'backgroundFill': 'none',
 
-    'rowStroke': '#cecece',
+    'rowStroke': anychart.core.defaultTheme.ganttDefaultStroke,
     'rowOddFill': '#fff',
     'rowEvenFill': '#fff',
     'rowFill': '#fff',
@@ -2244,11 +2249,11 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     },
     'header': {
       'backgroundFill': '#cecece',
-      'levelsSeparationStroke': '#cecece',
+      'levelsSeparationStroke': anychart.core.defaultTheme.ganttDefaultStroke,
 
       'topLevel': {
         'tileFill': '#f7f7f7',
-        'tilesSeparationStroke': '#cecece',
+        'tilesSeparationStroke': anychart.core.defaultTheme.ganttDefaultStroke,
         'labels': {
           'enabled': true,
           'anchor': 'left-top',
@@ -2268,7 +2273,7 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
 
       'midLevel': {
         'tileFill': '#f7f7f7',
-        'tilesSeparationStroke': '#cecece',
+        'tilesSeparationStroke': anychart.core.defaultTheme.ganttDefaultStroke,
         'labels': {
           'enabled': true,
           'anchor': 'left-top',
@@ -2288,7 +2293,7 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
 
       'lowLevel': {
         'tileFill': '#f7f7f7',
-        'tilesSeparationStroke': '#cecece',
+        'tilesSeparationStroke': anychart.core.defaultTheme.ganttDefaultStroke,
         'labels': {
           'enabled': true,
           'anchor': 'left-top',

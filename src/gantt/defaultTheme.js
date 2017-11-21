@@ -4,10 +4,12 @@ goog.provide('anychart.ganttModule.defaultTheme');
 goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
   // merge with chart
   'ganttBase': {
+    'defaultRowHoverFill': '#f8fafb',
+    'defaultRowSelectedFill': '#ebf1f4',
     'splitterPosition': '30%',
     'headerHeight': 70,
-    'rowHoverFill': '#F8FAFB',
-    'rowSelectedFill': '#ebf1f4',
+    // 'rowHoverFill': '#F8FAFB',
+    // 'rowSelectedFill': '#ebf1f4',
     'rowStroke': '#cecece',
     'editing': false,
     'title': {
