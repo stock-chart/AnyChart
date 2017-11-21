@@ -1369,7 +1369,7 @@ anychart.ganttModule.BaseGrid.prototype.getSourceColorFor = function(colorName, 
       sourceColor = anychart.color.darken(palette.itemAt(2));
       break;
     case 'selectedConnectorStroke':
-      sourceColor = anychart.color.setThickness(anychart.color.lighten(palette.itemAt(2)), 2);
+      sourceColor = anychart.color.setThickness(/** @type {acgraph.vector.Stroke} */(anychart.color.lighten(palette.itemAt(2))), 2);
       break;
     case 'rowHoverFill':
       sourceColor = anychart.getFullTheme('ganttBase.defaultRowHoverFill');
@@ -1380,7 +1380,7 @@ anychart.ganttModule.BaseGrid.prototype.getSourceColorFor = function(colorName, 
     default:
       sourceColor = 'blue';
   }
-  return sourceColor;
+  return /** @type {acgraph.vector.AnyColor} */(sourceColor);
 };
 
 

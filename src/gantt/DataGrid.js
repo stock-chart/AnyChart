@@ -328,11 +328,11 @@ anychart.ganttModule.DataGrid.prototype.resolveHeaderFill = function() {
 };
 
 
-/** @inheritedDOc */
+/** @inheritDoc */
 anychart.ganttModule.DataGrid.prototype.resolveOption = function(name, state, normalizer) {
   var val = this.getOption(name);
   if (!goog.isDefAndNotNull(val))
-    val = function () { return this['sourceColor'] };
+    val = (function () { return this['sourceColor']; });
   return normalizer(val);
 };
 //endregion
