@@ -4515,22 +4515,6 @@ anychart.ganttModule.TimeLine.prototype.serialize = function() {
   json['baselineAbove'] = this.baselineAbove_;
 
   anychart.core.settings.serialize(this, anychart.ganttModule.TimeLine.COLOR_DESCRIPTORS, json);
-  //json['columnStroke'] = anychart.color.serialize(this.columnStroke_);
-  //json['baseFill'] = anychart.color.serialize(this.baseFill_);
-  //json['baseStroke'] = anychart.color.serialize(this.baseStroke_);
-  //json['baselineFill'] = anychart.color.serialize(this.baselineFill_);
-  //json['baselineStroke'] = anychart.color.serialize(this.baselineStroke_);
-  //json['milestoneFill'] = anychart.color.serialize(this.milestoneFill_);
-  //json['milestoneStroke'] = anychart.color.serialize(this.milestoneStroke_);
-  //json['parentFill'] = anychart.color.serialize(this.parentFill_);
-  //json['parentStroke'] = anychart.color.serialize(this.parentStroke_);
-  //json['progressFill'] = anychart.color.serialize(this.progressFill_);
-  //json['progressStroke'] = anychart.color.serialize(this.progressStroke_);
-  //json['selectedElementFill'] = anychart.color.serialize(this.selectedElementFill_);
-  //json['selectedElementStroke'] = anychart.color.serialize(this.selectedElementStroke_);
-  //json['connectorFill'] = anychart.color.serialize(this.connectorFill_);
-  //json['connectorStroke'] = anychart.color.serialize(this.connectorStroke_);
-  //json['selectedConnectorStroke'] = anychart.color.serialize(this.selectedConnectorStroke_);
 
   json['connectorPreviewStroke'] = anychart.color.serialize(this.connectorPreviewStroke_);
   json['editPreviewFill'] = anychart.color.serialize(this.editPreviewFill_);
@@ -4601,23 +4585,7 @@ anychart.ganttModule.TimeLine.prototype.setupByJSON = function(config, opt_defau
 
   this.baselineAbove(config['baselineAbove']);
 
-  anychart.core.settings.deserialize(this, anychart.ganttModule.TimeLine.COLOR_DESCRIPTORS, config);
-  //this.columnStroke(config['columnStroke']);
-  //this.baseFill(config['baseFill']);
-  //this.baseStroke(config['baseStroke']);
-  //this.baselineFill(config['baselineFill']);
-  //this.baselineStroke(config['baselineStroke']);
-  //this.milestoneFill(config['milestoneFill']);
-  //this.milestoneStroke(config['milestoneStroke']);
-  //this.parentFill(config['parentFill']);
-  //this.parentStroke(config['parentStroke']);
-  //this.progressFill(config['progressFill']);
-  //this.progressStroke(config['progressStroke']);
-  //this.selectedElementFill(config['selectedElementFill']);
-  //this.selectedElementStroke(config['selectedElementStroke']);
-  //this.connectorFill(config['connectorFill']);
-  //this.connectorStroke(config['connectorStroke']);
-  //this.selectedConnectorStroke(config['selectedConnectorStroke']);
+  anychart.core.settings.deserialize(this, anychart.ganttModule.TimeLine.COLOR_DESCRIPTORS, config, opt_default);
 
   this.connectorPreviewStroke(config['connectorPreviewStroke']);
   this.editPreviewFill(config['editPreviewFill']);
@@ -5031,6 +4999,7 @@ anychart.standalones.resourceTimeline = function() {
 //exports
 (function() {
   var proto = anychart.ganttModule.TimeLine.prototype;
+  // auto generated
   //proto['backgroundFill'] = proto.backgroundFill;
   //proto['columnStroke'] = proto.columnStroke;
 
@@ -5044,6 +5013,8 @@ anychart.standalones.resourceTimeline = function() {
   // bar coloring
   //proto['baseFill'] = proto.baseFill;
   //proto['baseStroke'] = proto.baseStroke;
+
+  // baseline coloring
   //proto['baselineFill'] = proto.baselineFill;
   //proto['baselineStroke'] = proto.baselineStroke;
 
@@ -5059,9 +5030,10 @@ anychart.standalones.resourceTimeline = function() {
   //proto['progressFill'] = proto.progressFill;
   //proto['progressStroke'] = proto.progressStroke;
 
-  // connector ne sovsem ponyatno coloring
-  // proto['connectorFill'] = proto.connectorFill;
-  // proto['connectorStroke'] = proto.connectorStroke;
+  // connector coloring
+  //proto['connectorFill'] = proto.connectorFill;
+  //proto['connectorStroke'] = proto.connectorStroke;
+  //proto['selectedConnectorStroke'] = proto.selectedConnectorStroke;
 
   // full bar stack coloring (bar progress parent milestone)
   //proto['selectedElementFill'] = proto.selectedElementFill;
@@ -5124,7 +5096,6 @@ anychart.standalones.resourceTimeline = function() {
   proto['parentBounds'] = proto.parentBounds;
   proto['container'] = proto.container;
   proto['rowStroke'] = proto.rowStroke;
-  //proto['backgroundFill'] = proto.backgroundFill;
   proto['headerHeight'] = proto.headerHeight;
   proto['defaultRowHeight'] = proto.defaultRowHeight;
   proto['palette'] = proto.palette;
@@ -5135,7 +5106,6 @@ anychart.standalones.resourceTimeline = function() {
   proto['parentBounds'] = proto.parentBounds;
   proto['container'] = proto.container;
   proto['rowStroke'] = proto.rowStroke;
-  //proto['backgroundFill'] = proto.backgroundFill;
   proto['headerHeight'] = proto.headerHeight;
   proto['defaultRowHeight'] = proto.defaultRowHeight;
   proto['palette'] = proto.palette;

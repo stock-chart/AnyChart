@@ -8,8 +8,6 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     'defaultRowSelectedFill': '#ebf1f4',
     'splitterPosition': '30%',
     'headerHeight': 70,
-    // 'rowHoverFill': '#F8FAFB',
-    // 'rowSelectedFill': '#ebf1f4',
     'rowStroke': '#cecece',
     'editing': false,
     'title': {

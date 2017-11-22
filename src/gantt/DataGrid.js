@@ -848,8 +848,6 @@ anychart.ganttModule.DataGrid.prototype.serialize = function() {
   var json = anychart.ganttModule.DataGrid.base(this, 'serialize');
 
   anychart.core.settings.serialize(this, anychart.ganttModule.DataGrid.COLOR_DESCRIPTORS, json);
-  //json['columnStroke'] = anychart.color.serialize(this.columnStroke_);
-  //json['headerFill'] = anychart.color.serialize(this.headerFill_);
   json['horizontalOffset'] = this.horizontalOffset();
 
   json['columns'] = [];
@@ -870,9 +868,7 @@ anychart.ganttModule.DataGrid.prototype.serialize = function() {
 anychart.ganttModule.DataGrid.prototype.setupByJSON = function(config, opt_default) {
   anychart.ganttModule.DataGrid.base(this, 'setupByJSON', config, opt_default);
 
-  anychart.core.settings.deserialize(this, anychart.ganttModule.DataGrid.COLOR_DESCRIPTORS, config);
-  //this.columnStroke(config['columnStroke']);
-  //this.headerFill(config['headerFill']);
+  anychart.core.settings.deserialize(this, anychart.ganttModule.DataGrid.COLOR_DESCRIPTORS, config, opt_default);
   this.horizontalOffset(config['horizontalOffset']);
 
   if ('defaultColumnSettings' in config)
@@ -1889,19 +1885,21 @@ anychart.standalones.dataGrid = function() {
 //exports
 (function() {
   var proto = anychart.ganttModule.DataGrid.prototype;
+
+  // auto generated
   //proto['backgroundFill'] = proto.backgroundFill;
   //proto['rowFill'] = proto.rowFill;
   //proto['rowEvenFill'] = proto.rowEvenFill;
   //proto['rowOddFill'] = proto.rowOddFill;
   //proto['rowHoverFill'] = proto.rowHoverFill;
   //proto['rowSelectedFill'] = proto.rowSelectedFill;
+  //proto['columnStroke'] = proto.columnStroke;
+  //proto['headerFill'] = proto.headerFill;
+
   proto['editing'] = proto.editing;
 
   proto['column'] = proto.column;
 
-  //auto generated
-  //proto['columnStroke'] = proto.columnStroke;
-  //proto['headerFill'] = proto.headerFill;
 
   proto['data'] = proto.data;
   proto['startIndex'] = proto.startIndex;
@@ -1937,7 +1935,6 @@ anychart.standalones.dataGrid = function() {
   proto['parentBounds'] = proto.parentBounds;
   proto['container'] = proto.container;
   proto['rowStroke'] = proto.rowStroke;
-  //proto['backgroundFill'] = proto.backgroundFill;
   proto['headerHeight'] = proto.headerHeight;
   proto['verticalScrollBar'] = proto.verticalScrollBar;
   proto['defaultRowHeight'] = proto.defaultRowHeight;

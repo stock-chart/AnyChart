@@ -1999,10 +1999,6 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'rowOddFill': '#fff',
     'rowEvenFill': '#fff',
     'rowFill': '#fff',
-    // 'rowHoverFill': '#F8FAFB',
-    // 'rowSelectedFill': '#ebf1f4',
-    'baseFill': anychart.core.defaultTheme.returnSourceColor,
-    'baseStroke': anychart.core.defaultTheme.returnSourceColor,
 
     'zIndex': 5,
     'editing': false,
@@ -2119,8 +2115,6 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'rowOddFill': '#fff',
     'rowEvenFill': '#fff',
     'rowFill': '#fff',
-    // 'rowHoverFill': '#F8FAFB',
-    // 'rowSelectedFill': '#ebf1f4',
 
     'zIndex': 5,
     'headerHeight': 70,
@@ -2176,28 +2170,8 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'baseFill': anychart.core.defaultTheme.returnSourceColor,
     'baseStroke': anychart.core.defaultTheme.returnSourceColor,
 
-    /*'progressFill': '#1976d2', // palette.itemAt(1)
-    'progressStroke': {
-      'color': '#fff',
-      'opacity': 0.00001
-    }, // custom
-
-    'baselineFill': '#d5ebfc', // no palette
-    'baselineStroke': '#bfd1e0', // no palette, neither lighten/darken
-
-    'parentFill': '#455a64', // palette.itemAt(4)
-    'parentStroke': '#2f3f46', // no palette, neither lighten/darken
-
-    'milestoneFill': '#ffa000', // palette.itemAt(9)
-    'milestoneStroke': '#d26104', // no palette, neither lighten/darken
-
-
-    'selectedElementFill': '#ef6c00', // palette.itemAt(2)
-    'selectedElementStroke': '#bc5704', // no palette, neither lighten/darken
-    'selectedConnectorStroke': '2 #bc5704', // no palette, neither lighten/darken*/
-
-    'connectorFill': '#545f69', // anychart.core.defaultTheme.fontColorBright
-    'connectorStroke': '#545f69', // anychart.core.defaultTheme.fontColorBright
+    'connectorFill': '#545f69',
+    'connectorStroke': '#545f69',
     'baselineAbove': false,
     'tooltip': {
       'padding': 5,

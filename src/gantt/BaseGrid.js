@@ -1344,7 +1344,6 @@ anychart.ganttModule.BaseGrid.prototype.getSourceColorFor = function(colorName, 
       };
       break;
     case 'baselineFill':
-      // sourceColor = '#d5ebfc';
       sourceColor = anychart.color.lighten(palette.itemAt(1), 0.7);
       break;
     case 'baselineStroke':
@@ -2583,12 +2582,6 @@ anychart.ganttModule.BaseGrid.prototype.serialize = function() {
   }
 
   anychart.core.settings.serialize(this, anychart.ganttModule.BaseGrid.COLOR_DESCRIPTORS, json);
-  //json['backgroundFill'] = anychart.color.serialize(/** @type {acgraph.vector.Fill} */ (this.backgroundFill_));
-  //json['rowOddFill'] = anychart.color.serialize(/** @type {acgraph.vector.Fill} */ (this.rowOddFill_));
-  //json['rowEvenFill'] = anychart.color.serialize(/** @type {acgraph.vector.Fill} */ (this.rowEvenFill_));
-  //json['rowFill'] = anychart.color.serialize(/** @type {acgraph.vector.Fill} */ (this.rowFill_));
-  //json['hoverFill'] = anychart.color.serialize(/** @type {acgraph.vector.Fill} */ (this.rowHoverFill_));
-  //json['rowSelectedFill'] = anychart.color.serialize(/** @type {acgraph.vector.Fill} */ (this.rowSelectedFill_));
 
   json['rowStroke'] = anychart.color.serialize(/** @type {acgraph.vector.Stroke} */ (this.rowStroke_));
   json['headerHeight'] = this.headerHeight_;
@@ -2619,13 +2612,7 @@ anychart.ganttModule.BaseGrid.prototype.setupByJSON = function(config, opt_defau
     this.palette(config['palette']);
   }
 
-  anychart.core.settings.deserialize(this, anychart.ganttModule.BaseGrid.COLOR_DESCRIPTORS, config);
-  //this.backgroundFill(config['backgroundFill']);
-  //this.rowFill(config['rowFill']);
-  //this.rowOddFill(config['rowOddFill']);
-  //this.rowEvenFill(config['rowEvenFill']);
-  //this.rowHoverFill(config['hoverFill']);
-  //this.rowSelectedFill(config['rowSelectedFill']);
+  anychart.core.settings.deserialize(this, anychart.ganttModule.BaseGrid.COLOR_DESCRIPTORS, config, opt_default);
 
   this.rowStroke(config['rowStroke']);
 
@@ -2638,6 +2625,7 @@ anychart.ganttModule.BaseGrid.prototype.setupByJSON = function(config, opt_defau
   this.editStructurePreviewDashStroke(config['editStructurePreviewDashStroke']);
   this.editing(config['editing']);
 };
+
 
 
 //region --- Base Grid Dragger
