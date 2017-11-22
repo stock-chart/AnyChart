@@ -293,6 +293,49 @@ anychart.annotationsModule.MARKER_DESCRIPTORS_META = (function() {
 })();
 
 
+/**
+ * Properties that should be defined in annotation prototype to support label annotation settings.
+ * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
+ */
+anychart.annotationsModule.LABEL_DESCRIPTORS = (function() {
+  /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
+  var map = {};
+
+  anychart.core.settings.createDescriptor(
+      map,
+      anychart.enums.PropertyHandlerType.SINGLE_ARG,
+      'anchor',
+      anychart.enums.normalizeAnchor);
+
+  anychart.core.settings.createDescriptor(
+      map,
+      anychart.enums.PropertyHandlerType.SINGLE_ARG,
+      'offsetX',
+      anychart.core.settings.numberNormalizer);
+
+  anychart.core.settings.createDescriptor(
+      map,
+      anychart.enums.PropertyHandlerType.SINGLE_ARG,
+      'offsetY',
+      anychart.core.settings.numberNormalizer);
+
+  return map;
+})();
+
+
+/**
+ * Properties meta.
+ * @type {!Array.<Array>}
+ */
+anychart.annotationsModule.LABEL_DESCRIPTORS_META = (function() {
+  return [
+    ['anchor', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW],
+    ['offsetX', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW],
+    ['offsetY', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW]
+  ];
+})();
+
+
 //endregion
 //region Descriptors state meta
 //region --- STROKE
