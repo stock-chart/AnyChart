@@ -921,6 +921,19 @@ anychart.stockModule.Chart.prototype.setDefaultPlotSettings = function(value) {
 
 
 /**
+ * Returns an array of params to pass to eventMarkers table getIterator() method.
+ * @return {Array} [from, to, coIterator]
+ */
+anychart.stockModule.Chart.prototype.getEventMarkersIteratorParams = function() {
+  return [
+    this.dataController_.getFirstSelectedKey(),
+    this.dataController_.getLastSelectedKey(),
+    this.dataController_.getCoIterator(false, false, true)
+  ];
+};
+
+
+/**
  * Internal function to select a range.
  * @param {number} start
  * @param {number} end

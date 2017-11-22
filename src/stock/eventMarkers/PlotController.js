@@ -30,6 +30,14 @@ anychart.stockModule.eventMarkers.PlotController = function(plot, chartControlle
    * @private
    */
   this.groups_ = [];
+
+  /**
+   * Event marker offsets hash map.
+   * @type {Object.<Object>}
+   * @private
+   */
+  this.eventMarkerOffsets_ = {};
+
   var descriptorOverride = [anychart.core.settings.descriptors.EVENT_MARKER_TYPE];
 
   var normalDescriptorsMeta = {};
@@ -121,7 +129,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.SUPPORTED_CONSISTENCY
 
 /**
  * Z index multiplier for default group zIndex.
- * @type {number}
+ * @const {number}
  */
 anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MULTIPLIER = 0.001;
 
@@ -173,10 +181,11 @@ anychart.stockModule.eventMarkers.PlotController.prototype.selected = function(o
  * Always returns 2 elements.
  * @param {anychart.PointState|number} state
  * @param {boolean} low
+ * @param {boolean=} opt_forConnector
  * @return {Array.<Object>}
  */
-anychart.stockModule.eventMarkers.PlotController.prototype.getPartialChain = function(state, low) {
-  var index = Math.min(state, anychart.PointState.SELECT) * 2 + low;
+anychart.stockModule.eventMarkers.PlotController.prototype.getPartialChain = function(state, low, opt_forConnector) {
+  var index = Math.min(state, anychart.PointState.SELECT) * 4 + low * 2 + !opt_forConnector;
   var res = this.partialChains_[index];
   if (!res) {
     var controller = /** @type {anychart.stockModule.eventMarkers.ChartController} */(this.plot_.getChart().eventMarkers());
@@ -191,12 +200,31 @@ anychart.stockModule.eventMarkers.PlotController.prototype.getPartialChain = fun
       plotState = this.selected_;
       chartState = /** @type {anychart.core.StateSettings} */(controller.selected());
     }
+    if (opt_forConnector) {
+      plotState = plotState.connector();
+      chartState = chartState.connector();
+    }
     if (low) {
-      res = [plotState.themeSettings, chartState.themeSettings];
+      res = [(state || opt_forConnector) ? null : this.themeSettings, plotState.themeSettings, chartState.themeSettings];
     } else {
-      res = [plotState.ownSettings, chartState.ownSettings];
+      res = [(state || opt_forConnector) ? null : this.ownSettings, plotState.ownSettings, chartState.ownSettings];
     }
     this.partialChains_[index] = res;
+  }
+  return res;
+};
+
+
+
+/**
+ * Returns an event markers offsets object for given index.
+ * @param index
+ * @return {Object.<number>}
+ */
+anychart.stockModule.eventMarkers.PlotController.prototype.getEventMarkerOffsets = function(index) {
+  var res = this.eventMarkerOffsets_[index];
+  if (!res) {
+    res = this.eventMarkerOffsets_[index] = {};
   }
   return res;
 };
@@ -222,7 +250,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.group = function(opt_
   var group = this.groups_[index];
   if (!group) {
     group = new anychart.stockModule.eventMarkers.Group(this.plot_);
-    group.autoZIndex(/** @type {number} */(this.zIndex()) + this.groups_.length * anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MULTIPLIER);
+    group.setAutoZIndex(/** @type {number} */(this.zIndex()) + this.groups_.length * anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MULTIPLIER);
     this.groups_[index] = group;
     group.listenSignals(this.onSignal_, this);
     this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA, anychart.Signal.NEEDS_REDRAW);
@@ -269,6 +297,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.draw = function() {
 
   if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
     this.partialChains_.length = 0;
+    this.eventMarkerOffsets_ = {};
     var bounds = /** @type {anychart.math.Rect} */(this.parentBounds());
     for (var i = 0; i < this.groups_.length; i++) {
       var group = this.groups_[i];

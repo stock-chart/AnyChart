@@ -467,6 +467,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       },
       'direction': 'auto',
       'position': 'axis',
+      'seriesId': '0',
       'fieldName': 'value'
     },
     'scroller': {

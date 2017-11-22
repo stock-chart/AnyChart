@@ -94,6 +94,9 @@ anychart.stockModule.eventMarkers.Group = function(plot) {
     ['position',
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW],
+    ['seriesId',
+      anychart.ConsistencyState.EVENT_MARKERS_DATA,
+      anychart.Signal.NEEDS_REDRAW],
     ['fieldName',
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW]
@@ -105,13 +108,6 @@ anychart.stockModule.eventMarkers.Group = function(plot) {
    * @private
    */
   this.partialChains_ = [];
-
-  /**
-   * Shapes array.
-   * @type {Array}
-   * @private
-   */
-  this.shapes_ = [];
 };
 goog.inherits(anychart.stockModule.eventMarkers.Group, anychart.core.VisualBase);
 anychart.core.settings.populateAliases(anychart.core.series.Base, [
@@ -140,10 +136,11 @@ anychart.stockModule.eventMarkers.Group.DESCRIPTORS = (function() {
   anychart.core.settings.createDescriptors(map, [
     anychart.core.settings.descriptors.DIRECTION,
     anychart.core.settings.descriptors.POSITION,
+    anychart.core.settings.descriptors.SERIES_ID,
     anychart.core.settings.descriptors.FIELD_NAME
   ]);
   return map;
-});
+})();
 anychart.core.settings.populate(anychart.stockModule.eventMarkers.Group, anychart.stockModule.eventMarkers.Group.DESCRIPTORS);
 
 
@@ -224,7 +221,7 @@ anychart.stockModule.eventMarkers.Group.DataFormat;
 anychart.stockModule.eventMarkers.Group.prototype.data = function(opt_value) {
   if (goog.isDef(opt_value)) {
     var dateTimePattern, timeOffset, baseDate, locale, data;
-    if (goog.isObject(opt_value)) {
+    if (goog.isObject(opt_value) && !goog.isArray(opt_value)) {
       dateTimePattern = opt_value['dateTimePattern'];
       timeOffset = opt_value['timeOffset'];
       baseDate = opt_value['baseDate'];
@@ -313,6 +310,7 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
+    this.iterator_ = null;
     this.shapeManager_.clearShapes();
   }
 
@@ -322,68 +320,107 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
-    this.shapes_.length = 0;
-
+    var offsets = {};
+    var controller = /** @type {anychart.stockModule.eventMarkers.PlotController} */(this.plot_.eventMarkers());
+    debugger;
+    var iterator = this.getIterator();
+    iterator.reset();
+    while (iterator.advance()) {
+      if (iterator.isFirstInGroup()) {
+        offsets = controller.getEventMarkerOffsets(iterator.getIndex());
+      }
+      this.drawEventMarker_(offsets);
+    }
     this.markConsistent(anychart.ConsistencyState.EVENT_MARKERS_DATA | anychart.ConsistencyState.Z_INDEX);
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.Z_INDEX)) {
 
-    // this.shapeManager_.updateZIndex(/** @type {number} */(this.zIndex()), );
     this.markConsistent(anychart.ConsistencyState.Z_INDEX);
   }
 
-  // if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
-  //   var columns = this.retrieveDataColumns();
-  //   var iterator;
-  //   if (columns) {
-  //     var yValueNames = this.getYValueNames();
-  //     this.prepareMetaMakers(columns, yValueNames);
-  //     if (labelsAreToBeRedrawn)
-  //       this.additionalLabelsInitialize();
-  //     this.startDrawing();
-  //
-  //     iterator = this.getResetIterator();
-  //     // currently this section is actual only for Stock, because
-  //     // Cartesian processes preFirst point as a regular point in iterator
-  //     var point = this.getPreFirstPoint();
-  //     if (point) {
-  //       this.makePointMeta(point, yValueNames, columns);
-  //       this.drawPoint(point, this.getPointState(point.getIndex()));
-  //     }
-  //
-  //     // main points drawing cycle
-  //     iterator.reset();
-  //     while (iterator.advance()) {
-  //       iterator.meta('destinationValue', NaN); //for animation-after-draw purposes.
-  //       state = this.getPointState(iterator.getIndex());
-  //       this.makePointMeta(iterator, yValueNames, columns);
-  //       this.drawPoint(iterator, state);
-  //       for (i = 0; i < elementsDrawersLength; i++)
-  //         elementsDrawers[i].call(this, iterator, state, false);
-  //     }
-  //
-  //     // currently this section is actual only for Stock, because
-  //     // Cartesian processes preFirst point as a regular point in iterator
-  //     point = this.getPostLastPoint();
-  //     if (point) {
-  //       this.makePointMeta(point, yValueNames, columns);
-  //       this.drawPoint(point, this.getPointState(point.getIndex()));
-  //     }
-  //
-  //     this.finalizeDrawing();
-  //   } else {
-  //     iterator = this.getResetIterator();
-  //     while (iterator.advance()) {
-  //       this.makeMissing(iterator, this.getYValueNames(), NaN);
-  //     }
-  //   }
-  //   this.markConsistent(anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.Z_INDEX);
-  // }
+  this.markConsistent(anychart.ConsistencyState.EVENT_MARKERS_CLIP);
 
   this.resumeSignalsDispatching(false);
 
   return this;
+};
+
+
+/**
+ * @param {Object.<number>} offsets
+ * @param {string=} opt_onlyInPosition
+ * @private
+ */
+anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker_ = function(offsets, opt_onlyInPosition) {
+  var xScale = /** @type {anychart.stockModule.scales.Scatter} */(this.plot_.getChart().xScale());
+  var zIndex = /** @type {number} */(this.zIndex());
+  var iterator = this.getIterator();
+  var state = Number(iterator.meta('state')) || anychart.PointState.NORMAL;
+  var type = /** @type {anychart.enums.EventMarkerType} */(this.resolveOption('type', state, iterator, anychart.enums.normalizeEventMarkerType, false));
+  var drawer = this.SINGLE_MARKER_DRAWERS[type];
+  if (drawer) {
+    var position = /** @type {anychart.enums.EventMarkerPosition} */(this.resolveOption('position', 0, iterator, anychart.enums.normalizeEventMarkerPosition, false, undefined, true));
+    var y = NaN;
+    var direction = /** @type {anychart.enums.EventMarkerDirection} */(this.resolveOption('direction', state, iterator, anychart.enums.normalizeEventMarkerDirection, false, undefined, true));
+    var seriesId = '';
+    var fieldName = '';
+    if (position != anychart.enums.EventMarkerPosition.AXIS) {
+      seriesId = /** @type {string} */(this.resolveOption('seriesId', 0, iterator, anychart.core.settings.stringNormalizer, false, undefined, true));
+      var series = this.plot_.getSeries(seriesId) || this.plot_.getSeriesAt(0);
+      var point;
+      if (series && (point = series.getSelectableData().getAtIndex(iterator.getIndex())) && !point.meta('missing')) {
+        fieldName = /** @type {string} */(this.resolveOption('fieldName', 0, iterator, anychart.core.settings.stringNormalizer, false, undefined, true));
+        var yValue = Number(point.get(fieldName));
+        if (position == anychart.enums.EventMarkerPosition.SERIES_POSITIVE && yValue < 0 ||
+            position == anychart.enums.EventMarkerPosition.SERIES_NEGATIVE && yValue > 0) {
+          y = Number(point.meta('zero'));
+          if (isNaN(y)) {
+            series.applyRatioToBounds(series.yScale().transform(0), false);
+          }
+        } else {
+          y = Number(point.meta(fieldName));
+        }
+        if (direction == anychart.enums.EventMarkerDirection.AUTO) {
+          direction = yValue < 0 ? anychart.enums.EventMarkerDirection.DOWN : anychart.enums.EventMarkerDirection.UP;
+        }
+      }
+    }
+    if (isNaN(y)) {
+      y = this.pixelBoundsCache.top + this.pixelBoundsCache.height;
+      position = anychart.enums.EventMarkerPosition.AXIS;
+      direction = anychart.enums.EventMarkerDirection.UP;
+    }
+    var directionIsUp = direction != anychart.enums.EventMarkerDirection.DOWN;
+    var hash = this.getPositionHash_(position, seriesId, fieldName, directionIsUp);
+    if (!opt_onlyInPosition || hash == opt_onlyInPosition) {
+      var offset = offsets[hash] || 0;
+      if (iterator.isFirstInGroup()) {
+        offset += anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('length', state, iterator, anychart.core.settings.numberOrPercentNormalizer, true)), this.pixelBoundsCache.width);
+      }
+      y += directionIsUp ? -offset : offset;
+      var path = /** @type {acgraph.vector.Path} */(this.shapeManager_.getShapesGroup(state, null, zIndex)['path']);
+      var x = Math.round(xScale.transformInternal(iterator.getX(), iterator.getIndex(), 0.5) * this.pixelBoundsCache.width + this.pixelBoundsCache.left);
+      var width = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('width', state, iterator, anychart.core.settings.numberOrPercentNormalizer, false)), this.pixelBoundsCache.width);
+      var height = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('height', state, iterator, anychart.core.settings.numberOrPercentNormalizer, false)), this.pixelBoundsCache.height);
+      drawer(path, x, y, width, height, directionIsUp);
+      offsets[hash] = offset + height;
+    }
+  }
+};
+
+
+/**
+ *
+ * @param {anychart.enums.EventMarkerPosition} position
+ * @param {string} seriesId
+ * @param {string} fieldName
+ * @param {boolean} directionIsUp
+ * @return {string}
+ * @private
+ */
+anychart.stockModule.eventMarkers.Group.prototype.getPositionHash_ = function(position, seriesId, fieldName, directionIsUp) {
+  return position + (position == anychart.enums.EventMarkerPosition.AXIS ? '' : (seriesId + fieldName) + (directionIsUp ? 'U' : 'D'));
 };
 
 
@@ -444,6 +481,10 @@ anychart.stockModule.eventMarkers.Group.prototype.getAutoHatchFill = function() 
  * @return {!anychart.data.IIterator}
  */
 anychart.stockModule.eventMarkers.Group.prototype.getIterator = function() {
+  if (!this.iterator_) {
+    this.iterator_ = this.dataTable_.getIterator.apply(this.dataTable_, this.plot_.getChart().getEventMarkersIteratorParams());
+  }
+  return this.iterator_;
 };
 
 
@@ -463,31 +504,33 @@ anychart.stockModule.eventMarkers.Group.prototype.getHatchFillResolutionContext 
  * @param {anychart.PointState|number} state
  * @param {*} normalPointOverride
  * @param {*} statePointOverride
+ * @param {boolean} connector
  * @return {Array.<*>}
  */
-anychart.stockModule.eventMarkers.Group.prototype.getResolutionChain = function(state, normalPointOverride, statePointOverride) {
+anychart.stockModule.eventMarkers.Group.prototype.getResolutionChain = function(state, normalPointOverride, statePointOverride, connector) {
   state = Math.min(state, anychart.PointState.SELECT);
-  var res = this.partialChains_[state];
+  var index = state * 2 + connector;
+  var res = this.partialChains_[index];
   if (res) {
-    // These magic numbers rely on the fact, that getPartialChain method of PlotController returns exactly 2 items
+    // These magic numbers rely on the fact, that getPartialChain method of PlotController returns exactly 3 items
     if (state) {
-      res[6] = normalPointOverride;
-      res[9] = statePointOverride;
-    } else {
+      res[0] = statePointOverride;
       res[4] = normalPointOverride;
+    } else {
+      res[0] = normalPointOverride;
     }
   } else {
     var controller = /** @type {anychart.stockModule.eventMarkers.PlotController} */(this.plot_.eventMarkers());
-    var normalLowChain = controller.getPartialChain(anychart.PointState.NORMAL, true);
-    var normalHighChain = controller.getPartialChain(anychart.PointState.NORMAL, false);
+    var normalLowChain = controller.getPartialChain(anychart.PointState.NORMAL, true, connector);
+    var normalHighChain = controller.getPartialChain(anychart.PointState.NORMAL, false, connector);
     if (state) {
-      var stateLowChain = controller.getPartialChain(state, true);
-      var stateHighChain = controller.getPartialChain(state, false);
+      var stateLowChain = controller.getPartialChain(state, true, connector);
+      var stateHighChain = controller.getPartialChain(state, false, connector);
       res = goog.array.concat([statePointOverride], stateHighChain, [normalPointOverride], normalHighChain, stateLowChain, normalLowChain);
     } else {
       res = goog.array.concat([normalPointOverride], normalHighChain, normalLowChain);
     }
-    this.partialChains_[state] = res;
+    this.partialChains_[index] = res;
   }
   return res;
 };
@@ -500,15 +543,15 @@ anychart.stockModule.eventMarkers.Group.prototype.getResolutionChain = function(
  * @param {number} state
  * @param {anychart.data.IRowInfo} point
  * @param {Function} normalizer
- * @param {boolean} scrollerSelected
+ * @param {boolean} scrollerSelected - used as a connector option selector.
  * @param {string=} opt_seriesName - series option name if differs from point names.
  * @param {boolean=} opt_ignorePointSettings
  * @return {*}
  */
 anychart.stockModule.eventMarkers.Group.prototype.resolveOption = function(name, state, point, normalizer, scrollerSelected, opt_seriesName, opt_ignorePointSettings) {
   var chain = this.getResolutionChain(state,
-      point.get('normal') || null,
-      (state ? (state == 1) ? point.get('hovered') : point.get('selected') : null) || null);
+      opt_ignorePointSettings ? null : point.get('normal') || null,
+      opt_ignorePointSettings ? null : (state ? (state == 1) ? point.get('hovered') : point.get('selected') : null) || null, scrollerSelected);
   for (var i = 0; i < chain.length; i++) {
     var obj = chain[i];
     if (goog.isObject(obj)) {
@@ -669,9 +712,21 @@ anychart.stockModule.eventMarkers.Group.prototype.serialize = function() {
 
 
 /** @inheritDoc */
+anychart.stockModule.eventMarkers.Group.prototype.setupSpecial = function(isDefault, var_args) {
+  var arg0 = arguments[1];
+  if (goog.isArray(arg0)) {
+    this.data(arg0);
+    return true;
+  }
+  return false;
+};
+
+
+/** @inheritDoc */
 anychart.stockModule.eventMarkers.Group.prototype.setupByJSON = function(config, opt_default) {
   anychart.stockModule.eventMarkers.Group.base(this, 'setupByJSON', config, opt_default);
-
+  if (goog.isDef(config['data']))
+    this.data(config);
   this.normal_.setupInternal(!!opt_default, config);
   this.normal_.setupInternal(!!opt_default, config['normal']);
   this.hovered_.setupInternal(!!opt_default, config['hovered']);

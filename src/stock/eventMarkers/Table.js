@@ -1,4 +1,6 @@
 goog.provide('anychart.stockModule.eventMarkers.Table');
+goog.require('anychart.data.IIterator');
+goog.require('anychart.data.IRowInfo');
 goog.require('anychart.format');
 goog.require('anychart.stockModule.data.TableIterator.ICoIterator');
 goog.require('anychart.utils');
@@ -19,7 +21,8 @@ anychart.stockModule.eventMarkers.Table = function() {
  * @typedef {{
  *    key: number,
  *    index: number,
- *    data: (*|undefined)
+ *    data: (*|undefined),
+ *    meta: (Object|undefined)
  * }}
  */
 anychart.stockModule.eventMarkers.Table.DataItem;
@@ -78,7 +81,7 @@ anychart.stockModule.eventMarkers.Table.prototype.setData = function(value, opt_
 
   /**
    * Cache of the last selection.
-   * @type {{fromIndex: number, toIndex: number, data: Array.<anychart.stockModule.eventMarkers.Table.DataItemAggregate}}}
+    * @type {?{fromIndex: number, toIndex: number, data: Array.<anychart.stockModule.eventMarkers.Table.DataItemAggregate>}}
    * @private
    */
   this.lastDataCache_ = null;
@@ -115,8 +118,9 @@ anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, t
   var toIndex = ~goog.array.binarySearch(this.data_, {key: to, index: -Infinity}, anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR);
 
   var data, count;
-  if (this.lastDataCache_ && this.lastDataCache_.fromIndex == fromIndex && this.lastDataCache_.toIndex == toIndex) {
+  if (this.lastDataCache_ && this.lastDataCache_.fromIndex == fromIndex && this.lastDataCache_.toIndex == toIndex && this.lastDataCache_.pointsCount == coIterator.getRowsCount()) {
     data = this.lastDataCache_.data;
+    count = this.lastDataCache_.count || 0;
   } else {
     data = [];
     count = 0;
@@ -161,7 +165,8 @@ anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, t
       fromIndex: fromIndex,
       toIndex: toIndex,
       data: data,
-      count: count
+      count: count,
+      pointsCount: coIterator.getRowsCount()
     };
   }
 
@@ -174,6 +179,7 @@ anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, t
  * @param {Array.<anychart.stockModule.eventMarkers.Table.DataItem>} data
  * @param {*} row
  * @param {number} index
+ * @return {Array.<anychart.stockModule.eventMarkers.Table.DataItem>}
  * @private
  */
 anychart.stockModule.eventMarkers.Table.prototype.dataReducer_ = function(data, row, index) {
@@ -186,7 +192,8 @@ anychart.stockModule.eventMarkers.Table.prototype.dataReducer_ = function(data, 
     data.push({
       index: index,
       key: +key,
-      data: row
+      data: row,
+      meta: {}
     });
   }
   return data;
@@ -217,6 +224,7 @@ anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR = function(a, b) {
  * @param {Array.<anychart.stockModule.eventMarkers.Table.DataItemAggregate>} data
  * @param {number} count
  * @constructor
+ * @implements {anychart.data.IRowInfo}
  * @implements {anychart.data.IIterator}
  */
 anychart.stockModule.eventMarkers.Table.Iterator = function(data, count) {
@@ -234,16 +242,6 @@ anychart.stockModule.eventMarkers.Table.Iterator = function(data, count) {
    */
   this.rowsCount_ = count;
 
-  /**
-   * Meta holder.
-   * @type {Array}
-   * @private
-   */
-  this.meta_ = [];
-  for (var i = 0; i < count; i++) {
-    this.meta_.push({});
-  }
-
   this.reset();
 };
 
@@ -255,6 +253,7 @@ anychart.stockModule.eventMarkers.Table.Iterator = function(data, count) {
 anychart.stockModule.eventMarkers.Table.Iterator.prototype.reset = function() {
   this.currentIndex_ = this.currentItemIndex_ = -1;
   this.currentSubIndex_ = this.currentItemLength_ = 0;
+  return this;
 };
 
 
@@ -263,10 +262,11 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.reset = function() {
  * @return {boolean}
  */
 anychart.stockModule.eventMarkers.Table.Iterator.prototype.advance = function() {
-  if (++this.currentSubIndex_ > this.currentItemLength_) {
+  if (++this.currentSubIndex_ >= this.currentItemLength_) {
     this.currentSubIndex_ = 0;
-    this.currentItemLength_ = (++this.currentItemIndex_ < this.data_.length) ?
-        this.data_[this.currentIndex_].items.length : 0;
+    this.currentItemIndex_++;
+    this.currentItemLength_ = (this.currentItemIndex_ < this.data_.length) ?
+        this.data_[this.currentItemIndex_].items.length : 0;
   }
   this.currentIndex_++;
   return this.currentSubIndex_ < this.currentItemLength_;
@@ -287,7 +287,7 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.getRowsCount = functi
  * @return {number}
  */
 anychart.stockModule.eventMarkers.Table.Iterator.prototype.getIndex = function() {
-  return this.currentIndex_ < this.data_.length ? this.data_[this.currentIndex_].index : NaN;
+  return this.currentItemIndex_ < this.data_.length ? this.data_[this.currentItemIndex_].index : NaN;
 };
 
 
@@ -296,7 +296,7 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.getIndex = function()
  * @return {number}
  */
 anychart.stockModule.eventMarkers.Table.Iterator.prototype.getX = function() {
-  return this.currentIndex_ < this.data_.length ? this.data_[this.currentIndex_].key : NaN;
+  return this.currentItemIndex_ < this.data_.length ? this.data_[this.currentItemIndex_].key : NaN;
 };
 
 
@@ -313,11 +313,20 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.get = function(name) 
 
 /**
  * Dummy.
- * @param {number} index
+ * @param {number|string} index
  * @return {*}
  */
 anychart.stockModule.eventMarkers.Table.Iterator.prototype.getColumn = function(index) {
   return void 0;
+};
+
+
+/**
+ * Returns true, if current item is the first in group.
+ * @return {boolean}
+ */
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.isFirstInGroup = function() {
+  return !this.currentSubIndex_;
 };
 
 
@@ -328,7 +337,7 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.getColumn = function(
  * @return {*}
  */
 anychart.stockModule.eventMarkers.Table.Iterator.prototype.meta = function(name, opt_value) {
-  var obj = this.meta_[this.currentIndex_];
+  var obj = this.data_[this.currentItemIndex_].items[this.currentSubIndex_].meta;
   if (goog.isDef(opt_value)) {
     obj[name] = opt_value;
     return this;

@@ -940,10 +940,15 @@ anychart.core.settings.descriptors = (function() {
   // connector
   map.EVENT_MARKER_TYPE = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'type', anychart.enums.normalizeEventMarkerType];
   map.LENGTH = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'length', anychart.core.settings.numberNormalizer];
-  
+
+  // event markers
   map.DIRECTION = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'direction', anychart.enums.normalizeEventMarkerDirection];
   map.POSITION = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'position', anychart.enums.normalizeEventMarkerPosition];
+  map.SERIES_ID = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'seriesId', anychart.core.settings.stringNormalizer];
   map.FIELD_NAME = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'fieldName', anychart.core.settings.stringNormalizer];
+  map.WIDTH = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'width', anychart.core.settings.numberOrPercentNormalizer];
+  map.HEIGHT = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'height', anychart.core.settings.numberOrPercentNormalizer];
+
 
   return map;
 })();

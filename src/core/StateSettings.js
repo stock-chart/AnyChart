@@ -296,7 +296,10 @@ anychart.core.StateSettings.PROPERTY_DESCRIPTORS = (function() {
     descriptors.FONT_SIZE,
     // pert tasks
     descriptors.DUMMY_FILL,
-    descriptors.DUMMY_STROKE
+    descriptors.DUMMY_STROKE,
+    // event markers
+    descriptors.WIDTH,
+    descriptors.HEIGHT
   ]);
 
   return map;

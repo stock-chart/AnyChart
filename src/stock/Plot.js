@@ -1222,8 +1222,9 @@ anychart.stockModule.Plot.prototype.invalidateRedrawable = function(doInvalidate
       this.series_[i].invalidate(state);
   }
 
-  if (this.eventMarkers_)
-    this.eventMarkers_.invalidate(anychart.ConsistencyState.APPEARANCE);
+  if (this.eventMarkers_) {
+    this.eventMarkers_.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA);
+  }
 
   if (this.chart_.annotationsModule)
     this.annotations().invalidateAnnotations();
@@ -3196,9 +3197,8 @@ anychart.stockModule.Plot.Dragger.prototype.computeInitialPosition = function() 
 anychart.stockModule.Plot.Dragger.prototype.defaultAction = function(x, y) {
   this.frameRatio_ = x / this.plot_.seriesBounds_.width;
   this.frameAnchor_ = this.anchor_;
-  if (goog.isDef(this.frame_))
-    anychart.window.cancelAnimationFrame(this.frame_);
-  this.frame_ = anychart.window.requestAnimationFrame(this.frameAction_);
+  if (!goog.isDef(this.frame_))
+    this.frame_ = anychart.window.requestAnimationFrame(this.frameAction_);
 };
 
 
