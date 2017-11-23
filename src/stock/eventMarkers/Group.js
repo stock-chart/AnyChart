@@ -37,7 +37,7 @@ anychart.stockModule.eventMarkers.Group = function(plot) {
    * @type {anychart.core.shapeManagers.PerPoint}
    * @private
    */
-  this.shapeManager_ = new anychart.core.shapeManagers.PerPoint(this, [anychart.core.shapeManagers.pathFillStrokeConfig], true);
+  this.shapeManager_ = new anychart.core.shapeManagers.PerPoint(this, [anychart.core.shapeManagers.pathFillStrokeConfig], false);
 
   var descriptorOverride = [anychart.core.settings.descriptors.EVENT_MARKER_TYPE];
 
@@ -157,8 +157,7 @@ anychart.core.settings.populate(anychart.stockModule.eventMarkers.Group, anychar
 anychart.stockModule.eventMarkers.Group.prototype.SUPPORTED_CONSISTENCY_STATES =
     anychart.core.VisualBase.prototype.SUPPORTED_CONSISTENCY_STATES |
     anychart.ConsistencyState.APPEARANCE |
-    anychart.ConsistencyState.EVENT_MARKERS_DATA |
-    anychart.ConsistencyState.EVENT_MARKERS_CLIP;
+    anychart.ConsistencyState.EVENT_MARKERS_DATA;
 
 
 /**
@@ -298,8 +297,7 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
     this.boundsWithoutAxes = this.axesLinesSpace_ ?
         this.axesLinesSpace_.tightenBounds(this.pixelBoundsCache) :
         this.pixelBoundsCache;
-    this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_CLIP |
-        anychart.ConsistencyState.EVENT_MARKERS_DATA);
+    this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
 
@@ -322,7 +320,6 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
   if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
     var offsets = {};
     var controller = /** @type {anychart.stockModule.eventMarkers.PlotController} */(this.plot_.eventMarkers());
-    debugger;
     var iterator = this.getIterator();
     iterator.reset();
     while (iterator.advance()) {
@@ -338,8 +335,6 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
 
     this.markConsistent(anychart.ConsistencyState.Z_INDEX);
   }
-
-  this.markConsistent(anychart.ConsistencyState.EVENT_MARKERS_CLIP);
 
   this.resumeSignalsDispatching(false);
 
@@ -374,15 +369,21 @@ anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker_ = function(of
         var yValue = Number(point.get(fieldName));
         if (position == anychart.enums.EventMarkerPosition.SERIES_POSITIVE && yValue < 0 ||
             position == anychart.enums.EventMarkerPosition.SERIES_NEGATIVE && yValue > 0) {
+          yValue = 0;
           y = Number(point.meta('zero'));
           if (isNaN(y)) {
-            series.applyRatioToBounds(series.yScale().transform(0), false);
+            y = series.applyRatioToBounds(series.yScale().transform(0), false);
           }
         } else {
           y = Number(point.meta(fieldName));
+          if (isNaN(y) && !isNaN(yValue)) {
+            y = series.applyRatioToBounds(series.yScale().transform(yValue), false);
+          }
         }
         if (direction == anychart.enums.EventMarkerDirection.AUTO) {
-          direction = yValue < 0 ? anychart.enums.EventMarkerDirection.DOWN : anychart.enums.EventMarkerDirection.UP;
+          direction = (yValue < 0 || !yValue && position == anychart.enums.EventMarkerPosition.SERIES_NEGATIVE) ?
+              anychart.enums.EventMarkerDirection.DOWN :
+              anychart.enums.EventMarkerDirection.UP;
         }
       }
     }
@@ -394,13 +395,26 @@ anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker_ = function(of
     var directionIsUp = direction != anychart.enums.EventMarkerDirection.DOWN;
     var hash = this.getPositionHash_(position, seriesId, fieldName, directionIsUp);
     if (!opt_onlyInPosition || hash == opt_onlyInPosition) {
+      var x = Math.round(xScale.transformInternal(iterator.getX(), iterator.getIndex(), 0.5) * this.pixelBoundsCache.width + this.pixelBoundsCache.left);
       var offset = offsets[hash] || 0;
-      if (iterator.isFirstInGroup()) {
-        offset += anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('length', state, iterator, anychart.core.settings.numberOrPercentNormalizer, true)), this.pixelBoundsCache.width);
+      var connectorLen = 0;
+      if (!offset) {
+        connectorLen = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('length', state, iterator, anychart.core.settings.numberOrPercentNormalizer, true)), this.pixelBoundsCache.width);
+        offset += connectorLen;
       }
       y += directionIsUp ? -offset : offset;
+      var tag = {
+        'group': this,
+        'groupIndex': iterator.getGroupIndex(),
+        'subIndex': iterator.getSubIndex()
+      };
+      var connectorStroke = /** @type {acgraph.vector.Stroke} */(this.resolveOption('stroke', state, iterator, anychart.core.settings.strokeSimpleNormalizer, true));
+      if (connectorLen && connectorStroke) {
+        var connectorPath = this.plot_.eventMarkers().drawConnector(x, y, y - (directionIsUp ? -connectorLen : connectorLen), connectorStroke);
+        connectorPath.tag = tag;
+      }
       var path = /** @type {acgraph.vector.Path} */(this.shapeManager_.getShapesGroup(state, null, zIndex)['path']);
-      var x = Math.round(xScale.transformInternal(iterator.getX(), iterator.getIndex(), 0.5) * this.pixelBoundsCache.width + this.pixelBoundsCache.left);
+      path.tag = tag;
       var width = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('width', state, iterator, anychart.core.settings.numberOrPercentNormalizer, false)), this.pixelBoundsCache.width);
       var height = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('height', state, iterator, anychart.core.settings.numberOrPercentNormalizer, false)), this.pixelBoundsCache.height);
       drawer(path, x, y, width, height, directionIsUp);
@@ -515,7 +529,7 @@ anychart.stockModule.eventMarkers.Group.prototype.getResolutionChain = function(
     // These magic numbers rely on the fact, that getPartialChain method of PlotController returns exactly 3 items
     if (state) {
       res[0] = statePointOverride;
-      res[4] = normalPointOverride;
+      res[6] = normalPointOverride;
     } else {
       res[0] = normalPointOverride;
     }
@@ -523,12 +537,34 @@ anychart.stockModule.eventMarkers.Group.prototype.getResolutionChain = function(
     var controller = /** @type {anychart.stockModule.eventMarkers.PlotController} */(this.plot_.eventMarkers());
     var normalLowChain = controller.getPartialChain(anychart.PointState.NORMAL, true, connector);
     var normalHighChain = controller.getPartialChain(anychart.PointState.NORMAL, false, connector);
+    var normalInstance = connector ? this.normal_.connector() : this.normal_;
     if (state) {
       var stateLowChain = controller.getPartialChain(state, true, connector);
       var stateHighChain = controller.getPartialChain(state, false, connector);
-      res = goog.array.concat([statePointOverride], stateHighChain, [normalPointOverride], normalHighChain, stateLowChain, normalLowChain);
+      var stateSettings = state == anychart.PointState.HOVER ? this.hovered_ : this.selected_;
+      stateSettings = connector ? stateSettings.connector() : stateSettings;
+      res = goog.array.concat(
+          [statePointOverride], // 0 index - state point override
+          stateSettings.ownSettings, // 1
+          stateHighChain, // 2, 3, 4, 5
+          [normalPointOverride], // 6 - normal point override
+          normalInstance.ownSettings,
+          connector ? null : this.ownSettings,
+          normalHighChain,
+          stateSettings.themeSettings,
+          stateLowChain,
+          normalInstance.themeSettings,
+          connector ? null : this.themeSettings,
+          normalLowChain);
     } else {
-      res = goog.array.concat([normalPointOverride], normalHighChain, normalLowChain);
+      res = goog.array.concat(
+          [normalPointOverride], // 0 index - state point override
+          normalInstance.ownSettings,
+          connector ? null : this.ownSettings,
+          normalHighChain,
+          normalInstance.themeSettings,
+          connector ? null : this.themeSettings,
+          normalLowChain);
     }
     this.partialChains_[index] = res;
   }
@@ -726,7 +762,7 @@ anychart.stockModule.eventMarkers.Group.prototype.setupSpecial = function(isDefa
 anychart.stockModule.eventMarkers.Group.prototype.setupByJSON = function(config, opt_default) {
   anychart.stockModule.eventMarkers.Group.base(this, 'setupByJSON', config, opt_default);
   if (goog.isDef(config['data']))
-    this.data(config);
+    this.data(/** @type {anychart.stockModule.eventMarkers.Group.DataFormat} */(config));
   this.normal_.setupInternal(!!opt_default, config);
   this.normal_.setupInternal(!!opt_default, config['normal']);
   this.hovered_.setupInternal(!!opt_default, config['hovered']);

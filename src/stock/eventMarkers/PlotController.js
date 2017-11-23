@@ -104,6 +104,8 @@ anychart.stockModule.eventMarkers.PlotController = function(plot, chartControlle
    * @private
    */
   this.partialChains_ = [];
+
+  this.bindHandlersToComponent(this);
 };
 goog.inherits(anychart.stockModule.eventMarkers.PlotController, anychart.core.VisualBase);
 anychart.core.settings.populate(anychart.stockModule.eventMarkers.PlotController, anychart.stockModule.eventMarkers.Group.DESCRIPTORS);
@@ -132,6 +134,20 @@ anychart.stockModule.eventMarkers.PlotController.prototype.SUPPORTED_CONSISTENCY
  * @const {number}
  */
 anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MULTIPLIER = 0.001;
+
+
+/**
+ * Z index for event markers inside a plot controller group.
+ * @const {number}
+ */
+anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MARKERS = 1;
+
+
+/**
+ * Z index for connectors inside a plot controller group.
+ * @const {number}
+ */
+anychart.stockModule.eventMarkers.PlotController.Z_INDEX_CONNECTORS = 0;
 
 
 /**
@@ -178,7 +194,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.selected = function(o
 
 /**
  * Returns partial resolution chain for passed state and priority.
- * Always returns 2 elements.
+ * Always returns 4 elements.
  * @param {anychart.PointState|number} state
  * @param {boolean} low
  * @param {boolean=} opt_forConnector
@@ -205,9 +221,9 @@ anychart.stockModule.eventMarkers.PlotController.prototype.getPartialChain = fun
       chartState = chartState.connector();
     }
     if (low) {
-      res = [(state || opt_forConnector) ? null : this.themeSettings, plotState.themeSettings, chartState.themeSettings];
+      res = [(state || opt_forConnector) ? null : this.themeSettings, (state || opt_forConnector) ? null : controller.themeSettings, plotState.themeSettings, chartState.themeSettings];
     } else {
-      res = [(state || opt_forConnector) ? null : this.ownSettings, plotState.ownSettings, chartState.ownSettings];
+      res = [(state || opt_forConnector) ? null : this.ownSettings, (state || opt_forConnector) ? null : controller.ownSettings, plotState.ownSettings, chartState.ownSettings];
     }
     this.partialChains_[index] = res;
   }
@@ -218,7 +234,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.getPartialChain = fun
 
 /**
  * Returns an event markers offsets object for given index.
- * @param index
+ * @param {number} index
  * @return {Object.<number>}
  */
 anychart.stockModule.eventMarkers.PlotController.prototype.getEventMarkerOffsets = function(index) {
@@ -250,7 +266,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.group = function(opt_
   var group = this.groups_[index];
   if (!group) {
     group = new anychart.stockModule.eventMarkers.Group(this.plot_);
-    group.setAutoZIndex(/** @type {number} */(this.zIndex()) + this.groups_.length * anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MULTIPLIER);
+    group.setAutoZIndex(anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MARKERS + this.groups_.length * anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MULTIPLIER);
     this.groups_[index] = group;
     group.listenSignals(this.onSignal_, this);
     this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA, anychart.Signal.NEEDS_REDRAW);
@@ -288,9 +304,12 @@ anychart.stockModule.eventMarkers.PlotController.prototype.draw = function() {
 
   if (!this.rootLayer_) {
     this.rootLayer_ = acgraph.layer();
+    this.bindHandlersToGraphics(this.rootLayer_);
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
+    this.pixelBoundsCache = /** @type {anychart.math.Rect} */(this.parentBounds());
+    this.rootLayer_.clip(this.pixelBoundsCache);
     this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
@@ -298,11 +317,11 @@ anychart.stockModule.eventMarkers.PlotController.prototype.draw = function() {
   if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
     this.partialChains_.length = 0;
     this.eventMarkerOffsets_ = {};
-    var bounds = /** @type {anychart.math.Rect} */(this.parentBounds());
+    this.clearConnectors_();
     for (var i = 0; i < this.groups_.length; i++) {
       var group = this.groups_[i];
       group.suspendSignalsDispatching();
-      group.parentBounds(bounds);
+      group.parentBounds(this.pixelBoundsCache);
       group.container(this.rootLayer_);
       group.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA);
       group.draw();
@@ -332,6 +351,82 @@ anychart.stockModule.eventMarkers.PlotController.prototype.draw = function() {
  */
 anychart.stockModule.eventMarkers.PlotController.prototype.onSignal_ = function(event) {
   this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA, anychart.Signal.NEEDS_REDRAW);
+};
+
+
+/**
+ * Clears connector paths.
+ * @private
+ */
+anychart.stockModule.eventMarkers.PlotController.prototype.clearConnectors_ = function() {
+  if (!this.pathsPool_)
+    this.pathsPool_ = [];
+  var reversingZero = this.pathsPool_.length;
+  if (this.connectorPaths_) {
+    for (var hash in this.connectorPaths_) {
+      var path = this.connectorPaths_[hash];
+      path.clear();
+      path.parent(null);
+      this.pathsPool_.push(path);
+      delete this.connectorPaths_[hash];
+    }
+  } else
+    this.connectorPaths_ = {};
+  // this reversion is made to save the order of elements in the root layer if possible.
+  for (var i = ~~((this.connectorPaths_.length - reversingZero) / 2), j = 0; i--; j++) {
+    var tmp = this.connectorPaths_[i + reversingZero];
+    this.connectorPaths_[i + reversingZero] = this.connectorPaths_[j + reversingZero];
+    this.connectorPaths_[j + reversingZero] = tmp;
+  }
+};
+
+
+/**
+ * Returns connector path.
+ * @param {acgraph.vector.Stroke} stroke
+ * @return {acgraph.vector.Path}
+ * @private
+ */
+anychart.stockModule.eventMarkers.PlotController.prototype.getConnectorPath_ = function(stroke) {
+  var hash = anychart.color.serialize(stroke);
+  if (hash in this.connectorPaths_)
+    return this.connectorPaths_[hash];
+  else {
+    var path = this.pathsPool_.length ?
+        /** @type {!acgraph.vector.Path} */(this.pathsPool_.pop()) :
+        acgraph.path();
+    this.rootLayer_.addChild(path);
+    if (goog.isObject(stroke) && ('keys' in stroke) && !goog.isObject(stroke['mode'])) {
+      stroke = /** @type {acgraph.vector.Stroke} */(anychart.utils.recursiveClone(stroke));
+      stroke['mode'] = this.pixelBoundsCache;
+    }
+    path.stroke(stroke);
+    path.fill(null);
+    path.zIndex(anychart.stockModule.eventMarkers.PlotController.Z_INDEX_CONNECTORS);
+    this.connectorPaths_[hash] = path;
+    return path;
+  }
+};
+
+
+/**
+ * Draws a connector by passed coordinates with passed stroke. Intended to be called by Groups draw().
+ * @param {number} x
+ * @param {number} y1
+ * @param {number} y2
+ * @param {acgraph.vector.Stroke} stroke
+ * @return {acgraph.vector.Path}
+ */
+anychart.stockModule.eventMarkers.PlotController.prototype.drawConnector = function(x, y1, y2, stroke) {
+  var path = this.getConnectorPath_(stroke);
+  path.moveTo(x, y1).lineTo(x, y2);
+  return path;
+};
+
+
+/** @inheritDoc */
+anychart.stockModule.eventMarkers.PlotController.prototype.handleMouseEvent = function(e) {
+  console.log(e.type, e);
 };
 
 

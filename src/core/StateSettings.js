@@ -38,8 +38,13 @@ anychart.core.StateSettings = function(stateHolder, descriptorsMeta, stateType, 
   this.stateType = stateType;
 
   if (goog.isDef(opt_descriptorsOverride)) {
-    var diff = anychart.core.settings.createDescriptors(anychart.core.StateSettings.PROPERTY_DESCRIPTORS, opt_descriptorsOverride);
-    anychart.core.settings.populate(anychart.core.StateSettings, diff, true);
+    var newDescriptors = {};
+    for (var i in this.PROPERTY_DESCRIPTORS) {
+      newDescriptors[i] = this.PROPERTY_DESCRIPTORS[i];
+    }
+    var diff = anychart.core.settings.createDescriptors(newDescriptors, opt_descriptorsOverride);
+    this.PROPERTY_DESCRIPTORS = newDescriptors;
+    anychart.core.settings.populate(this, diff, true);
   }
 };
 goog.inherits(anychart.core.StateSettings, anychart.core.Base);
@@ -251,7 +256,7 @@ anychart.core.StateSettings.prototype.resolutionChainCache = function(opt_value)
 /**
  * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
  */
-anychart.core.StateSettings.PROPERTY_DESCRIPTORS = (function() {
+anychart.core.StateSettings.prototype.PROPERTY_DESCRIPTORS = (function() {
   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
   var map = {};
   /**
@@ -304,7 +309,7 @@ anychart.core.StateSettings.PROPERTY_DESCRIPTORS = (function() {
 
   return map;
 })();
-anychart.core.settings.populate(anychart.core.StateSettings, anychart.core.StateSettings.PROPERTY_DESCRIPTORS);
+anychart.core.settings.populate(anychart.core.StateSettings, anychart.core.StateSettings.prototype.PROPERTY_DESCRIPTORS);
 
 
 //endregion
@@ -518,7 +523,7 @@ anychart.core.StateSettings.prototype.selected = function(opt_value) {
 /** @inheritDoc */
 anychart.core.StateSettings.prototype.serialize = function() {
   var json = anychart.core.StateSettings.base(this, 'serialize');
-  anychart.core.settings.serialize(this, anychart.core.StateSettings.PROPERTY_DESCRIPTORS, json, 'State settings', this.descriptorsMeta);
+  anychart.core.settings.serialize(this, this.PROPERTY_DESCRIPTORS, json, 'State settings', this.descriptorsMeta);
 
   if (this.descriptorsMeta['labels'])
     json['labels'] = this.labels().serialize();
@@ -560,7 +565,7 @@ anychart.core.StateSettings.prototype.setEnabledTrue = function(config) {
 /** @inheritDoc */
 anychart.core.StateSettings.prototype.setupByJSON = function(config, opt_default) {
   anychart.core.StateSettings.base(this, 'setupByJSON', config, opt_default);
-  anychart.core.settings.deserialize(this, anychart.core.StateSettings.PROPERTY_DESCRIPTORS, config);
+  anychart.core.settings.deserialize(this, this.PROPERTY_DESCRIPTORS, config);
 
   if (goog.isDef(this.descriptorsMeta['labels'])) {
     this.setEnabledTrue(config['labels']);

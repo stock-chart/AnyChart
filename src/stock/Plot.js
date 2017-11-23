@@ -259,13 +259,6 @@ anychart.stockModule.Plot.ZINDEX_LINE_SERIES = 31;
 
 
 /**
- * Event markers Z index.
- * @type {number}
- */
-anychart.stockModule.Plot.ZINDEX_EVENT_MARKERS = 34;
-
-
-/**
  * Axis z-index in chart root layer.
  * @type {number}
  */
@@ -277,6 +270,20 @@ anychart.stockModule.Plot.ZINDEX_AXIS = 35;
  * @type {number}
  */
 anychart.stockModule.Plot.ZINDEX_PRICE_INDICATOR = 150;
+
+
+/**
+ * Grid z-index in chart root layer.
+ * @type {number}
+ */
+anychart.stockModule.Plot.ZINDEX_EVENTS_INTERCEPTOR = 199;
+
+
+/**
+ * Event markers Z index.
+ * @type {number}
+ */
+anychart.stockModule.Plot.ZINDEX_EVENT_MARKERS = 200;
 
 
 /**
@@ -1900,7 +1907,7 @@ anychart.stockModule.Plot.prototype.ensureVisualReady_ = function() {
     this.rootLayer_ = acgraph.layer();
     this.bindHandlersToGraphics(this.rootLayer_);
     this.eventsInterceptor_ = this.rootLayer_.rect();
-    this.eventsInterceptor_.zIndex(199);
+    this.eventsInterceptor_.zIndex(anychart.stockModule.Plot.ZINDEX_EVENTS_INTERCEPTOR);
     //this.eventsInterceptor_.cursor(acgraph.vector.Cursor.EW_RESIZE);
     this.eventsInterceptor_.fill(anychart.color.TRANSPARENT_HANDLER);
     this.eventsInterceptor_.stroke(null);
@@ -2440,6 +2447,7 @@ anychart.stockModule.Plot.prototype.eventMarkers = function(opt_value) {
   if (!this.eventMarkers_) {
     this.eventMarkers_ = new anychart.stockModule.eventMarkers.PlotController(this, /** @type {anychart.stockModule.eventMarkers.ChartController} */(this.chart_.eventMarkers()));
     this.eventMarkers_.listenSignals(this.eventMarkersSignalsHandler_, this);
+    this.eventMarkers_.setParentEventTarget(this);
   }
 
   if (goog.isDef(opt_value)) {

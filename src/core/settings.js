@@ -602,6 +602,16 @@ anychart.core.settings.strokeNormalizer = function(args) {
 
 
 /**
+ * Simple normalizer for stroke.
+ * @param {*} arg
+ * @return {acgraph.vector.Stroke}
+ */
+anychart.core.settings.strokeSimpleNormalizer = function(arg) {
+  return acgraph.vector.normalizeStroke(/** @type {acgraph.vector.Stroke|acgraph.vector.ColoredFill|string|null|undefined} */(arg));
+};
+
+
+/**
  * Array normalizer for stroke.
  * @param {Array.<*>} args
  * @return {*}

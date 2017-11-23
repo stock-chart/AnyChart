@@ -356,7 +356,6 @@ anychart.ConsistencyState = {
   QUARTER_LABELS: 1 << 8,
   //----------------------------- EVENT MARKERS (VB) -----------------------------
   EVENT_MARKERS_DATA: 1 << 6,
-  EVENT_MARKERS_CLIP: 1 << 7,
   /**
    * Combination of all states.
    */
