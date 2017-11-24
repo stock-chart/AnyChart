@@ -489,7 +489,7 @@ anychart.scales.ScatterTicks.prototype.setupLogarithmic_ = function(min, max, lo
             anychart.utils.alignRight(currentInterval, val5),
             anychart.utils.alignRight(currentInterval, val6),
             anychart.utils.alignRight(currentInterval, val7));
-        currentInterval = Math.max(currentInterval, 1e-7);
+        currentInterval = Math.max(currentInterval, 1e-7) || currentInterval;
         var tmpDiff1 = anychart.math.specialRound(anychart.utils.alignLeft(min, currentInterval, this.base_)) - min;
         tmpDiff1 *= tmpDiff1;
         var tmpDiff2 = anychart.math.specialRound(anychart.utils.alignRight(max, currentInterval, this.base_)) - max;
@@ -501,9 +501,9 @@ anychart.scales.ScatterTicks.prototype.setupLogarithmic_ = function(min, max, lo
         }
       }
     }
-    interval = Math.max(interval, 1e-7);
+    var precision = anychart.math.getPrecision(interval);
 
-    var desiredMin = anychart.math.specialRound(anychart.utils.alignLeft(min, interval, this.base_));
+    var desiredMin = anychart.math.specialRound(anychart.utils.alignLeft(min, interval, this.base_, precision));
     if (opt_canModifyMin) {
       min = desiredMin;
       result[0] = anychart.math.pow(logBase, desiredMin);
@@ -511,14 +511,14 @@ anychart.scales.ScatterTicks.prototype.setupLogarithmic_ = function(min, max, lo
       ticks.push(anychart.math.pow(logBase, min));
       result[2] = anychart.math.pow(logBase, desiredMin);
     }
-    var desiredMax = anychart.math.specialRound(anychart.utils.alignRight(max, interval, this.base_));
+    var desiredMax = anychart.math.specialRound(anychart.utils.alignRight(max, interval, this.base_, precision));
     if (opt_canModifyMax) {
       max = desiredMax;
       result[1] = anychart.math.pow(logBase, desiredMax);
     } else if (desiredMax - max > 1e-7) {
       result[3] = anychart.math.pow(logBase, desiredMax);
     }
-    for (var j = anychart.math.specialRound(anychart.utils.alignRight(min, interval, this.base_));
+    for (var j = anychart.math.specialRound(anychart.utils.alignRight(min, interval, this.base_, precision));
          j <= max;
          j = anychart.math.specialRound(j + interval)) {
       ticks.push(anychart.math.pow(logBase, j));
