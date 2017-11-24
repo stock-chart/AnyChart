@@ -168,7 +168,7 @@ anychart.core.defaultTheme.VALUE_TOKEN_DECIMALS_COUNT_2 = '{%Value}{decimalsCoun
 /**
  * @const {string}
  */
-anychart.core.defaultTheme.VALUE_TOKEN_DECIMALS_COUNT_10 = '{%Value}{decimalsCount:10}';
+anychart.core.defaultTheme.VALUE_TOKEN_DECIMALS_COUNT_10 = '{%Value}';
 
 
 /**
