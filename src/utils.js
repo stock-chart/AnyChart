@@ -558,7 +558,7 @@ anychart.utils.isRightAnchor = function(anchor) {
  * @param {number} value Value to align.
  * @param {number} interval Value to align by.
  * @param {number=} opt_base Optional base value to calculate from. Defaults to 0.
- * @param {number=} opt_precision - Precision. Defaults to 7.
+ * @param {number=} opt_precision - Precision. Defaults to 7, minimal value is 7.
  * @return {number} Aligned value.
  */
 anychart.utils.alignLeft = function(value, interval, opt_base, opt_precision) {
@@ -578,7 +578,7 @@ anychart.utils.alignLeft = function(value, interval, opt_base, opt_precision) {
  * @param {number} value Value to align.
  * @param {number} interval Value to align by.
  * @param {number=} opt_base Optional base value to calculate from. Defaults to 0.
- * @param {number=} opt_precision - Precision. Defaults to 7.
+ * @param {number=} opt_precision - Precision. Defaults to 7, minimal value is 7.
  * @return {number} Aligned value.
  */
 anychart.utils.alignRight = function(value, interval, opt_base, opt_precision) {
