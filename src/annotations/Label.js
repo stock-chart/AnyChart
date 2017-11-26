@@ -14,9 +14,19 @@ goog.require('anychart.enums');
  */
 anychart.annotationsModule.Label = function(chartController) {
   anychart.annotationsModule.Label.base(this, 'constructor', chartController);
+
+  anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, anychart.annotationsModule.X_ANCHOR_DESCRIPTORS_META);
+  anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, anychart.annotationsModule.VALUE_ANCHOR_DESCRIPTORS_META);
+  anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, anychart.annotationsModule.LABEL_DESCRIPTORS_META);
+
+  anychart.core.settings.createTextPropertiesDescriptorsMeta(this.descriptorsMeta,
+      anychart.ConsistencyState.ANNOTATIONS_SHAPES,
+      anychart.ConsistencyState.APPEARANCE,
+      anychart.Signal.NEEDS_REDRAW,
+      anychart.Signal.NEEDS_REDRAW);
 };
 goog.inherits(anychart.annotationsModule.Label, anychart.annotationsModule.Base);
-//anychart.core.settings.populateAliases(anychart.annotationsModule.Label, ['stroke', 'fill', 'hatchFill'], 'normal');
+//anychart.core.settings.populateAliases(anychart.annotationsModule.Label, ['width', 'height'], 'normal');
 anychart.core.settings.populate(anychart.annotationsModule.Label, anychart.annotationsModule.X_ANCHOR_DESCRIPTORS);
 anychart.core.settings.populate(anychart.annotationsModule.Label, anychart.annotationsModule.VALUE_ANCHOR_DESCRIPTORS);
 anychart.core.settings.populate(anychart.annotationsModule.Label, anychart.annotationsModule.LABEL_DESCRIPTORS);
@@ -44,7 +54,7 @@ anychart.annotationsModule.Label.prototype.SUPPORTED_ANCHORS = anychart.annotati
 //region State Settings
 /** @inheritDoc */
 anychart.annotationsModule.Label.prototype.getNormalDescriptorsMeta = function() {
-  return [];
+  return [];//anychart.annotationsModule.LABEL_DESCRIPTORS_STATE_META;
 };
 
 
@@ -58,13 +68,34 @@ anychart.annotationsModule.Label.prototype.getNormalDescriptorsMeta = function()
 /** @inheritDoc */
 anychart.annotationsModule.Label.prototype.ensureCreated = function() {
   anychart.annotationsModule.Label.base(this, 'ensureCreated');
-  //
+  if (!this.textElement_) {
+    this.textElement_ = acgraph.text();
+    this.textElement_.text('hello world');
+    this.textElement_.color('black');
+    this.textElement_.fontSize(30);
+    this.textElement_.applyTextSettings();
+
+    this.textElement_.parent(this.rootLayer);
+    this.textElement_.zIndex(anychart.annotationsModule.Base.LABELS_ZINDEX);
+  }
 };
 
 
 /** @inheritDoc */
 anychart.annotationsModule.Label.prototype.drawOnePointShape = function(x, y) {
-  //
+  var anchor = /** @type {anychart.enums.Anchor} */(this.getOption('anchor'));
+  var bounds = this.textElement_.getBounds();
+  var position = {x: x, y: y};
+  var diff = anychart.utils.getCoordinateByAnchor(anychart.math.rect(0, 0, bounds.width, bounds.height), anchor);
+  position.x -= diff.x;
+  position.y -= diff.y;
+
+  anychart.utils.applyOffsetByAnchor(position, anchor,
+      /** @type {number} */(this.getOption('offsetX') || 0),
+      /** @type {number} */(this.getOption('offsetY') || 0));
+
+  this.textElement_.x(position.x);
+  this.textElement_.y(position.y);
 };
 
 
@@ -105,6 +136,7 @@ anychart.annotationsModule.Label.prototype.setupByJSON = function(config, opt_de
 
 /** @inheritDoc */
 anychart.annotationsModule.Label.prototype.disposeInternal = function() {
+  goog.dispose(this.textElement_);
   anychart.annotationsModule.Label.base(this, 'disposeInternal');
 };
 //endregion

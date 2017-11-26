@@ -174,6 +174,11 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme']['chart'], {
       'offsetX': 0,
       'offsetY': 0
     },
-    'label': {}
+    'label': {
+      'anchor': 'center',
+      'text': 'Label',
+      'offsetX': 0,
+      'offsetY': 0
+    }
   }
 });

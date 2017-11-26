@@ -299,7 +299,13 @@ anychart.annotationsModule.MARKER_DESCRIPTORS_META = (function() {
  */
 anychart.annotationsModule.LABEL_DESCRIPTORS = (function() {
   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
-  var map = {};
+  var map = anychart.core.settings.createTextPropertiesDescriptors();
+
+  anychart.core.settings.createDescriptor(
+      map,
+      anychart.enums.PropertyHandlerType.SINGLE_ARG,
+      'text',
+      anychart.core.settings.stringNormalizer);
 
   anychart.core.settings.createDescriptor(
       map,
@@ -319,6 +325,18 @@ anychart.annotationsModule.LABEL_DESCRIPTORS = (function() {
       'offsetY',
       anychart.core.settings.numberNormalizer);
 
+  anychart.core.settings.createDescriptor(
+      map,
+      anychart.enums.PropertyHandlerType.SINGLE_ARG,
+      'width',
+      anychart.core.settings.numberNormalizer);
+
+  anychart.core.settings.createDescriptor(
+      map,
+      anychart.enums.PropertyHandlerType.SINGLE_ARG,
+      'height',
+      anychart.core.settings.numberNormalizer);
+
   return map;
 })();
 
@@ -329,9 +347,12 @@ anychart.annotationsModule.LABEL_DESCRIPTORS = (function() {
  */
 anychart.annotationsModule.LABEL_DESCRIPTORS_META = (function() {
   return [
+    ['text', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW],
     ['anchor', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW],
     ['offsetX', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW],
-    ['offsetY', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW]
+    ['offsetY', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW],
+    ['width', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW],
+    ['height', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW]
   ];
 })();
 
@@ -391,7 +412,7 @@ anychart.annotationsModule.FILL_DESCRIPTORS_META = (function() {
 
 
 //endregion
-//region --- MARKERS
+//region --- MARKER
 /**
  * Properties meta.
  * @type {!Array.<Array>}
@@ -399,6 +420,21 @@ anychart.annotationsModule.FILL_DESCRIPTORS_META = (function() {
 anychart.annotationsModule.MARKER_DESCRIPTORS_STATE_META = (function() {
   return [
     ['size', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW]
+  ];
+})();
+
+
+//endregion
+//region --- LABEL
+/**
+ * Properties meta.
+ * @type {!Array.<Array>}
+ */
+anychart.annotationsModule.LABEL_DESCRIPTORS_STATE_META = (function() {
+  //TODO(Anton Kagakin): add other descriptors
+  return [
+    ['width', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW],
+    ['height', anychart.ConsistencyState.ANNOTATIONS_SHAPES, anychart.Signal.NEEDS_REDRAW]
   ];
 })();
 
