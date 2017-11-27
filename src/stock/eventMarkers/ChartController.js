@@ -226,7 +226,7 @@ anychart.stockModule.eventMarkers.ChartController.prototype.disposeInternal = fu
 //endregion
 //exports
 (function() {
-  var proto = anychart.stockModule.eventMarkers.PlotController.prototype;
+  var proto = anychart.stockModule.eventMarkers.ChartController.prototype;
   proto['group'] = proto.group;
   proto['data'] = proto.data;
   proto['normal'] = proto.normal;

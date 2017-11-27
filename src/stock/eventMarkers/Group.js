@@ -457,7 +457,7 @@ anychart.stockModule.eventMarkers.Group.prototype.isDiscreteBased = function() {
  * @return {boolean}
  */
 anychart.stockModule.eventMarkers.Group.prototype.supportsPointSettings = function() {
-  return false;
+  return true;
 };
 
 
@@ -524,6 +524,12 @@ anychart.stockModule.eventMarkers.Group.prototype.getHatchFillResolutionContext 
 anychart.stockModule.eventMarkers.Group.prototype.getResolutionChain = function(state, normalPointOverride, statePointOverride, connector) {
   state = Math.min(state, anychart.PointState.SELECT);
   var index = state * 2 + connector;
+  if (connector) {
+    if (goog.isObject(normalPointOverride))
+      normalPointOverride = normalPointOverride['connector'];
+    if (goog.isObject(statePointOverride))
+      statePointOverride = statePointOverride['connector'];
+  }
   var res = this.partialChains_[index];
   if (res) {
     // These magic numbers rely on the fact, that getPartialChain method of PlotController returns exactly 3 items
@@ -585,9 +591,19 @@ anychart.stockModule.eventMarkers.Group.prototype.getResolutionChain = function(
  * @return {*}
  */
 anychart.stockModule.eventMarkers.Group.prototype.resolveOption = function(name, state, point, normalizer, scrollerSelected, opt_seriesName, opt_ignorePointSettings) {
-  var chain = this.getResolutionChain(state,
-      opt_ignorePointSettings ? null : point.get('normal') || null,
-      opt_ignorePointSettings ? null : (state ? (state == 1) ? point.get('hovered') : point.get('selected') : null) || null, scrollerSelected);
+  var normalSettings, stateSettings;
+  if (opt_ignorePointSettings) {
+    normalSettings = stateSettings = null;
+  } else {
+    normalSettings = point.get('normal');
+    if (!goog.isDef(normalSettings)) {
+      var propName = scrollerSelected ? 'connector' : name;
+      normalSettings = {};
+      normalSettings[propName] = point.get(propName);
+    }
+    stateSettings = state ? (state == 1) ? point.get('hovered') : point.get('selected') : null;
+  }
+  var chain = this.getResolutionChain(state, normalSettings, stateSettings, scrollerSelected);
   for (var i = 0; i < chain.length; i++) {
     var obj = chain[i];
     if (goog.isObject(obj)) {
@@ -784,4 +800,7 @@ anychart.stockModule.eventMarkers.Group.prototype.disposeInternal = function() {
 (function() {
   var proto = anychart.stockModule.eventMarkers.Group.prototype;
   proto['data'] = proto.data;
+  proto['normal'] = proto.normal;
+  proto['hovered'] = proto.hovered;
+  proto['selected'] = proto.selected;
 })();

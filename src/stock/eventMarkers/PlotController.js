@@ -388,7 +388,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.clearConnectors_ = fu
  * @private
  */
 anychart.stockModule.eventMarkers.PlotController.prototype.getConnectorPath_ = function(stroke) {
-  var hash = anychart.color.serialize(stroke);
+  var hash = anychart.color.hash(stroke);
   if (hash in this.connectorPaths_)
     return this.connectorPaths_[hash];
   else {
