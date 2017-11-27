@@ -538,12 +538,12 @@ anychart.cartesian3dModule.Chart.prototype.createTextMarkerInstance = function()
 /**
  * Set zIndex for point.
  * @param {anychart.core.series.Cartesian} series
+ * @param {number} directIndex
  * @private
  */
-anychart.cartesian3dModule.Chart.prototype.setSeriesPointZIndex_ = function(series) {
-  var seriesIndex = series.getIndex();
-  var inc = seriesIndex * anychart.core.series.Base.ZINDEX_INCREMENT_MULTIPLIER;
+anychart.cartesian3dModule.Chart.prototype.setSeriesPointZIndex_ = function(series, directIndex) {
   var iterator = series.getIterator();
+  var inc = directIndex * anychart.core.series.Base.ZINDEX_INCREMENT_MULTIPLIER;
   var value = anychart.utils.toNumber(iterator.get('value'));
   var zIndex = anychart.core.ChartWithSeries.ZINDEX_SERIES;
 
@@ -595,7 +595,7 @@ anychart.cartesian3dModule.Chart.prototype.prepare3d = function() {
         if (series.isDiscreteBased()) {
           var iterator = series.getResetIterator();
           while (iterator.advance()) {
-            this.setSeriesPointZIndex_(/** @type {anychart.core.series.Cartesian} */(series));
+            this.setSeriesPointZIndex_(/** @type {anychart.core.series.Cartesian} */(series), i);
           }
         } else if (series.supportsStack()) {
           this.lastEnabledAreaSeriesMap[series.getScalesPairIdentifier()] = actualIndex;
