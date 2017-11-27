@@ -563,7 +563,7 @@ anychart.utils.isRightAnchor = function(anchor) {
  */
 anychart.utils.alignLeft = function(value, interval, opt_base, opt_precision) {
   opt_base = opt_base || 0;
-  var precision = goog.isDef(opt_precision) && opt_precision >= 7 ? opt_precision : 7;
+  var precision = opt_precision >= 7 ? opt_precision : 7;
   var mod = anychart.math.round((value - opt_base) % interval, precision);
   if (mod < 0)
     mod += interval;
@@ -583,7 +583,7 @@ anychart.utils.alignLeft = function(value, interval, opt_base, opt_precision) {
  */
 anychart.utils.alignRight = function(value, interval, opt_base, opt_precision) {
   opt_base = opt_base || 0;
-  var precision = goog.isDef(opt_precision) && opt_precision >= 7 ? opt_precision : 7;
+  var precision = opt_precision >= 7 ? opt_precision : 7;
   var mod = anychart.math.round((value - opt_base) % interval, precision);
   if (mod >= interval) // ECMAScript float representation... try (0.5 % 0.1).
     mod -= interval;

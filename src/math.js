@@ -74,11 +74,7 @@ anychart.math.round = function(num, opt_digitsCount) {
  * @return {number} The rounded number.
  */
 anychart.math.specialRound = function(num, opt_precision) {
-  var abs = Math.abs(num);
-  var log = Math.log(abs);
-  var floor = Math.floor(log * Math.LOG10E);
-  var res = 13 - Math.max(floor, 7);
-  return anychart.math.round(num, opt_precision ? opt_precision : res);
+  return anychart.math.round(num, opt_precision ? opt_precision : 13 - Math.max(Math.floor(Math.log(Math.abs(num)) * Math.LOG10E), 7));
 };
 
 
