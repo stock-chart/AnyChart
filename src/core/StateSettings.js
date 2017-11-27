@@ -275,6 +275,10 @@ anychart.core.StateSettings.PROPERTY_DESCRIPTORS = (function() {
     descriptors.FONT_VARIANT,
     descriptors.FONT_WEIGHT,
     descriptors.FONT_SIZE,
+    // other text properties
+    descriptors.FONT_COLOR,
+    descriptors.FONT_OPACITY,
+    descriptors.FONT_DECORATION,
     // pert tasks
     descriptors.DUMMY_FILL,
     descriptors.DUMMY_STROKE

@@ -120,148 +120,36 @@ anychart.core.settings.createDescriptorsMeta = function(map, metas) {
  * @return {!Object.<string, anychart.core.settings.PropertyDescriptor>} - Descriptors map.
  */
 anychart.core.settings.createTextPropertiesDescriptors = function() {
+  var single = anychart.enums.PropertyHandlerType.SINGLE_ARG;
+  var multi = anychart.enums.PropertyHandlerType.MULTI_ARG;
 
   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
   var map = {};
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'minFontSize',
-      anychart.core.settings.numberOrStringNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'maxFontSize',
-      anychart.core.settings.numberOrStringNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.MULTI_ARG,
-      'adjustFontSize',
-      anychart.core.settings.adjustFontSizeNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'fontSize',
-      anychart.core.settings.numberOrStringNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'fontFamily',
-      anychart.core.settings.stringNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'fontColor',
-      anychart.core.settings.stringOrNullNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'fontOpacity',
-      anychart.core.settings.numberNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'fontDecoration',
-      anychart.enums.normalizeFontDecoration);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'fontStyle',
-      anychart.enums.normalizeFontStyle);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'fontVariant',
-      anychart.enums.normalizeFontVariant);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'fontWeight',
-      anychart.core.settings.numberOrStringNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'letterSpacing',
-      anychart.core.settings.numberOrStringNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'textDirection',
-      anychart.enums.normalizeTextDirection);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'lineHeight',
-      anychart.core.settings.numberOrStringNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'textIndent',
-      anychart.core.settings.numberNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'vAlign',
-      anychart.enums.normalizeVAlign);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'hAlign',
-      anychart.enums.normalizeHAlign);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'wordWrap',
-      anychart.core.settings.asIsNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'wordBreak',
-      anychart.core.settings.asIsNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'textOverflow',
-      anychart.core.settings.stringNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'selectable',
-      anychart.core.settings.booleanNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'disablePointerEvents',
-      anychart.core.settings.booleanNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'useHtml',
-      anychart.core.settings.booleanNormalizer);
-
+  anychart.core.settings.createDescriptors(map, [
+    [single, 'minFontSize', anychart.core.settings.numberOrStringNormalizer],
+    [single, 'maxFontSize', anychart.core.settings.numberOrStringNormalizer],
+    [multi, 'adjustFontSize', anychart.core.settings.adjustFontSizeNormalizer],
+    [single, 'fontFamily', anychart.core.settings.stringNormalizer],
+    [single, 'fontStyle', anychart.enums.normalizeFontStyle],
+    [single, 'fontVariant', anychart.enums.normalizeFontVariant],
+    [single, 'fontWeight', anychart.core.settings.numberOrStringNormalizer],
+    [single, 'fontSize', anychart.core.settings.numberOrStringNormalizer],
+    [single, 'fontColor', anychart.core.settings.stringOrNullNormalizer],
+    [single, 'fontOpacity', anychart.core.settings.numberNormalizer],
+    [single, 'fontDecoration', anychart.enums.normalizeFontDecoration],
+    [single, 'letterSpacing', anychart.core.settings.numberOrStringNormalizer],
+    [single, 'textDirection', anychart.enums.normalizeTextDirection],
+    [single, 'lineHeight', anychart.core.settings.numberOrStringNormalizer],
+    [single, 'textIndent', anychart.core.settings.numberNormalizer],
+    [single, 'vAlign', anychart.enums.normalizeVAlign],
+    [single, 'hAlign', anychart.enums.normalizeHAlign],
+    [single, 'wordWrap', anychart.core.settings.asIsNormalizer],
+    [single, 'wordBreak', anychart.core.settings.asIsNormalizer],
+    [single, 'textOverflow', anychart.core.settings.stringNormalizer],
+    [single, 'selectable', anychart.core.settings.booleanNormalizer],
+    [single, 'disablePointerEvents', anychart.core.settings.booleanNormalizer],
+    [single, 'useHtml', anychart.core.settings.booleanNormalizer]
+  ]);
   return map;
 };
 
@@ -723,6 +611,16 @@ anychart.core.settings.numberNormalizer = function(val) {
 /**
  * Single arg normalizer for number params.
  * @param {*} val
+ * @return {?number}
+ */
+anychart.core.settings.numberOrNullNormalizer = function(val) {
+  return goog.isNull(val) ? val : Number(val);
+};
+
+
+/**
+ * Single arg normalizer for number params.
+ * @param {*} val
  * @return {number|string}
  */
 anychart.core.settings.numberOrZeroNormalizer = function(val) {
@@ -930,6 +828,10 @@ anychart.core.settings.descriptors = (function() {
   map.FONT_VARIANT = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'fontVariant', anychart.enums.normalizeFontVariant];
   map.FONT_WEIGHT = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'fontWeight', anychart.core.settings.numberOrStringNormalizer];
   map.FONT_SIZE = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'fontSize', anychart.core.settings.numberOrPercentOrNullOrFunctionNormalizer];
+  // other text settings
+  map.FONT_COLOR = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'fontColor', anychart.core.settings.stringOrNullNormalizer];
+  map.FONT_OPACITY = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'fontOpacity', anychart.core.settings.numberNormalizer];
+  map.FONT_DECORATION = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'fontDecoration', anychart.enums.normalizeFontDecoration];
   // pert tasks
   map.DUMMY_FILL = [anychart.enums.PropertyHandlerType.MULTI_ARG, 'dummyFill', anychart.core.settings.fillOrFunctionNormalizer];
   map.DUMMY_STROKE = [anychart.enums.PropertyHandlerType.MULTI_ARG, 'dummyStroke', anychart.core.settings.strokeOrFunctionNormalizer];

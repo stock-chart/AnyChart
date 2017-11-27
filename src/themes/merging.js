@@ -652,7 +652,8 @@ anychart.themes.merging.mergingMap_ = (function() {
           'textAxisMarker'
         ]],
         [['standalones', 'resource'],
-          '.resourceList.baseSettings']
+          '.resourceList.baseSettings'],
+        'chart.defaultAnnotationSettings.label'
       ]
     },
     {
