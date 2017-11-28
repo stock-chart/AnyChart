@@ -37,17 +37,6 @@ anychart.pieModule.Point.prototype.getEndAngle = function() {
 };
 
 
-/** @inheritDoc */
-anychart.pieModule.Point.prototype.selected = function(opt_value) {
-  //TODO(AntonKagakin): pie chart cant select points in the new interactivity model
-  if (goog.isDef(opt_value)) {
-    this.getChart().explodeSlice(this.index, !!opt_value);
-    return this;
-  } else
-    return /** @type {boolean} */ (this.chart.data().meta(this.index, 'exploded'));
-};
-
-
 /**
  * Alias-method
  */

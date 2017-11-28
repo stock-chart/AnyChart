@@ -148,9 +148,9 @@ anychart.pieModule.Chart = function(opt_data, opt_csvSettings) {
     ['innerRadius', anychart.ConsistencyState.BOUNDS, anychart.Signal.NEEDS_REDRAW],
     ['startAngle', anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.PIE_LABELS,
       anychart.Signal.NEEDS_REDRAW],
-    ['explode',
-      anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.PIE_LABELS,
-      anychart.Signal.NEEDS_REDRAW],
+    // ['explode',
+    //   anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.PIE_LABELS,
+    //   anychart.Signal.NEEDS_REDRAW],
     ['sort', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW, 0, sortBeforeInvalidation],
     ['insideLabelsOffset',
       anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.PIE_LABELS,
@@ -166,6 +166,9 @@ anychart.pieModule.Chart = function(opt_data, opt_csvSettings) {
 
   var normalDescriptorsMeta = {};
   anychart.core.settings.createDescriptorsMeta(normalDescriptorsMeta, [
+    ['explode',
+      anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.PIE_LABELS,
+      anychart.Signal.NEEDS_REDRAW],
     ['fill',
       anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.CHART_LEGEND,
       anychart.Signal.NEEDS_REDRAW],
@@ -229,6 +232,7 @@ anychart.pieModule.Chart = function(opt_data, opt_csvSettings) {
 };
 goog.inherits(anychart.pieModule.Chart, anychart.core.SeparateChart);
 anychart.core.settings.populateAliases(anychart.pieModule.Chart, ['fill', 'stroke', 'hatchFill'], 'normal');
+anychart.core.settings.populateAliases(anychart.pieModule.Chart, ['explode'], 'selected');
 
 
 //region --- Static props
@@ -403,15 +407,15 @@ anychart.pieModule.Chart.PROPERTY_DESCRIPTORS = (function() {
       anychart.enums.PropertyHandlerType.SINGLE_ARG,
       'startAngle',
       startAngleNormalizer);
-  function explodeNormalizer(opt_value) {
-    return anychart.utils.normalizeNumberOrPercent(opt_value, 15);
-  }
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'explode',
-      explodeNormalizer);
-
+  // function explodeNormalizer(opt_value) {
+  //   return anychart.utils.normalizeNumberOrPercent(opt_value, 15);
+  // }
+  // anychart.core.settings.createDescriptor(
+  //     map,
+  //     anychart.enums.PropertyHandlerType.SINGLE_ARG,
+  //     '',
+  //     explodeNormalizer,
+  //     'explode');
   anychart.core.settings.createDescriptor(
       map,
       anychart.enums.PropertyHandlerType.SINGLE_ARG,
@@ -1984,6 +1988,15 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
       value = +value;
       sweep = value / /** @type {number} */ (this.getStat(anychart.enums.Statistics.SUM)) * 360;
 
+      var state = iterator.get('state');
+      state = state == 'selected' ? anychart.PointState.SELECT :
+          state == 'hovered' ? anychart.PointState.HOVER :
+          state == 'normal' ? anychart.PointState.NORMAL : NaN;
+
+      if (!isNaN(state)) {
+        this.state.setPointState(/** @type {anychart.PointState} */(state), iterator.getIndex());
+      }
+
       iterator.meta('start', start).meta('sweep', sweep);
       // if (!goog.isDef(exploded = iterator.meta('exploded'))) {
       //   exploded = !!this.getExplode();
@@ -2468,46 +2481,48 @@ anychart.pieModule.Chart.prototype.drawSlice_ = function(pointState, opt_update)
     iterator.meta('hatchSlice', hatchSlice);
   }
 
-  var normalizer = anychart.core.settings.numberOrPercentNormalizer;
+  if (slice) {
+    var normalizer = anychart.core.settings.numberOrPercentNormalizer;
 
-  var outlineOffset = this.resolveOption('outlineOffset', pointState, iterator, normalizer, false) || 0;
-  var outlineWidth = this.resolveOption('outlineWidth', pointState, iterator, normalizer, false) || 0;
+    var outlineOffset = this.resolveOption('outlineOffset', pointState, iterator, normalizer, false) || 0;
+    var outlineWidth = this.resolveOption('outlineWidth', pointState, iterator, normalizer, false) || 0;
 
-  outlineOffset = anychart.utils.normalizeSize(/** @type {number|string} */(outlineOffset), this.radiusValue_);
-  outlineWidth = anychart.utils.normalizeSize(/** @type {number|string} */(outlineWidth), this.radiusValue_);
+    outlineOffset = anychart.utils.normalizeSize(/** @type {number|string} */(outlineOffset), this.radiusValue_);
+    outlineWidth = anychart.utils.normalizeSize(/** @type {number|string} */(outlineWidth), this.radiusValue_);
 
-  var explode = this.getExplode(pointState);
+    var explode = this.getExplode(pointState);
 
-  var angle = start + sweep / 2;
-  var cos = Math.cos(goog.math.toRadians(angle));
-  var sin = Math.sin(goog.math.toRadians(angle));
-  var ex = explode * cos;
-  var ey = explode * sin;
+    var angle = start + sweep / 2;
+    var cos = Math.cos(goog.math.toRadians(angle));
+    var sin = Math.sin(goog.math.toRadians(angle));
+    var ex = explode * cos;
+    var ey = explode * sin;
 
-  var outerSliceRadius = this.radiusValue_;
-  var innerOutlineRadius = outerSliceRadius + outlineOffset;
-  var outerOutlineRadius = outerSliceRadius + outlineOffset + outlineWidth;
+    var outerSliceRadius = this.radiusValue_;
+    var innerOutlineRadius = outerSliceRadius + outlineOffset;
+    var outerOutlineRadius = outerSliceRadius + outlineOffset + outlineWidth;
 
-  if (!outlineWidth) {
-    sliceOutline.clear();
-  } else {
-    sliceOutline = acgraph.vector.primitives.donut(sliceOutline, this.cx_ + ex, this.cy_ + ey, outerOutlineRadius, innerOutlineRadius, start, sweep);
-  }
-  slice = acgraph.vector.primitives.donut(slice, this.cx_ + ex, this.cy_ + ey, outerSliceRadius, this.innerRadiusValue_, start, sweep);
+    if (!outlineWidth) {
+      sliceOutline.clear();
+    } else {
+      acgraph.vector.primitives.donut(sliceOutline, this.cx_ + ex, this.cy_ + ey, outerOutlineRadius, innerOutlineRadius, start, sweep);
+    }
+    slice = acgraph.vector.primitives.donut(slice, this.cx_ + ex, this.cy_ + ey, outerSliceRadius, this.innerRadiusValue_, start, sweep);
 
-  slice.tag = {
-    series: this,
-    index: index
-  };
-
-  this.colorizeSlice(pointState);
-  if (hatchSlice) {
-    hatchSlice.deserialize(slice.serialize());
-    hatchSlice.tag = {
+    slice.tag = {
       series: this,
       index: index
     };
-    this.applyHatchFill(pointState);
+
+    this.colorizeSlice(pointState);
+    if (hatchSlice) {
+      hatchSlice.deserialize(slice.serialize());
+      hatchSlice.tag = {
+        series: this,
+        index: index
+      };
+      this.applyHatchFill(pointState);
+    }
   }
 
   return true;
