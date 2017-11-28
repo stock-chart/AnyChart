@@ -2170,6 +2170,16 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
     'baseFill': anychart.core.defaultTheme.returnSourceColor,
     'baseStroke': anychart.core.defaultTheme.returnSourceColor,
 
+    'baseBarAnchor': 'auto',
+    'baseBarPosition': 'left-center',
+    'baseBarOffset': 0,
+    'baseBarHeight': '70%',
+    'parentBarHeight': '40%',
+    'progressBarHeight': '100%',
+    'progressBarPosition': 'left-center',
+    'progressBarAnchor': 'left-center',
+    //all another settings should be set to 'null' for serialization demerging purposes
+
     'connectorFill': '#545f69',
     'connectorStroke': '#545f69',
     'baselineAbove': false,
