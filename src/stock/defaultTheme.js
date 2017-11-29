@@ -465,6 +465,28 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
           'stroke': 'blue'
         }
       },
+      'hovered': {
+        'type': 'pin',
+        'width': 20,
+        'height': 20,
+        'fill': 'green',
+        'stroke': 'black',
+        'connector': {
+          'length': 10,
+          'stroke': 'green'
+        }
+      },
+      'selected': {
+        'type': 'pin',
+        'width': 25,
+        'height': 25,
+        'fill': 'blue',
+        'stroke': 'black',
+        'connector': {
+          'length': 10,
+          'stroke': 'green'
+        }
+      },
       'direction': 'auto',
       'position': 'axis',
       'seriesId': '0',

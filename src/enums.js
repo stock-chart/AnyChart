@@ -849,6 +849,7 @@ anychart.enums.EventMarkerPosition = {
   SERIES: 'series',
   SERIES_POSITIVE: 'series-positive',
   SERIES_NEGATIVE: 'series-negative',
+  SERIES_ZERO: 'series-zero',
   AXIS: 'axis'
 };
 
@@ -1432,6 +1433,14 @@ anychart.enums.EventType = {
   LEGEND_ITEM_MOUSE_UP: 'legenditemmouseup',
   LEGEND_ITEM_CLICK: 'legenditemclick',
   LEGEND_ITEM_DBLCLICK: 'legenditemdblclick',
+
+  EVENT_MARKER_MOUSE_OUT: 'eventmarkermouseout',
+  EVENT_MARKER_MOUSE_OVER: 'eventmarkermouseover',
+  EVENT_MARKER_MOUSE_MOVE: 'eventmarkermousemove',
+  EVENT_MARKER_MOUSE_DOWN: 'eventmarkermousedown',
+  EVENT_MARKER_MOUSE_UP: 'eventmarkermouseup',
+  EVENT_MARKER_CLICK: 'eventmarkerclick',
+  EVENT_MARKER_DBLCLICK: 'eventmarkerdblclick',
 
   DRAG: 'drag',
   DRAG_START: 'dragstart',

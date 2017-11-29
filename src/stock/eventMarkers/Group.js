@@ -11,19 +11,25 @@ goog.require('anychart.stockModule.eventMarkers.Table');
 /**
  * Event markers group class.
  * @param {anychart.stockModule.Plot} plot
+ * @param {number} index
  * @constructor
  * @extends {anychart.core.VisualBase}
  * @implements {anychart.core.IShapeManagerUser}
  */
-anychart.stockModule.eventMarkers.Group = function(plot) {
+anychart.stockModule.eventMarkers.Group = function(plot, index) {
   anychart.stockModule.eventMarkers.Group.base(this, 'constructor');
 
   /**
    * Stock plot reference.
    * @type {anychart.stockModule.Plot}
-   * @private
    */
-  this.plot_ = plot;
+  this.plot = plot;
+
+  /**
+   * Group index.
+   * @type {number}
+   */
+  this.index = index;
 
   /**
    * Data table.
@@ -180,7 +186,7 @@ anychart.stockModule.eventMarkers.Group.prototype.connectorInvalidated_ = functi
 
 /** @inheritDoc */
 anychart.stockModule.eventMarkers.Group.prototype.getParentState = function(state) {
-  var controller = /** @type {anychart.stockModule.eventMarkers.PlotController} */(this.plot_.eventMarkers());
+  var controller = /** @type {anychart.stockModule.eventMarkers.PlotController} */(this.plot.eventMarkers());
   var result;
   if (!state) {
     result = controller.normal();
@@ -319,14 +325,15 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
 
   if (this.hasInvalidationState(anychart.ConsistencyState.EVENT_MARKERS_DATA)) {
     var offsets = {};
-    var controller = /** @type {anychart.stockModule.eventMarkers.PlotController} */(this.plot_.eventMarkers());
+    var controller = /** @type {anychart.stockModule.eventMarkers.PlotController} */(this.plot.eventMarkers());
     var iterator = this.getIterator();
     iterator.reset();
     while (iterator.advance()) {
-      if (iterator.isFirstInGroup()) {
-        offsets = controller.getEventMarkerOffsets(iterator.getIndex());
+      if (iterator.isFirstInStack()) {
+        offsets = controller.getEventMarkerOffsets(iterator.getPointIndex());
       }
-      this.drawEventMarker_(offsets);
+      var tuple = this.drawEventMarker(offsets);
+      offsets[/** @type {string} */(tuple[0])] = /** @type {number} */(tuple[1]);
     }
     this.markConsistent(anychart.ConsistencyState.EVENT_MARKERS_DATA | anychart.ConsistencyState.Z_INDEX);
   }
@@ -343,84 +350,113 @@ anychart.stockModule.eventMarkers.Group.prototype.draw = function() {
 
 
 /**
- * @param {Object.<number>} offsets
- * @param {string=} opt_onlyInPosition
- * @private
+ * Removes the group.
  */
-anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker_ = function(offsets, opt_onlyInPosition) {
-  var xScale = /** @type {anychart.stockModule.scales.Scatter} */(this.plot_.getChart().xScale());
+anychart.stockModule.eventMarkers.Group.prototype.remove = function() {
+  this.shapeManager_.clearShapes();
+  this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA);
+};
+
+
+/**
+ * If opt_offsets is passed - draws the marker selected by iterator from scratch and returns a tuple of [positionHash: string, newOffsetInPosition: number].
+ * Otherwise updates the event marker selected by the iterator expecting "offset", "shapes" and "totalHeight" meta values to be set and returns a tuple of
+ * [positionHash: string, diffInNextOffsetInPosition: number].
+ * @param {Object.<number>=} opt_offsets
+ * @return {!Array.<string|number>}
+ */
+anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker = function(opt_offsets) {
+  var offset, totalHeightDiff, hash;
+  var xScale = /** @type {anychart.stockModule.scales.Scatter} */(this.plot.getChart().xScale());
   var zIndex = /** @type {number} */(this.zIndex());
   var iterator = this.getIterator();
   var state = Number(iterator.meta('state')) || anychart.PointState.NORMAL;
   var type = /** @type {anychart.enums.EventMarkerType} */(this.resolveOption('type', state, iterator, anychart.enums.normalizeEventMarkerType, false));
   var drawer = this.SINGLE_MARKER_DRAWERS[type];
-  if (drawer) {
-    var position = /** @type {anychart.enums.EventMarkerPosition} */(this.resolveOption('position', 0, iterator, anychart.enums.normalizeEventMarkerPosition, false, undefined, true));
-    var y = NaN;
-    var direction = /** @type {anychart.enums.EventMarkerDirection} */(this.resolveOption('direction', state, iterator, anychart.enums.normalizeEventMarkerDirection, false, undefined, true));
-    var seriesId = '';
-    var fieldName = '';
-    if (position != anychart.enums.EventMarkerPosition.AXIS) {
-      seriesId = /** @type {string} */(this.resolveOption('seriesId', 0, iterator, anychart.core.settings.stringNormalizer, false, undefined, true));
-      var series = this.plot_.getSeries(seriesId) || this.plot_.getSeriesAt(0);
-      var point;
-      if (series && (point = series.getSelectableData().getAtIndex(iterator.getIndex())) && !point.meta('missing')) {
-        fieldName = /** @type {string} */(this.resolveOption('fieldName', 0, iterator, anychart.core.settings.stringNormalizer, false, undefined, true));
-        var yValue = Number(point.get(fieldName));
-        if (position == anychart.enums.EventMarkerPosition.SERIES_POSITIVE && yValue < 0 ||
-            position == anychart.enums.EventMarkerPosition.SERIES_NEGATIVE && yValue > 0) {
-          yValue = 0;
-          y = Number(point.meta('zero'));
-          if (isNaN(y)) {
-            y = series.applyRatioToBounds(series.yScale().transform(0), false);
-          }
-        } else {
-          y = Number(point.meta(fieldName));
-          if (isNaN(y) && !isNaN(yValue)) {
-            y = series.applyRatioToBounds(series.yScale().transform(yValue), false);
-          }
+  var position = /** @type {anychart.enums.EventMarkerPosition} */(this.resolveOption('position', 0, iterator, anychart.enums.normalizeEventMarkerPosition, false, undefined, true));
+  var y = NaN;
+  var direction = /** @type {anychart.enums.EventMarkerDirection} */(this.resolveOption('direction', state, iterator, anychart.enums.normalizeEventMarkerDirection, false, undefined, true));
+  var seriesId = '';
+  var fieldName = '';
+  if (position != anychart.enums.EventMarkerPosition.AXIS) {
+    seriesId = /** @type {string} */(this.resolveOption('seriesId', 0, iterator, anychart.core.settings.stringNormalizer, false, undefined, true));
+    var series = this.plot.getSeries(seriesId) || this.plot.getSeriesAt(0);
+    var point;
+    if (series && (point = series.getSelectableData().getAtIndex(iterator.getPointIndex())) && !point.meta('missing')) {
+      fieldName = /** @type {string} */(this.resolveOption('fieldName', 0, iterator, anychart.core.settings.stringNormalizer, false, undefined, true));
+      var yValue = Number(point.get(fieldName));
+      if (position == anychart.enums.EventMarkerPosition.SERIES_POSITIVE && yValue < 0 ||
+          position == anychart.enums.EventMarkerPosition.SERIES_NEGATIVE && yValue > 0) {
+        yValue = 0;
+        y = Number(point.meta('zero'));
+        if (isNaN(y)) {
+          y = series.applyRatioToBounds(series.yScale().transform(0), false);
         }
-        if (direction == anychart.enums.EventMarkerDirection.AUTO) {
-          direction = (yValue < 0 || !yValue && position == anychart.enums.EventMarkerPosition.SERIES_NEGATIVE) ?
-              anychart.enums.EventMarkerDirection.DOWN :
-              anychart.enums.EventMarkerDirection.UP;
+        y = goog.math.clamp(y, this.pixelBoundsCache.top, this.pixelBoundsCache.top + this.pixelBoundsCache.height);
+        position = (y == this.pixelBoundsCache.top + this.pixelBoundsCache.height) ?
+            anychart.enums.EventMarkerPosition.AXIS :
+            anychart.enums.EventMarkerPosition.SERIES_ZERO;
+      } else {
+        y = Number(point.meta(fieldName));
+        if (isNaN(y) && !isNaN(yValue)) {
+          y = series.applyRatioToBounds(series.yScale().transform(yValue), false);
+          y = goog.math.clamp(y, this.pixelBoundsCache.top, this.pixelBoundsCache.top + this.pixelBoundsCache.height);
         }
       }
-    }
-    if (isNaN(y)) {
-      y = this.pixelBoundsCache.top + this.pixelBoundsCache.height;
-      position = anychart.enums.EventMarkerPosition.AXIS;
-      direction = anychart.enums.EventMarkerDirection.UP;
-    }
-    var directionIsUp = direction != anychart.enums.EventMarkerDirection.DOWN;
-    var hash = this.getPositionHash_(position, seriesId, fieldName, directionIsUp);
-    if (!opt_onlyInPosition || hash == opt_onlyInPosition) {
-      var x = Math.round(xScale.transformInternal(iterator.getX(), iterator.getIndex(), 0.5) * this.pixelBoundsCache.width + this.pixelBoundsCache.left);
-      var offset = offsets[hash] || 0;
-      var connectorLen = 0;
-      if (!offset) {
-        connectorLen = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('length', state, iterator, anychart.core.settings.numberOrPercentNormalizer, true)), this.pixelBoundsCache.width);
-        offset += connectorLen;
+      if (direction == anychart.enums.EventMarkerDirection.AUTO) {
+        direction = (yValue < 0 || !yValue && position == anychart.enums.EventMarkerPosition.SERIES_NEGATIVE) ?
+            anychart.enums.EventMarkerDirection.DOWN :
+            anychart.enums.EventMarkerDirection.UP;
       }
-      y += directionIsUp ? -offset : offset;
-      var tag = {
-        'group': this,
-        'groupIndex': iterator.getGroupIndex(),
-        'subIndex': iterator.getSubIndex()
-      };
-      var connectorStroke = /** @type {acgraph.vector.Stroke} */(this.resolveOption('stroke', state, iterator, anychart.core.settings.strokeSimpleNormalizer, true));
-      if (connectorLen && connectorStroke) {
-        var connectorPath = this.plot_.eventMarkers().drawConnector(x, y, y - (directionIsUp ? -connectorLen : connectorLen), connectorStroke);
-        connectorPath.tag = tag;
-      }
-      var path = /** @type {acgraph.vector.Path} */(this.shapeManager_.getShapesGroup(state, null, zIndex)['path']);
-      path.tag = tag;
-      var width = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('width', state, iterator, anychart.core.settings.numberOrPercentNormalizer, false)), this.pixelBoundsCache.width);
-      var height = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('height', state, iterator, anychart.core.settings.numberOrPercentNormalizer, false)), this.pixelBoundsCache.height);
-      drawer(path, x, y, width, height, directionIsUp);
-      offsets[hash] = offset + height;
     }
   }
+  if (isNaN(y)) {
+    y = this.pixelBoundsCache.top + this.pixelBoundsCache.height;
+    position = anychart.enums.EventMarkerPosition.AXIS;
+    direction = anychart.enums.EventMarkerDirection.UP;
+  }
+  var directionIsUp = direction != anychart.enums.EventMarkerDirection.DOWN;
+  hash = this.getPositionHash_(position, seriesId, fieldName, directionIsUp);
+  iterator.meta('positionHash', hash);
+  var x = Math.round(xScale.transformInternal(iterator.getX(), iterator.getPointIndex(), 0.5) * this.pixelBoundsCache.width + this.pixelBoundsCache.left);
+  offset = (opt_offsets ? opt_offsets[hash] : Number(iterator.meta('offset'))) || 0;
+  iterator.meta('offset', offset);
+  var connectorLen = 0;
+  if (!offset) {
+    connectorLen = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('length', state, iterator, anychart.core.settings.numberOrPercentNormalizer, true)), this.pixelBoundsCache.width);
+    offset += connectorLen;
+  }
+  y += directionIsUp ? -offset : offset;
+  var tag = {
+    group: this,
+    index: iterator.getIndex()
+  };
+  var connectorStroke = /** @type {acgraph.vector.Stroke} */(this.resolveOption('stroke', state, iterator, anychart.core.settings.strokeSimpleNormalizer, true));
+  if (connectorLen && connectorStroke) {
+    var connectorPath = this.plot.eventMarkers().drawConnector(x, y, y - (directionIsUp ? -connectorLen : connectorLen), connectorStroke, opt_offsets ? undefined : /** @type {acgraph.vector.Path} */(iterator.meta('connectorPath')));
+    connectorPath.tag = tag;
+    iterator.meta('connectorPath', connectorPath);
+  }
+  var shapes, path;
+  if (opt_offsets) {
+    shapes = this.shapeManager_.getShapesGroup(state, null, zIndex);
+    path = /** @type {acgraph.vector.Path} */(shapes['path']);
+    iterator.meta('shapes', shapes);
+  } else {
+    shapes = /** @type {Object.<acgraph.vector.Path>} */(iterator.meta('shapes'));
+    path = /** @type {acgraph.vector.Path} */(shapes['path']);
+    this.shapeManager_.updateColors(state, shapes);
+    path.parent(/** @type {acgraph.vector.Layer} */(this.container()));
+    path.clear();
+  }
+  path.tag = tag;
+  var width = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('width', state, iterator, anychart.core.settings.numberOrPercentNormalizer, false)), this.pixelBoundsCache.width);
+  var height = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('height', state, iterator, anychart.core.settings.numberOrPercentNormalizer, false)), this.pixelBoundsCache.height);
+  drawer(path, x, y, width, height, directionIsUp);
+  offset += height;
+  totalHeightDiff = height + connectorLen - Number(iterator.meta('totalHeight') || 0);
+  iterator.meta('totalHeight', height + connectorLen);
+  return [hash, opt_offsets ? offset : (directionIsUp ? -totalHeightDiff : totalHeightDiff)];
 };
 
 
@@ -435,6 +471,66 @@ anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker_ = function(of
  */
 anychart.stockModule.eventMarkers.Group.prototype.getPositionHash_ = function(position, seriesId, fieldName, directionIsUp) {
   return position + (position == anychart.enums.EventMarkerPosition.AXIS ? '' : (seriesId + fieldName) + (directionIsUp ? 'U' : 'D'));
+};
+
+
+/**
+ * This method also has a side effect - it patches the original source event to maintain pointIndex support for
+ * browser events.
+ * @param {anychart.core.MouseEvent} event
+ * @return {Object} An object of event to dispatch. If null - unrecognized type was found.
+ */
+anychart.stockModule.eventMarkers.Group.prototype.makePointEvent = function(event) {
+  var type = event['type'];
+  switch (type) {
+    case acgraph.events.EventType.MOUSEOUT:
+      type = anychart.enums.EventType.EVENT_MARKER_MOUSE_OUT;
+      break;
+    case acgraph.events.EventType.MOUSEOVER:
+      type = anychart.enums.EventType.EVENT_MARKER_MOUSE_OVER;
+      break;
+    case acgraph.events.EventType.MOUSEMOVE:
+      type = anychart.enums.EventType.EVENT_MARKER_MOUSE_MOVE;
+      break;
+    case acgraph.events.EventType.MOUSEDOWN:
+      type = anychart.enums.EventType.EVENT_MARKER_MOUSE_DOWN;
+      break;
+    case acgraph.events.EventType.MOUSEUP:
+      type = anychart.enums.EventType.EVENT_MARKER_MOUSE_UP;
+      break;
+    case acgraph.events.EventType.CLICK:
+    case acgraph.events.EventType.TOUCHSTART:
+      type = anychart.enums.EventType.EVENT_MARKER_CLICK;
+      break;
+    case acgraph.events.EventType.DBLCLICK:
+      type = anychart.enums.EventType.EVENT_MARKER_DBLCLICK;
+      break;
+    default:
+      return null;
+  }
+
+  var index;
+  if ('eventMarkerIndex' in event) {
+    index = event['eventMarkerIndex'];
+  } else if ('labelIndex' in event) {
+    index = event['labelIndex'] + this.getIterator().getFirstIndex();
+  }
+  event['eventMarkerIndex'] = index = anychart.utils.toNumber(index);
+
+  var iter = this.getDetachedIterator();
+  if (!iter.select(index))
+    iter.reset();
+
+  return {
+    'type': type,
+    'actualTarget': event['target'],
+    'iterator': iter,
+    'group': this,
+    'index': index,
+    'target': this,
+    'originalEvent': event
+    // 'point': this.getPoint(stackIndex)
+  };
 };
 
 
@@ -477,8 +573,8 @@ anychart.stockModule.eventMarkers.Group.prototype.getColorResolutionContext = fu
     'sourceColor': source,
     'iterator': iterator,
     'group': this,
-    'chart': this.plot_.getChart(),
-    'plot': this.plot_
+    'chart': this.plot.getChart(),
+    'plot': this.plot
   };
 };
 
@@ -492,13 +588,21 @@ anychart.stockModule.eventMarkers.Group.prototype.getAutoHatchFill = function() 
 
 
 /**
- * @return {!anychart.data.IIterator}
+ * @return {!anychart.stockModule.eventMarkers.Table.Iterator}
  */
 anychart.stockModule.eventMarkers.Group.prototype.getIterator = function() {
   if (!this.iterator_) {
-    this.iterator_ = this.dataTable_.getIterator.apply(this.dataTable_, this.plot_.getChart().getEventMarkersIteratorParams());
+    this.iterator_ = this.getDetachedIterator();
   }
   return this.iterator_;
+};
+
+
+/**
+ * @return {!anychart.stockModule.eventMarkers.Table.Iterator}
+ */
+anychart.stockModule.eventMarkers.Group.prototype.getDetachedIterator = function() {
+  return this.dataTable_.getIterator.apply(this.dataTable_, this.plot.getChart().getEventMarkersIteratorParams());
 };
 
 
@@ -540,7 +644,7 @@ anychart.stockModule.eventMarkers.Group.prototype.getResolutionChain = function(
       res[0] = normalPointOverride;
     }
   } else {
-    var controller = /** @type {anychart.stockModule.eventMarkers.PlotController} */(this.plot_.eventMarkers());
+    var controller = /** @type {anychart.stockModule.eventMarkers.PlotController} */(this.plot.eventMarkers());
     var normalLowChain = controller.getPartialChain(anychart.PointState.NORMAL, true, connector);
     var normalHighChain = controller.getPartialChain(anychart.PointState.NORMAL, false, connector);
     var normalInstance = connector ? this.normal_.connector() : this.normal_;
@@ -790,7 +894,7 @@ anychart.stockModule.eventMarkers.Group.prototype.setupByJSON = function(config,
 /** @inheritDoc */
 anychart.stockModule.eventMarkers.Group.prototype.disposeInternal = function() {
   goog.disposeAll(this.shapeManager_, this.normal_, this.hovered_, this.selected_);
-  this.normal_ = this.hovered_ = this.selected_ = this.shapeManager_ = this.plot_ = null;
+  this.normal_ = this.hovered_ = this.selected_ = this.shapeManager_ = this.plot = null;
   anychart.stockModule.eventMarkers.Group.base(this, 'disposeInternal');
 };
 

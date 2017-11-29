@@ -38,6 +38,12 @@ anychart.stockModule.eventMarkers.PlotController = function(plot, chartControlle
    */
   this.eventMarkerOffsets_ = {};
 
+  /**
+   * @type {Array.<acgraph.vector.Path>}
+   * @private
+   */
+  this.connectorPaths_ = [];
+
   var descriptorOverride = [anychart.core.settings.descriptors.EVENT_MARKER_TYPE];
 
   var normalDescriptorsMeta = {};
@@ -265,7 +271,8 @@ anychart.stockModule.eventMarkers.PlotController.prototype.group = function(opt_
   }
   var group = this.groups_[index];
   if (!group) {
-    group = new anychart.stockModule.eventMarkers.Group(this.plot_);
+    group = new anychart.stockModule.eventMarkers.Group(this.plot_, index);
+    group.setParentEventTarget(this);
     group.setAutoZIndex(anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MARKERS + this.groups_.length * anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MULTIPLIER);
     this.groups_[index] = group;
     group.listenSignals(this.onSignal_, this);
@@ -360,23 +367,12 @@ anychart.stockModule.eventMarkers.PlotController.prototype.onSignal_ = function(
  */
 anychart.stockModule.eventMarkers.PlotController.prototype.clearConnectors_ = function() {
   if (!this.pathsPool_)
-    this.pathsPool_ = [];
-  var reversingZero = this.pathsPool_.length;
-  if (this.connectorPaths_) {
-    for (var hash in this.connectorPaths_) {
-      var path = this.connectorPaths_[hash];
-      path.clear();
-      path.parent(null);
-      this.pathsPool_.push(path);
-      delete this.connectorPaths_[hash];
-    }
-  } else
-    this.connectorPaths_ = {};
-  // this reversion is made to save the order of elements in the root layer if possible.
-  for (var i = ~~((this.connectorPaths_.length - reversingZero) / 2), j = 0; i--; j++) {
-    var tmp = this.connectorPaths_[i + reversingZero];
-    this.connectorPaths_[i + reversingZero] = this.connectorPaths_[j + reversingZero];
-    this.connectorPaths_[j + reversingZero] = tmp;
+    this.pathsPool_ = /** @type {Array.<acgraph.vector.Path>} */([]);
+  var path;
+  while (path = this.connectorPaths_.pop()) {
+    path.clear();
+    path.parent(null);
+    this.pathsPool_.push(path);
   }
 };
 
@@ -384,28 +380,24 @@ anychart.stockModule.eventMarkers.PlotController.prototype.clearConnectors_ = fu
 /**
  * Returns connector path.
  * @param {acgraph.vector.Stroke} stroke
+ * @param {acgraph.vector.Path=} opt_path
  * @return {acgraph.vector.Path}
  * @private
  */
-anychart.stockModule.eventMarkers.PlotController.prototype.getConnectorPath_ = function(stroke) {
-  var hash = anychart.color.hash(stroke);
-  if (hash in this.connectorPaths_)
-    return this.connectorPaths_[hash];
-  else {
-    var path = this.pathsPool_.length ?
-        /** @type {!acgraph.vector.Path} */(this.pathsPool_.pop()) :
-        acgraph.path();
-    this.rootLayer_.addChild(path);
-    if (goog.isObject(stroke) && ('keys' in stroke) && !goog.isObject(stroke['mode'])) {
-      stroke = /** @type {acgraph.vector.Stroke} */(anychart.utils.recursiveClone(stroke));
-      stroke['mode'] = this.pixelBoundsCache;
-    }
-    path.stroke(stroke);
-    path.fill(null);
-    path.zIndex(anychart.stockModule.eventMarkers.PlotController.Z_INDEX_CONNECTORS);
-    this.connectorPaths_[hash] = path;
-    return path;
+anychart.stockModule.eventMarkers.PlotController.prototype.getConnectorPath_ = function(stroke, opt_path) {
+  var path = opt_path ? opt_path.clear() : (this.pathsPool_.length ? this.pathsPool_.pop() : acgraph.path());
+  if (goog.isObject(stroke) && ('keys' in stroke) && !goog.isObject(stroke['mode'])) {
+    stroke = /** @type {acgraph.vector.Stroke} */(anychart.utils.recursiveClone(stroke));
+    stroke['mode'] = this.pixelBoundsCache;
   }
+  path.stroke(stroke);
+  path.fill(null);
+  path.zIndex(anychart.stockModule.eventMarkers.PlotController.Z_INDEX_CONNECTORS);
+  if (!opt_path) {
+    this.rootLayer_.addChild(path);
+    this.connectorPaths_.push(path);
+  }
+  return path;
 };
 
 
@@ -415,18 +407,85 @@ anychart.stockModule.eventMarkers.PlotController.prototype.getConnectorPath_ = f
  * @param {number} y1
  * @param {number} y2
  * @param {acgraph.vector.Stroke} stroke
+ * @param {acgraph.vector.Path=} opt_path
  * @return {acgraph.vector.Path}
  */
-anychart.stockModule.eventMarkers.PlotController.prototype.drawConnector = function(x, y1, y2, stroke) {
-  var path = this.getConnectorPath_(stroke);
+anychart.stockModule.eventMarkers.PlotController.prototype.drawConnector = function(x, y1, y2, stroke, opt_path) {
+  var path = this.getConnectorPath_(stroke, opt_path);
   path.moveTo(x, y1).lineTo(x, y2);
   return path;
 };
 
 
 /** @inheritDoc */
-anychart.stockModule.eventMarkers.PlotController.prototype.handleMouseEvent = function(e) {
-  console.log(e.type, e);
+anychart.stockModule.eventMarkers.PlotController.prototype.handleMouseEvent = function(event) {
+  var group;
+
+  var tag = anychart.utils.extractTag(event['domTarget']);
+
+  if (anychart.utils.instanceOf(event['target'], anychart.core.ui.LabelsFactory)) {
+    var parent = event['target'].getParentEventTarget();
+    if (anychart.utils.instanceOf(parent, anychart.stockModule.eventMarkers.Group)) {
+      group = parent;
+    }
+  } else if (goog.isObject(tag)) {
+    group = tag.group;
+    event['eventMarkerIndex'] = tag.index;
+  }
+  if (group && !group.isDisposed() && group.enabled()) {
+    var evt = group.makePointEvent(event);
+    if (evt)
+      group.dispatchEvent(evt);
+  }
+};
+
+
+/**
+ * Applies state to the event marker.
+ * @param {anychart.stockModule.eventMarkers.Group} group
+ * @param {number} markerIndex
+ * @param {anychart.PointState} state
+ * @param {anychart.PointState=} opt_fromState
+ * @param {boolean=} opt_toggle
+ * @return {boolean} - if the state changed.
+ */
+anychart.stockModule.eventMarkers.PlotController.prototype.applyState = function(group, markerIndex, state, opt_fromState, opt_toggle) {
+  var iterator = group.getIterator();
+  if (iterator.select(markerIndex)) {
+    if (goog.isDef(opt_fromState)) {
+      var currState = Number(iterator.meta('state') || 0);
+      if (opt_toggle && currState == state) {
+        state = opt_fromState;
+      } else if (currState != opt_fromState) {
+        return false;
+      }
+    }
+    if (currState != state) {
+      iterator.meta('state', state);
+      var tuple = group.drawEventMarker();
+      var offset = /** @type {number} */(tuple[1]);
+      if (offset) {
+        var hash = /** @type {string} */(tuple[0]);
+        var stackIndex = iterator.getPointIndex();
+        while (iterator.advance() && iterator.getPointIndex() == stackIndex) {
+          if (iterator.meta('positionHash') == hash) {
+            iterator.meta('shapes')['path'].translate(0, offset);
+          }
+        }
+        for (var i = group.index + 1; i < this.groups_.length; i++) {
+          if (group && group.enabled() && (iterator = group.getIterator()).selectByDataIndex(stackIndex)) {
+            do {
+              if (iterator.meta('positionHash') == hash) {
+                iterator.meta('shapes')['path'].translate(0, offset);
+              }
+            } while (iterator.advance() && iterator.getPointIndex() == stackIndex);
+          }
+        }
+      }
+      return true;
+    }
+  }
+  return false;
 };
 
 

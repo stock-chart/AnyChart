@@ -80,6 +80,11 @@ anychart.stockModule.eventMarkers.ChartController = function(chart) {
       anychart.ConsistencyState.EVENT_MARKERS_DATA,
       anychart.Signal.NEEDS_REDRAW]
   ]);
+
+  chart.listen(anychart.enums.EventType.EVENT_MARKER_MOUSE_OVER, this.handleMouseOverAndMove_, false, this);
+  chart.listen(anychart.enums.EventType.EVENT_MARKER_MOUSE_MOVE, this.handleMouseOverAndMove_, false, this);
+  chart.listen(anychart.enums.EventType.EVENT_MARKER_MOUSE_OUT, this.handleMouseOut_, false, this);
+  chart.listen(anychart.enums.EventType.EVENT_MARKER_CLICK, this.handleMouseClick_, false, this);
 };
 goog.inherits(anychart.stockModule.eventMarkers.ChartController, anychart.core.Base);
 anychart.core.settings.populate(anychart.stockModule.eventMarkers.ChartController, anychart.stockModule.eventMarkers.Group.DESCRIPTORS);
@@ -178,6 +183,78 @@ anychart.stockModule.eventMarkers.ChartController.prototype.data = function(opt_
   if (goog.isDef(opt_value))
     return this;
   return /** @type {anychart.stockModule.data.TableMapping|anychart.stockModule.data.Table|Array.<Array.<*>>|string} */(res);
+};
+
+
+//endregion
+//region --- Interactivity
+//------------------------------------------------------------------------------
+//
+//  Interactivity
+//
+//------------------------------------------------------------------------------
+/**
+ * Event handler for mouseOver and mouseMove.
+ * @param {goog.events.Event} e
+ * @private
+ */
+anychart.stockModule.eventMarkers.ChartController.prototype.handleMouseOverAndMove_ = function(e) {
+  var group = e['group'];
+  if (group) {
+    var index = e['index'];
+    if (this.currentHoverGroup_ && (this.currentHoverGroup_ != group || this.currentHoverIndex_ != index)) {
+      this.currentHoverGroup_.plot.eventMarkers().applyState(this.currentHoverGroup_, this.currentHoverIndex_, anychart.PointState.NORMAL, anychart.PointState.HOVER);
+    }
+    if (group.plot.eventMarkers().applyState(group, index, anychart.PointState.HOVER, anychart.PointState.NORMAL)) {
+      this.currentHoverGroup_ = group;
+      this.currentHoverIndex_ = index;
+    } else {
+      this.currentHoverGroup_ = null;
+      this.currentHoverIndex_ = NaN;
+    }
+  }
+};
+
+
+/**
+ * Event handler for mouseOut.
+ * @param {goog.events.Event} e
+ * @private
+ */
+anychart.stockModule.eventMarkers.ChartController.prototype.handleMouseOut_ = function(e) {
+  var group = e['group'];
+  if (group) {
+    var index = e['index'];
+    if (group.plot.eventMarkers().applyState(group, index, anychart.PointState.NORMAL, anychart.PointState.HOVER)) {
+      this.currentHoverGroup_ = null;
+      this.currentHoverIndex_ = NaN;
+    }
+  }
+};
+
+
+/**
+ * Event handler for mouseOut.
+ * @param {goog.events.Event} e
+ * @private
+ */
+anychart.stockModule.eventMarkers.ChartController.prototype.handleMouseClick_ = function(e) {
+  var group = e['group'];
+  if (group) {
+    var index = e['index'];
+    var sameMarker = this.currentSelectGroup_ == group && this.currentSelectIndex_ == index;
+    // var evt = (/** @type {anychart.core.MouseEvent} */(e['originalEvent']));
+    if (this.currentSelectGroup_) {
+      this.currentSelectGroup_.plot.eventMarkers().applyState(this.currentSelectGroup_, this.currentSelectIndex_, sameMarker ? anychart.PointState.HOVER : anychart.PointState.NORMAL, anychart.PointState.SELECT);
+    }
+    if (!sameMarker && group.plot.eventMarkers().applyState(group, index, anychart.PointState.SELECT, anychart.PointState.HOVER)) {
+      this.currentSelectGroup_ = group;
+      this.currentSelectIndex_ = index;
+    } else {
+      this.currentSelectGroup_ = null;
+      this.currentSelectIndex_ = NaN;
+    }
+  }
 };
 
 

@@ -33,7 +33,7 @@ anychart.stockModule.eventMarkers.Table.DataItem;
  *    key: number,
  *    index: number,
  *    items: Array.<anychart.stockModule.eventMarkers.Table.DataItem>,
- *    count: number
+ *    emIndex: number
  * }}
  */
 anychart.stockModule.eventMarkers.Table.DataItemAggregate;
@@ -111,18 +111,22 @@ anychart.stockModule.eventMarkers.Table.prototype.getData = function() {
  * @param {number} from
  * @param {number} to
  * @param {anychart.stockModule.data.TableIterator.ICoIterator} coIterator
- * @return {anychart.stockModule.eventMarkers.Table.Iterator}
+ * @return {!anychart.stockModule.eventMarkers.Table.Iterator}
  */
 anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, to, coIterator) {
   var fromIndex = ~goog.array.binarySearch(this.data_, {key: from, index: -1}, anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR);
   var toIndex = ~goog.array.binarySearch(this.data_, {key: to, index: -Infinity}, anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR);
 
-  var data, count;
+  var data, count, lookups, firstIndex, j;
   if (this.lastDataCache_ && this.lastDataCache_.fromIndex == fromIndex && this.lastDataCache_.toIndex == toIndex && this.lastDataCache_.pointsCount == coIterator.getRowsCount()) {
     data = this.lastDataCache_.data;
+    lookups = this.lastDataCache_.lookups;
+    firstIndex = this.lastDataCache_.firstIndex || 0;
     count = this.lastDataCache_.count || 0;
   } else {
     data = [];
+    lookups = [];
+    firstIndex = NaN;
     count = 0;
     var i = fromIndex;
     var prevIterKey = NaN;
@@ -139,10 +143,17 @@ anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, t
         if (isNaN(prevIterKey)) {
           items.length = 0;
         } else {
+          if (!data.length) {
+            firstIndex = i - items.length;
+          }
+          for (j = 0; j < items.length; j++) {
+            lookups.push(data.length);
+          }
           data.push({
             key: prevIterKey,
             index: prevIterIndex,
-            items: items
+            items: items,
+            emIndex: i - items.length
           });
           count += items.length;
           items = [];
@@ -157,10 +168,17 @@ anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, t
         i++;
       }
       if (items.length) {
+        if (!data.length) {
+          firstIndex = i - items.length;
+        }
+        for (j = 0; j < items.length; j++) {
+          lookups.push(data.length);
+        }
         data.push({
           key: prevIterKey,
           index: prevIterIndex,
-          items: items
+          items: items,
+          emIndex: i - items.length
         });
         count += items.length;
       }
@@ -169,12 +187,14 @@ anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, t
       fromIndex: fromIndex,
       toIndex: toIndex,
       data: data,
+      lookups: lookups,
+      firstIndex: firstIndex,
       count: count,
       pointsCount: coIterator.getRowsCount()
     };
   }
 
-  return new anychart.stockModule.eventMarkers.Table.Iterator(data, count);
+  return new anychart.stockModule.eventMarkers.Table.Iterator(data, lookups, firstIndex, count);
 };
 
 
@@ -226,18 +246,34 @@ anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR = function(a, b) {
 /**
  * Iterator class.
  * @param {Array.<anychart.stockModule.eventMarkers.Table.DataItemAggregate>} data
+ * @param {Array.<number>} indexLookup
+ * @param {number} startIndex
  * @param {number} count
  * @constructor
  * @implements {anychart.data.IRowInfo}
  * @implements {anychart.data.IIterator}
  */
-anychart.stockModule.eventMarkers.Table.Iterator = function(data, count) {
+anychart.stockModule.eventMarkers.Table.Iterator = function(data, indexLookup, startIndex, count) {
   /**
    * Data items array.
    * @type {Array.<anychart.stockModule.eventMarkers.Table.DataItemAggregate>}
    * @private
    */
   this.data_ = data;
+
+  /**
+   * A lookup table for index -> groupIndex fast searches.
+   * @type {Array.<number>}
+   * @private
+   */
+  this.lookupTable_ = indexLookup;
+
+  /**
+   * First index of the selection in terms of group data indexes.
+   * @type {number}
+   * @private
+   */
+  this.firstIndex_ = startIndex;
 
   /**
    * Total rows count.
@@ -252,22 +288,47 @@ anychart.stockModule.eventMarkers.Table.Iterator = function(data, count) {
 
 /**
  * Selects an item by passed params.
- * @param {number} groupIndex
- * @param {number} subIndex
+ * @param {number} index
  * @return {boolean}
  */
-anychart.stockModule.eventMarkers.Table.Iterator.prototype.select = function(groupIndex, subIndex) {
-  var itemLength;
-  var res = 0 <= groupIndex && groupIndex < this.data_.length &&
-      0 <= subIndex && subIndex < (itemLength = this.data_[groupIndex].items.length);
-  if (res) {
-    this.currentItemIndex_ = groupIndex;
-    this.currentSubIndex_ = subIndex;
-    this.currentItemLength_ = itemLength;
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.select = function(index) {
+  var res;
+  if (res = (this.firstIndex_ <= index && index < this.firstIndex_ + this.rowsCount_)) {
+    this.currentIndex_ = index;
+    this.currentItemIndex_ = this.lookupTable_[index - this.firstIndex_];
+    var item = this.data_[this.currentItemIndex_];
+    this.currentItemLength_ = item.items.length;
+    this.currentSubIndex_ = index - item.emIndex;
   } else {
     this.currentItemLength_ = 0;
     this.currentItemIndex_ = this.data_.length;
     this.currentSubIndex_ = 0;
+    this.currentIndex_ = NaN;
+  }
+  return res;
+};
+
+
+/**
+ * @param {number} index
+ * @return {boolean}
+ */
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.selectByDataIndex = function(index) {
+  var res;
+  var itemIndex = goog.array.binarySearch(this.data_, index, function(target, value) {
+    return target - value.index;
+  });
+  if (res = (itemIndex >= 0)) {
+    var item = this.data_[itemIndex];
+    this.currentItemIndex_ = itemIndex;
+    this.currentIndex_ = item.emIndex;
+    this.currentItemLength_ = item.items.length;
+    this.currentSubIndex_ = 0;
+  } else {
+    this.currentItemLength_ = 0;
+    this.currentItemIndex_ = this.data_.length;
+    this.currentSubIndex_ = 0;
+    this.currentIndex_ = NaN;
   }
   return res;
 };
@@ -278,6 +339,7 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.select = function(gro
  * @return {anychart.stockModule.eventMarkers.Table.Iterator}
  */
 anychart.stockModule.eventMarkers.Table.Iterator.prototype.reset = function() {
+  this.currentIndex_ = this.firstIndex_ - 1;
   this.currentItemIndex_ = -1;
   this.currentSubIndex_ = this.currentItemLength_ = 0;
   return this;
@@ -295,6 +357,7 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.advance = function() 
     this.currentItemLength_ = (this.currentItemIndex_ < this.data_.length) ?
         this.data_[this.currentItemIndex_].items.length : 0;
   }
+  this.currentIndex_++;
   return this.currentSubIndex_ < this.currentItemLength_;
 };
 
@@ -312,8 +375,17 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.getRowsCount = functi
  * Returns current row data index. It is not bound to the rows count.
  * @return {number}
  */
-anychart.stockModule.eventMarkers.Table.Iterator.prototype.getIndex = function() {
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.getPointIndex = function() {
   return this.currentItemIndex_ < this.data_.length ? this.data_[this.currentItemIndex_].index : NaN;
+};
+
+
+/**
+ * Returns current row data index.
+ * @return {number}
+ */
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.getIndex = function() {
+  return this.currentItemIndex_ < this.data_.length ? this.currentIndex_ : NaN;
 };
 
 
@@ -351,7 +423,7 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.getColumn = function(
  * Returns true, if current item is the first in group.
  * @return {boolean}
  */
-anychart.stockModule.eventMarkers.Table.Iterator.prototype.isFirstInGroup = function() {
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.isFirstInStack = function() {
   return !this.currentSubIndex_;
 };
 
@@ -359,7 +431,15 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.isFirstInGroup = func
 /**
  * @return {number}
  */
-anychart.stockModule.eventMarkers.Table.Iterator.prototype.getGroupIndex = function() {
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.getFirstIndex = function() {
+  return this.firstIndex_;
+};
+
+
+/**
+ * @return {number}
+ */
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.getStackIndex = function() {
   return this.currentItemIndex_ < this.data_.length ? this.currentItemIndex_ : NaN;
 };
 
