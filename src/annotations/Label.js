@@ -61,7 +61,8 @@ anychart.annotationsModule.Label.prototype.SUPPORTED_ANCHORS = anychart.annotati
 //region State Settings
 /** @inheritDoc */
 anychart.annotationsModule.Label.prototype.getNormalDescriptorsMeta = function() {
-  return anychart.annotationsModule.LABEL_DESCRIPTORS_STATE_META;
+  var base = anychart.annotationsModule.Label.base(this, 'getNormalDescriptorsMeta');
+  return goog.array.concat(base, anychart.annotationsModule.LABEL_DESCRIPTORS_STATE_META);
 };
 
 
