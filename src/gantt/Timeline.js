@@ -3379,10 +3379,10 @@ anychart.ganttModule.TimeLine.prototype.drawBar_ = function(bounds, item, type, 
       isParent = (isTreeDataItem && item.numChildren());
       if (isParent) {
         defaultFill = resolver('parentFill', anychart.enums.ColorType.FILL, false)(this, 0, item);
-        defaultStroke = resolver('parentStroke', anychart.enums.ColorType.FILL, false)(this, 0, item);
+        defaultStroke = resolver('parentStroke', anychart.enums.ColorType.STROKE, false)(this, 0, item);
       } else {
         defaultFill = resolver('baseFill', anychart.enums.ColorType.FILL, false)(this, 0, item);
-        defaultStroke = resolver('baseStroke', anychart.enums.ColorType.FILL, false)(this, 0, item);
+        defaultStroke = resolver('baseStroke', anychart.enums.ColorType.STROKE, false)(this, 0, item);
       }
       if (isTreeDataItem) {
         this.controller.data().suspendSignalsDispatching();//this.controller.data() can be Tree or TreeView.
@@ -3955,7 +3955,7 @@ anychart.ganttModule.TimeLine.prototype.drawAsMilestone_ = function(dataItem, to
       var selectedElementStroke = resolver('selectedElementStroke', anychart.enums.ColorType.STROKE, false)(this, 0, this.selectedItem);
     }
     var milestoneFill = resolver('milestoneFill', anychart.enums.ColorType.FILL, false)(this, 0, dataItem);
-    var milestoneStroke = resolver('milestoneStroke', anychart.enums.ColorType.FILL, false)(this, 0, dataItem);
+    var milestoneStroke = resolver('milestoneStroke', anychart.enums.ColorType.STROKE, false)(this, 0, dataItem);
     if (settings) {
       var fill;
       if (isSelected) {
