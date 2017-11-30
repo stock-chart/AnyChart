@@ -138,6 +138,9 @@ anychart.annotationsModule.Label.prototype.ensureCreated = function() {
     this.textElement_.parent(this.rootLayer);
     this.textElement_.zIndex(anychart.annotationsModule.Base.LABELS_ZINDEX);
   }
+  if (!this.path_) {
+    this.path_ = this.rootLayer.path().zIndex(10).fill('none').stroke('black');
+  }
 };
 
 
@@ -157,6 +160,14 @@ anychart.annotationsModule.Label.prototype.drawOnePointShape = function(x, y) {
 
   this.textElement_.x(position.x);
   this.textElement_.y(position.y);
+  bounds = this.textElement_.getBounds();
+  this.path_
+      .clear()
+      .moveTo(bounds.left, bounds.top)
+      .lineTo(bounds.getRight(), bounds.top)
+      .lineTo(bounds.getRight(), bounds.getBottom())
+      .lineTo(bounds.left, bounds.getBottom())
+      .lineTo(bounds.left, bounds.top);
 };
 
 
