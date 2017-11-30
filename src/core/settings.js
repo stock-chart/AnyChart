@@ -936,10 +936,6 @@ anychart.core.settings.descriptors = (function() {
 
   //pie
   map.EXPLODE = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'explode', anychart.core.settings.numberOrPercentNormalizer];
-  map.OUTLINE_STROKE = [anychart.enums.PropertyHandlerType.MULTI_ARG, 'outlineStroke', anychart.core.settings.strokeOrFunctionNormalizer];
-  map.OUTLINE_FILL = [anychart.enums.PropertyHandlerType.MULTI_ARG, 'outlineFill', anychart.core.settings.fillOrFunctionNormalizer];
-  map.OUTLINE_WIDTH = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'outlineWidth', anychart.core.settings.numberOrPercentNormalizer];
-  map.OUTLINE_OFFSET = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'outlineOffset', anychart.core.settings.numberOrPercentNormalizer];
 
   return map;
 })();

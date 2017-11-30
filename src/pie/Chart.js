@@ -148,9 +148,6 @@ anychart.pieModule.Chart = function(opt_data, opt_csvSettings) {
     ['innerRadius', anychart.ConsistencyState.BOUNDS, anychart.Signal.NEEDS_REDRAW],
     ['startAngle', anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.PIE_LABELS,
       anychart.Signal.NEEDS_REDRAW],
-    // ['explode',
-    //   anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.PIE_LABELS,
-    //   anychart.Signal.NEEDS_REDRAW],
     ['sort', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW, 0, sortBeforeInvalidation],
     ['insideLabelsOffset',
       anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.PIE_LABELS,
@@ -179,10 +176,7 @@ anychart.pieModule.Chart = function(opt_data, opt_csvSettings) {
       anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.CHART_LEGEND,
       anychart.Signal.NEEDS_REDRAW],
     ['labels', 0, 0],
-    ['outlineFill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
-    ['outlineStroke', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
-    ['outlineWidth', anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
-    ['outlineOffset', anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW]
+    ['outline', 0, 0]
   ]);
   function pieFillNormalizer(args) {
     var isAqua = false;
@@ -207,13 +201,18 @@ anychart.pieModule.Chart = function(opt_data, opt_csvSettings) {
     factory.setParentEventTarget(this);
     this.invalidate(anychart.ConsistencyState.PIE_LABELS, anychart.Signal.NEEDS_REDRAW);
   });
+  this.normal_.setOption(anychart.core.StateSettings.OUTLINE_AFTER_INIT_CALLBACK, /** @this {anychart.pieModule.Chart} */ function(instance) {
+    instance.listenSignals(this.outlineInvalidated_, this);
+    this.invalidate(anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW);
+  });
 
   var hoveredDescriptorsMeta = {};
   anychart.core.settings.createDescriptorsMeta(hoveredDescriptorsMeta, [
     ['fill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
     ['stroke', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
     ['hatchFill', 0, 0],
-    ['labels', 0, 0]
+    ['labels', 0, 0],
+    ['outline', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW]
   ]);
   this.hovered_ = new anychart.core.StateSettings(this, hoveredDescriptorsMeta, anychart.PointState.HOVER);
   this.hovered_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.CIRCULAR_LABELS_CONSTRUCTOR);
@@ -223,7 +222,8 @@ anychart.pieModule.Chart = function(opt_data, opt_csvSettings) {
     ['fill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
     ['stroke', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
     ['hatchFill', 0, 0],
-    ['labels', 0, 0]
+    ['labels', 0, 0],
+    ['outline', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW]
   ]);
   this.selected_ = new anychart.core.StateSettings(this, selectedDescriptorsMeta, anychart.PointState.SELECT);
   this.selected_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.CIRCULAR_LABELS_CONSTRUCTOR);
@@ -231,7 +231,7 @@ anychart.pieModule.Chart = function(opt_data, opt_csvSettings) {
   this.resumeSignalsDispatching(false);
 };
 goog.inherits(anychart.pieModule.Chart, anychart.core.SeparateChart);
-anychart.core.settings.populateAliases(anychart.pieModule.Chart, ['fill', 'stroke', 'hatchFill'], 'normal');
+anychart.core.settings.populateAliases(anychart.pieModule.Chart, ['fill', 'stroke', 'hatchFill', 'outline'], 'normal');
 anychart.core.settings.populateAliases(anychart.pieModule.Chart, ['explode'], 'selected');
 
 
@@ -473,7 +473,7 @@ anychart.core.settings.populate(anychart.pieModule.Chart, anychart.pieModule.Cha
 
 
 //endregion
-//region --- Interface method
+//region --- Interface methods
 /** @inheritDoc */
 anychart.pieModule.Chart.prototype.getType = function() {
   return /** @type {boolean} */ (this.getOption('mode3d')) ? anychart.enums.ChartTypes.PIE_3D : anychart.enums.ChartTypes.PIE;
@@ -891,14 +891,20 @@ anychart.pieModule.Chart.prototype.resolveOption = function(name, state, point, 
   var hasSelectState = !!(state & anychart.PointState.SELECT);
 
   var stateObject = hasSelectState ? this.selected_ : hasHoverState ? this.hovered_ : this.normal_;
-  var stateValue = stateObject.getOption(name);
+  var path = name.split('.');
+  var stateValue = goog.array.reduce(path, function(rval, val) {return rval[val]();}, stateObject);
+
   if (opt_ignorePointSettings) {
     val = stateValue;
   } else {
     var pointStateName = hasSelectState ? 'selected' : hasHoverState ? 'hovered' : 'normal';
     var pointStateObject = point.get(pointStateName);
+    var pointStateValue = goog.isDef(pointStateObject) ?
+        goog.array.reduce(path, function(rval, val) {return rval[val];}, pointStateObject) :
+        void 0;
+
     val = anychart.utils.getFirstDefinedValue(
-        goog.isDef(pointStateObject) ? pointStateObject[name] : void 0,
+        pointStateValue,
         point.get(anychart.color.getPrefixedColorName(state, name)),
         stateValue);
   }
@@ -1024,14 +1030,14 @@ anychart.pieModule.Chart.prototype.colorizeSlice = function(pointState) {
 
       var sliceOutline = /** @type {acgraph.vector.Path} */ (this.getIterator().meta('sliceOutline'));
 
-      fillResolver = anychart.pieModule.Chart.getColorResolver('outlineFill', anychart.enums.ColorType.FILL, true);
+      fillResolver = anychart.pieModule.Chart.getColorResolver('outline.fill', anychart.enums.ColorType.FILL, true);
       fillColor = fillResolver(this, pointState, false, true);
       if (this.isRadialGradientMode_(fillColor) && goog.isNull(fillColor.mode)) {
         //fillColor = /** @type {!acgraph.vector.Fill} */(goog.object.clone(/** @type {Object} */(fillColor)));
         fillColor.mode = this.pieBounds_ ? this.pieBounds_ : null;
       }
 
-      strokeResolver = anychart.pieModule.Chart.getColorResolver('outlineStroke', anychart.enums.ColorType.STROKE, true);
+      strokeResolver = anychart.pieModule.Chart.getColorResolver('outline.stroke', anychart.enums.ColorType.STROKE, true);
       strokeColor = strokeResolver(this, pointState, false, true);
       if (this.isRadialGradientMode_(strokeColor) && goog.isNull(strokeColor.mode)) {
         strokeColor.mode = this.pieBounds_ ? this.pieBounds_ : null;
@@ -1166,6 +1172,16 @@ anychart.pieModule.Chart.prototype.labelsInvalidated_ = function(event) {
   }
 
   this.invalidate(state, signal);
+};
+
+
+/**
+ * Internal label invalidation handler.
+ * @param {anychart.SignalEvent} event Event object.
+ * @private
+ */
+anychart.pieModule.Chart.prototype.outlineInvalidated_ = function(event) {
+  this.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.BOUNDS, anychart.Signal.NEEDS_REDRAW);
 };
 
 
@@ -2078,9 +2094,9 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
-    var hasOutLine = this.normal_.getOption('outlineOffset') || this.normal_.getOption('outlineWidth') ||
-        this.hovered_.getOption('outlineOffset') || this.hovered_.getOption('outlineWidth') ||
-        this.selected_.getOption('outlineOffset') ||  this.selected_.getOption('outlineWidth');
+    var hasOutLine = this.normal_.outline().getOption('offset') || this.normal_.outline().getOption('width') ||
+        this.hovered_.outline().getOption('offset') || this.hovered_.outline().getOption('width') ||
+        this.selected_.outline().getOption('offset') ||  this.selected_.outline().getOption('width');
 
     if (this.outlineLayer_) {
       this.outlineLayer_.clear();
@@ -2484,8 +2500,8 @@ anychart.pieModule.Chart.prototype.drawSlice_ = function(pointState, opt_update)
   if (slice) {
     var normalizer = anychart.core.settings.numberOrPercentNormalizer;
 
-    var outlineOffset = this.resolveOption('outlineOffset', pointState, iterator, normalizer, false) || 0;
-    var outlineWidth = this.resolveOption('outlineWidth', pointState, iterator, normalizer, false) || 0;
+    var outlineOffset = this.resolveOption('outline.offset', pointState, iterator, normalizer, false) || 0;
+    var outlineWidth = this.resolveOption('outline.width', pointState, iterator, normalizer, false) || 0;
 
     outlineOffset = anychart.utils.normalizeSize(/** @type {number|string} */(outlineOffset), this.radiusValue_);
     outlineWidth = anychart.utils.normalizeSize(/** @type {number|string} */(outlineWidth), this.radiusValue_);

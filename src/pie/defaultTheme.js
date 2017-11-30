@@ -24,23 +24,33 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'labels': {
         'format': anychart.core.defaultTheme.PERCENT_VALUE_TOKEN + '%'
       },
-      'explode': 0
+      'explode': 0,
+      'outline': {
+        'width': 0,
+        'offset': 0,
+        'fill': anychart.core.defaultTheme.returnLightenSourceColor50,
+        'stroke': 'none'
+      }
     },
     'hovered': {
       'explode': 0,
-      'outlineWidth': 10,
-      'outlineOffset': 0,
-      'outlineFill': anychart.core.defaultTheme.returnLightenSourceColor50,
-      'outlineStroke': 'none'
+      'outline': {
+        'width': 10,
+        'offset': 0,
+        'fill': anychart.core.defaultTheme.returnLightenSourceColor50,
+        'stroke': 'none'
+      }
     },
     'selected': {
-      'explode': '7%',
+      'explode': '5%',
       'fill': anychart.core.defaultTheme.returnLightenSourceColor,
       'stroke': 'none',
-      'outlineWidth': 10,
-      'outlineOffset': 0,
-      'outlineFill': anychart.core.defaultTheme.returnLightenSourceColor50,
-      'outlineStroke': 'none'
+      'outline': {
+        'width': 10,
+        'offset': 0,
+        'fill': anychart.core.defaultTheme.returnLightenSourceColor50,
+        'stroke': 'none'
+      }
     },
     'a11y': {
       'titleFormat': anychart.core.defaultTheme.pieA11yTitleFormatter
