@@ -467,26 +467,14 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         }
       },
       'hovered': {
-        'type': 'flag',
         'width': 20,
         'height': 20,
-        'fill': 'green 0.5',
-        'stroke': 'black',
-        'connector': {
-          'length': 10,
-          'stroke': 'green'
-        }
+        'fill': 'green 0.5'
       },
       'selected': {
-        'type': 'flag',
         'width': 25,
         'height': 25,
-        'fill': 'red 0.5',
-        'stroke': 'black',
-        'connector': {
-          'length': 10,
-          'stroke': 'green'
-        }
+        'fill': 'red 0.5'
       },
       'direction': 'auto',
       'position': 'axis',
