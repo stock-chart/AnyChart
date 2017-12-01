@@ -291,7 +291,7 @@ anychart.stockModule.eventMarkers.Group.DataFormat;
 
 /**
  * Gets and sets data for the series.
- * @param {anychart.stockModule.eventMarkers.Group.DataFormat=} opt_value
+ * @param {*|anychart.stockModule.eventMarkers.Group.DataFormat=} opt_value
  * @return {anychart.stockModule.eventMarkers.Group|Array.<Object>}
  */
 anychart.stockModule.eventMarkers.Group.prototype.data = function(opt_value) {
