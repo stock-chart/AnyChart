@@ -457,7 +457,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'type': 'flag',
         'width': 15,
         'height': 15,
-        'fill': 'red',
+        'fill': 'blue 0.5',
         'stroke': 'blue',
         'format': 'A',
         'hAlign': 'center',
@@ -467,10 +467,10 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         }
       },
       'hovered': {
-        'type': 'pin',
+        'type': 'flag',
         'width': 20,
         'height': 20,
-        'fill': 'green',
+        'fill': 'green 0.5',
         'stroke': 'black',
         'connector': {
           'length': 10,
@@ -478,10 +478,10 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         }
       },
       'selected': {
-        'type': 'pin',
+        'type': 'flag',
         'width': 25,
         'height': 25,
-        'fill': 'blue',
+        'fill': 'red 0.5',
         'stroke': 'black',
         'connector': {
           'length': 10,

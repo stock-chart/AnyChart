@@ -546,7 +546,6 @@ anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker = function(opt
     overlay.clear();
     overlay.setTransformationMatrix(1, 0, 0, 1, 0, 0);
   }
-  overlay.fill('red 0.5');
   path.tag = tag;
   overlay.tag = tag;
   var width = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('width', state, iterator, anychart.core.settings.numberOrPercentNormalizer, false)), this.pixelBoundsCache.width);
