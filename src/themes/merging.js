@@ -653,7 +653,7 @@ anychart.themes.merging.mergingMap_ = (function() {
         ]],
         [['standalones', 'resource'],
           '.resourceList.baseSettings'],
-        'stock.eventMarkers'
+        'stock.eventMarkers.normal'
       ]
     },
     {

@@ -460,6 +460,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'fill': 'red',
         'stroke': 'blue',
         'format': 'A',
+        'hAlign': 'center',
         'connector': {
           'length': 5,
           'stroke': 'blue'

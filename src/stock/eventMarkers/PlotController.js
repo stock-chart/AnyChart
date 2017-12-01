@@ -44,65 +44,22 @@ anychart.stockModule.eventMarkers.PlotController = function(plot, chartControlle
    */
   this.connectorPaths_ = [];
 
-  var descriptorOverride = [anychart.core.settings.descriptors.EVENT_MARKER_TYPE];
-
-  var normalDescriptorsMeta = {};
-  anychart.core.settings.createDescriptorsMeta(normalDescriptorsMeta, [
-    ['type',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['width',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['height',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['fill',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['stroke',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['format',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['connector',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW]
-  ]);
-  anychart.core.settings.createTextPropertiesDescriptorsMeta(
-      normalDescriptorsMeta,
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW,
-      anychart.Signal.NEEDS_REDRAW);
-  this.normal_ = new anychart.core.StateSettings(this, normalDescriptorsMeta, anychart.PointState.NORMAL, descriptorOverride);
+  this.normal_ = new anychart.core.StateSettings(this,
+      anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_META_NORMAL,
+      anychart.PointState.NORMAL,
+      anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_OVERRIDE);
   this.normal_.setOption(anychart.core.StateSettings.CONNECTOR_AFTER_INIT_CALLBACK, anychart.core.StateSettings.DEFAULT_CONNECTOR_AFTER_INIT_CALLBACK);
 
-  var descriptorsMeta = {};
-  anychart.core.settings.createDescriptorsMeta(descriptorsMeta, [
-    ['type', 0, 0],
-    ['width', 0, 0],
-    ['height', 0, 0],
-    ['fill', 0, 0],
-    ['stroke', 0, 0],
-    ['format', 0, 0],
-    ['connector', 0, 0]
-  ]);
-  this.hovered_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.HOVER, descriptorOverride);
-  this.selected_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.SELECT, descriptorOverride);
+  this.hovered_ = new anychart.core.StateSettings(this,
+      anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_META_STATE,
+      anychart.PointState.NORMAL,
+      anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_OVERRIDE);
+  this.selected_ = new anychart.core.StateSettings(this,
+      anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_META_STATE,
+      anychart.PointState.NORMAL,
+      anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_OVERRIDE);
 
-  anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
-    ['direction',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['position',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['fieldName',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW]
-  ]);
+  anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS_META);
 
   /**
    * Partial resolution chains cache.
@@ -115,15 +72,7 @@ anychart.stockModule.eventMarkers.PlotController = function(plot, chartControlle
 };
 goog.inherits(anychart.stockModule.eventMarkers.PlotController, anychart.core.VisualBase);
 anychart.core.settings.populate(anychart.stockModule.eventMarkers.PlotController, anychart.stockModule.eventMarkers.Group.DESCRIPTORS);
-anychart.core.settings.populateAliases(anychart.stockModule.eventMarkers.PlotController, [
-  'type',
-  'width',
-  'height',
-  'fill',
-  'stroke',
-  'format',
-  'connector'
-], 'normal');
+anychart.core.settings.populateAliases(anychart.stockModule.eventMarkers.PlotController, anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_NAMES, 'normal');
 
 
 /**
@@ -139,14 +88,29 @@ anychart.stockModule.eventMarkers.PlotController.prototype.SUPPORTED_CONSISTENCY
  * Z index multiplier for default group zIndex.
  * @const {number}
  */
-anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MULTIPLIER = 0.001;
+anychart.stockModule.eventMarkers.PlotController.Z_INDEX_GROUPS_MULTI = 0.01;
+
+
+/**
+ * Z index multiplier for zIndex in group.
+ * Event marker has 3 layers - path, label, overlay. Path has zIndex 0, overlay - 2e-6.
+ * @const {number}
+ */
+anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MARKERS_MULTI = 3e-6;
+
+
+/**
+ * Z index multiplier for zIndex in group.
+ * @const {number}
+ */
+anychart.stockModule.eventMarkers.PlotController.Z_INDEX_LABELS_ADD = 1e-6;
 
 
 /**
  * Z index for event markers inside a plot controller group.
  * @const {number}
  */
-anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MARKERS = 1;
+anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MARKERS = 10;
 
 
 /**
@@ -273,7 +237,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.group = function(opt_
   if (!group) {
     group = new anychart.stockModule.eventMarkers.Group(this.plot_, index);
     group.setParentEventTarget(this);
-    group.setAutoZIndex(anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MARKERS + this.groups_.length * anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MULTIPLIER);
+    group.setAutoZIndex(anychart.stockModule.eventMarkers.PlotController.Z_INDEX_MARKERS + this.groups_.length * anychart.stockModule.eventMarkers.PlotController.Z_INDEX_GROUPS_MULTI);
     this.groups_[index] = group;
     group.listenSignals(this.onSignal_, this);
     this.invalidate(anychart.ConsistencyState.EVENT_MARKERS_DATA, anychart.Signal.NEEDS_REDRAW);
@@ -428,7 +392,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.handleMouseEvent = fu
     if (anychart.utils.instanceOf(parent, anychart.stockModule.eventMarkers.Group)) {
       group = parent;
     }
-  } else if (goog.isObject(tag)) {
+  } else if (goog.isObject(tag) && !anychart.utils.instanceOf(tag, anychart.stockModule.eventMarkers.PlotController)) {
     group = tag.group;
     event['eventMarkerIndex'] = tag.index;
   }
@@ -468,16 +432,12 @@ anychart.stockModule.eventMarkers.PlotController.prototype.applyState = function
         var hash = /** @type {string} */(tuple[0]);
         var stackIndex = iterator.getPointIndex();
         while (iterator.advance() && iterator.getPointIndex() == stackIndex) {
-          if (iterator.meta('positionHash') == hash) {
-            iterator.meta('shapes')['path'].translate(0, offset);
-          }
+          group.translateEventMarker(iterator, hash, offset);
         }
         for (var i = group.index + 1; i < this.groups_.length; i++) {
           if (group && group.enabled() && (iterator = group.getIterator()).selectByDataIndex(stackIndex)) {
             do {
-              if (iterator.meta('positionHash') == hash) {
-                iterator.meta('shapes')['path'].translate(0, offset);
-              }
+              group.translateEventMarker(iterator, hash, offset);
             } while (iterator.advance() && iterator.getPointIndex() == stackIndex);
           }
         }

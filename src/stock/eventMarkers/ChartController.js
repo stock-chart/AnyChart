@@ -21,65 +21,22 @@ anychart.stockModule.eventMarkers.ChartController = function(chart) {
    */
   this.chart_ = chart;
 
-  var descriptorOverride = [anychart.core.settings.descriptors.EVENT_MARKER_TYPE];
-
-  var normalDescriptorsMeta = {};
-  anychart.core.settings.createDescriptorsMeta(normalDescriptorsMeta, [
-    ['type',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['width',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['height',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['fill',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['stroke',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['format',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['connector',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW]
-  ]);
-  anychart.core.settings.createTextPropertiesDescriptorsMeta(
-      normalDescriptorsMeta,
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW,
-      anychart.Signal.NEEDS_REDRAW);
-  this.normal_ = new anychart.core.StateSettings(this, normalDescriptorsMeta, anychart.PointState.NORMAL, descriptorOverride);
+  this.normal_ = new anychart.core.StateSettings(this,
+      anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_META_NORMAL,
+      anychart.PointState.NORMAL,
+      anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_OVERRIDE);
   this.normal_.setOption(anychart.core.StateSettings.CONNECTOR_AFTER_INIT_CALLBACK, anychart.core.StateSettings.DEFAULT_CONNECTOR_AFTER_INIT_CALLBACK);
 
-  var descriptorsMeta = {};
-  anychart.core.settings.createDescriptorsMeta(descriptorsMeta, [
-    ['type', 0, 0],
-    ['width', 0, 0],
-    ['height', 0, 0],
-    ['fill', 0, 0],
-    ['stroke', 0, 0],
-    ['format', 0, 0],
-    ['connector', 0, 0]
-  ]);
-  this.hovered_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.HOVER, descriptorOverride);
-  this.selected_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.SELECT, descriptorOverride);
+  this.hovered_ = new anychart.core.StateSettings(this,
+      anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_META_STATE,
+      anychart.PointState.NORMAL,
+      anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_OVERRIDE);
+  this.selected_ = new anychart.core.StateSettings(this,
+      anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_META_STATE,
+      anychart.PointState.NORMAL,
+      anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_OVERRIDE);
 
-  anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
-    ['direction',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['position',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW],
-    ['fieldName',
-      anychart.ConsistencyState.EVENT_MARKERS_DATA,
-      anychart.Signal.NEEDS_REDRAW]
-  ]);
+  anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS_META);
 
   chart.listen(anychart.enums.EventType.EVENT_MARKER_MOUSE_OVER, this.handleMouseOverAndMove_, false, this);
   chart.listen(anychart.enums.EventType.EVENT_MARKER_MOUSE_MOVE, this.handleMouseOverAndMove_, false, this);
@@ -88,15 +45,7 @@ anychart.stockModule.eventMarkers.ChartController = function(chart) {
 };
 goog.inherits(anychart.stockModule.eventMarkers.ChartController, anychart.core.Base);
 anychart.core.settings.populate(anychart.stockModule.eventMarkers.ChartController, anychart.stockModule.eventMarkers.Group.DESCRIPTORS);
-anychart.core.settings.populateAliases(anychart.stockModule.eventMarkers.ChartController, [
-  'type',
-  'width',
-  'height',
-  'fill',
-  'stroke',
-  'format',
-  'connector'
-], 'normal');
+anychart.core.settings.populateAliases(anychart.stockModule.eventMarkers.ChartController, anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_NAMES, 'normal');
 
 
 //region --- Public methods
@@ -202,15 +151,17 @@ anychart.stockModule.eventMarkers.ChartController.prototype.handleMouseOverAndMo
   var group = e['group'];
   if (group) {
     var index = e['index'];
-    if (this.currentHoverGroup_ && (this.currentHoverGroup_ != group || this.currentHoverIndex_ != index)) {
-      this.currentHoverGroup_.plot.eventMarkers().applyState(this.currentHoverGroup_, this.currentHoverIndex_, anychart.PointState.NORMAL, anychart.PointState.HOVER);
-    }
-    if (group.plot.eventMarkers().applyState(group, index, anychart.PointState.HOVER, anychart.PointState.NORMAL)) {
-      this.currentHoverGroup_ = group;
-      this.currentHoverIndex_ = index;
-    } else {
-      this.currentHoverGroup_ = null;
-      this.currentHoverIndex_ = NaN;
+    if (this.currentHoverGroup_ != group || this.currentHoverIndex_ != index) {
+      if (this.currentHoverGroup_) {
+        this.currentHoverGroup_.plot.eventMarkers().applyState(this.currentHoverGroup_, this.currentHoverIndex_, anychart.PointState.NORMAL, anychart.PointState.HOVER);
+      }
+      if (group.plot.eventMarkers().applyState(group, index, anychart.PointState.HOVER, anychart.PointState.NORMAL)) {
+        this.currentHoverGroup_ = group;
+        this.currentHoverIndex_ = index;
+      } else {
+        this.currentHoverGroup_ = null;
+        this.currentHoverIndex_ = NaN;
+      }
     }
   }
 };
