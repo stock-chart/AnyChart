@@ -4296,7 +4296,7 @@ anychart.pieModule.Chart.prototype.applyAppearanceToPoint = function(pointState,
 anychart.pieModule.Chart.prototype.finalizePointAppearance = function(opt_value) {
   var iterator = this.getIterator();
   var sweep = /** @type {number} */(iterator.meta('sweep'));
-  var value = /** @type {number|string|null|undefined} */ (iterator.get('value'));
+  var value = /** @type {number|string|null|undefined} */(iterator.get('value'));
 
   // if only 1 point in Pie was drawn - forbid to explode it
   if (iterator.getRowsCount() == 1 || sweep == 360 || this.isMissing_(value))
@@ -4313,7 +4313,9 @@ anychart.pieModule.Chart.prototype.finalizePointAppearance = function(opt_value)
       this.labels().draw();
       this.labels().resumeSignalsDispatching(false);
     } else {
+      var currIndex = iterator.getIndex();
       this.labels().clear();
+      iterator.select(currIndex);
     }
   } else {
     var index = iterator.getIndex();
