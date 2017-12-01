@@ -575,6 +575,7 @@ anychart.cartesian3dModule.Chart.prototype.setSeriesPointZIndex_ = function(seri
   }
 
   iterator.meta('zIndex', zIndex);
+  iterator.meta('directIndex', directIndex);
 };
 
 
@@ -588,14 +589,16 @@ anychart.cartesian3dModule.Chart.prototype.prepare3d = function() {
   var stackIsDirect = stackDirection == anychart.enums.ScaleStackDirection.DIRECT;
 
   for (var i = 0; i < allSeries.length; i++) {
-    var actualIndex = stackIsDirect ? allSeries.length - i - 1 : i;
+    var directIndex = allSeries.length - i - 1;
+    var actualIndex = stackIsDirect ? directIndex : i;
     series = allSeries[actualIndex];
     if (series && series.enabled()) {
       if (series.check(anychart.core.drawers.Capabilities.IS_3D_BASED)) {
         if (series.isDiscreteBased()) {
           var iterator = series.getResetIterator();
           while (iterator.advance()) {
-            this.setSeriesPointZIndex_(/** @type {anychart.core.series.Cartesian} */(series), i);
+            var z = this.yScale().inverted() ? directIndex : i;
+            this.setSeriesPointZIndex_(/** @type {anychart.core.series.Cartesian} */(series), z);
           }
         } else if (series.supportsStack()) {
           this.lastEnabledAreaSeriesMap[series.getScalesPairIdentifier()] = actualIndex;
