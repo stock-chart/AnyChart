@@ -2057,7 +2057,7 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
           //todo (blackart) for debug purpose
           // console.log('iteration:', iteration, 'labels offset:', this.labelsRadiusOffset_, 'maxLabel:', this.indexOfMaxLabel, 'label for drop:', this.lableToDrop );
 
-          for (; this.labelsRadiusOffset_ && iteration && Math.abs(this.labelsRadiusOffset_) > error;) {
+          for (; this.labelsRadiusOffset_ && isFinite(this.labelsRadiusOffset_) && iteration && Math.abs(this.labelsRadiusOffset_) > error;) {
             this.updateBounds();
 
             this.labelsRadiusOffset_ = Number.NEGATIVE_INFINITY;
@@ -2347,7 +2347,7 @@ anychart.pieModule.Chart.prototype.drawLabel_ = function(pointState, opt_updateC
   var iterator = this.getIterator();
 
   var mainFactory = this.labels();
-  var stateFactory = selected ? this.selected_.labels() : hovered ? this.hovered_.labels() : mainFactory;
+  var stateFactory = selected ? this.selected_.labels() : hovered ? this.hovered_.labels() : null;
 
   var pointLabel = iterator.get('normal');
   pointLabel = goog.isDef(pointLabel) ? pointLabel['label'] : void 0;
@@ -4296,9 +4296,10 @@ anychart.pieModule.Chart.prototype.applyAppearanceToPoint = function(pointState,
 anychart.pieModule.Chart.prototype.finalizePointAppearance = function(opt_value) {
   var iterator = this.getIterator();
   var sweep = /** @type {number} */(iterator.meta('sweep'));
+  var value = /** @type {number|string|null|undefined} */ (iterator.get('value'));
 
   // if only 1 point in Pie was drawn - forbid to explode it
-  if (iterator.getRowsCount() == 1 || sweep == 360)
+  if (iterator.getRowsCount() == 1 || sweep == 360 || this.isMissing_(value))
     return;
 
   var explodeChanged = !!opt_value;
@@ -4787,7 +4788,7 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
     y1 = cy + dRY * Math.sin(angle);
 
     //radius from center of pir to label position.
-    var realConnectorRadius = Math.floor(anychart.math.vectorLength(x, y, cx, cy));
+    var realConnectorRadius = Math.floor(anychart.math.vectorLength(x, y, cx, cy)) + offsetY;
     var dAngle = Math.abs(acgraph.math.angleBetweenVectors(x - x0, y - y0, x1 - x0, y1 - y0));
 
     var isNotValidConnectorLength = leg < 0 || realConnectorRadius > dR;
