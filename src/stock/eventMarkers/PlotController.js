@@ -71,7 +71,7 @@ anychart.stockModule.eventMarkers.PlotController = function(plot, chartControlle
   this.bindHandlersToComponent(this);
 };
 goog.inherits(anychart.stockModule.eventMarkers.PlotController, anychart.core.VisualBase);
-anychart.core.settings.populate(anychart.stockModule.eventMarkers.PlotController, anychart.stockModule.eventMarkers.Group.DESCRIPTORS);
+anychart.core.settings.populate(anychart.stockModule.eventMarkers.PlotController, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS);
 anychart.core.settings.populateAliases(anychart.stockModule.eventMarkers.PlotController, anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_NAMES, 'normal');
 
 
@@ -220,7 +220,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.getEventMarkerOffsets
  * Getter/setter for groups.
  * @param {(Object|boolean|null|number)=} opt_indexOrValue Group settings to set or index of a group.
  * @param {(Object|boolean|null)=} opt_value Group settings to set.
- * @return {!(anychart.stockModule.eventMarkers.Group|anychart.stockModule.eventMarkers.PlotController)} Axis instance by index or itself for method chaining.
+ * @return {!anychart.stockModule.eventMarkers.Group} Axis instance by index or itself for method chaining.
  */
 anychart.stockModule.eventMarkers.PlotController.prototype.group = function(opt_indexOrValue, opt_value) {
   var index,
@@ -245,10 +245,8 @@ anychart.stockModule.eventMarkers.PlotController.prototype.group = function(opt_
 
   if (goog.isDef(value)) {
     group.setup(value);
-    return this;
-  } else {
-    return group;
   }
+  return group;
 };
 
 
@@ -478,7 +476,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.setupByJSON = functio
   this.hovered_.setupInternal(!!opt_default, config['hovered']);
   this.selected_.setupInternal(!!opt_default, config['selected']);
   // Group is not a typo
-  anychart.core.settings.deserialize(this, anychart.stockModule.eventMarkers.Group.DESCRIPTORS, config);
+  anychart.core.settings.deserialize(this, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS, config);
 };
 
 

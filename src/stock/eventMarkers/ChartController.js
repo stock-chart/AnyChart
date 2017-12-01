@@ -44,7 +44,7 @@ anychart.stockModule.eventMarkers.ChartController = function(chart) {
   chart.listen(anychart.enums.EventType.EVENT_MARKER_CLICK, this.handleMouseClick_, false, this);
 };
 goog.inherits(anychart.stockModule.eventMarkers.ChartController, anychart.core.Base);
-anychart.core.settings.populate(anychart.stockModule.eventMarkers.ChartController, anychart.stockModule.eventMarkers.Group.DESCRIPTORS);
+anychart.core.settings.populate(anychart.stockModule.eventMarkers.ChartController, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS);
 anychart.core.settings.populateAliases(anychart.stockModule.eventMarkers.ChartController, anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_NAMES, 'normal');
 
 
@@ -100,7 +100,7 @@ anychart.stockModule.eventMarkers.ChartController.prototype.selected = function(
  * Getter/setter for groups.
  * @param {(Object|boolean|null|number)=} opt_indexOrValue Group settings to set or index of a group.
  * @param {(Object|boolean|null)=} opt_value Group settings to set.
- * @return {anychart.stockModule.eventMarkers.Group|anychart.stockModule.eventMarkers.ChartController}
+ * @return {anychart.stockModule.eventMarkers.Group}
  */
 anychart.stockModule.eventMarkers.ChartController.prototype.group = function(opt_indexOrValue, opt_value) {
   var index,
@@ -115,9 +115,6 @@ anychart.stockModule.eventMarkers.ChartController.prototype.group = function(opt
   }
 
   var res = this.chart_.plot().eventMarkers().group(index, value);
-  if (goog.isDef(value)) {
-    return this;
-  }
   return /** @type {anychart.stockModule.eventMarkers.Group} */(res);
 };
 
@@ -239,7 +236,7 @@ anychart.stockModule.eventMarkers.ChartController.prototype.setupByJSON = functi
   this.hovered_.setupInternal(!!opt_default, config['hovered']);
   this.selected_.setupInternal(!!opt_default, config['selected']);
   // Group is not a typo
-  anychart.core.settings.deserialize(this, anychart.stockModule.eventMarkers.Group.DESCRIPTORS, config);
+  anychart.core.settings.deserialize(this, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS, config);
 };
 
 

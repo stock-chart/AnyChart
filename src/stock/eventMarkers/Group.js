@@ -1051,7 +1051,7 @@ anychart.stockModule.eventMarkers.Group.prototype.setupByJSON = function(config,
   this.normal_.setupInternal(!!opt_default, config['normal']);
   this.hovered_.setupInternal(!!opt_default, config['hovered']);
   this.selected_.setupInternal(!!opt_default, config['selected']);
-  anychart.core.settings.deserialize(this, anychart.stockModule.eventMarkers.Group.DESCRIPTORS, config);
+  anychart.core.settings.deserialize(this, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS, config);
 };
 
 
