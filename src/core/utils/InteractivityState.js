@@ -139,7 +139,6 @@ anychart.core.utils.InteractivityState.prototype.getSeriesStateForUpdate = funct
  * their state to opt_stateToChange.
  */
 anychart.core.utils.InteractivityState.prototype.setPointState = function(state, opt_index, opt_stateToChange) {
-  console.log('setPointState');
   var i, iterator, index;
   if (goog.isDef(opt_index)) {
     var val = this.target.getStartValueForAppearanceReduction();

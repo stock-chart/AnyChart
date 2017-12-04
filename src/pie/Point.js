@@ -38,9 +38,14 @@ anychart.pieModule.Point.prototype.getEndAngle = function() {
 
 
 /**
- * Alias-method
+ * Getter/setter for select point state.
+ * @param {boolean=} opt_value Select state to set.
+ * @return {(boolean|anychart.core.Point)} Select state of self for chaining.
  */
-anychart.pieModule.Point.prototype.exploded = anychart.pieModule.Point.prototype.selected;
+anychart.pieModule.Point.prototype.exploded = function(opt_value) {
+  anychart.core.reporting.warning(anychart.enums.WarningCode.DEPRECATED, null, ['exploded()', 'selected()'], true);
+  return this.selected(opt_value);
+};
 
 
 //exports
@@ -49,6 +54,6 @@ anychart.pieModule.Point.prototype.exploded = anychart.pieModule.Point.prototype
   proto['getStartAngle'] = proto.getStartAngle;
   proto['getEndAngle'] = proto.getEndAngle;
   proto['hovered'] = proto.hovered;
-  proto['selected'] = proto.selected;
+  proto['selected'] = proto.selected; //deprecated
   proto['exploded'] = proto.exploded;
 })();
