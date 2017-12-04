@@ -455,26 +455,29 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     'eventMarkers': {
       'normal': {
         'type': 'flag',
-        'width': 15,
-        'height': 15,
-        'fill': 'blue 0.5',
+        'width': 20,
+        'height': 20,
+        'fill': 'blue',
         'stroke': 'blue',
+        'adjustFontSize': true,
+        'fontSize': null,
         'format': 'A',
         'hAlign': 'center',
+        'vAlign': 'center',
         'connector': {
           'length': 5,
           'stroke': 'blue'
         }
       },
       'hovered': {
-        'width': 20,
-        'height': 20,
-        'fill': 'green 0.5'
+        'width': 25,
+        'height': 25,
+        'fill': 'green'
       },
       'selected': {
         'width': 25,
         'height': 25,
-        'fill': 'red 0.5'
+        'fill': 'red'
       },
       'direction': 'auto',
       'position': 'axis',

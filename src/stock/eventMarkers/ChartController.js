@@ -218,7 +218,7 @@ anychart.stockModule.eventMarkers.ChartController.prototype.serialize = function
   var json = anychart.stockModule.eventMarkers.ChartController.base(this, 'serialize');
 
   // Group is not a typo
-  anychart.core.settings.serialize(this, anychart.stockModule.eventMarkers.Group.DESCRIPTORS, json);
+  anychart.core.settings.serialize(this, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS, json);
   json['normal'] = this.normal_.serialize();
   json['hovered'] = this.hovered_.serialize();
   json['selected'] = this.selected_.serialize();

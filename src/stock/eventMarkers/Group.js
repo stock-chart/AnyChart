@@ -480,10 +480,15 @@ anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker = function(opt
   if (position != anychart.enums.EventMarkerPosition.AXIS) {
     seriesId = /** @type {string} */(this.resolveOption('seriesId', 0, iterator, anychart.core.settings.stringNormalizer, false, undefined, true));
     var series = this.plot.getSeries(seriesId) || this.plot.getSeriesAt(0);
-    var point;
+    var point, yValue;
     if (series && (point = series.getSelectableData().getAtIndex(iterator.getPointIndex())) && !point.meta('missing')) {
-      fieldName = /** @type {string} */(this.resolveOption('fieldName', 0, iterator, anychart.core.settings.stringNormalizer, false, undefined, true));
-      var yValue = Number(point.get(fieldName));
+      if (position == anychart.enums.EventMarkerPosition.ZERO) {
+        fieldName = 'zero';
+        yValue = 0;
+      } else {
+        fieldName = /** @type {string} */(this.resolveOption('fieldName', 0, iterator, anychart.core.settings.stringNormalizer, false, undefined, true));
+        yValue = Number(point.get(fieldName));
+      }
       if (position == anychart.enums.EventMarkerPosition.SERIES_POSITIVE && yValue < 0 ||
           position == anychart.enums.EventMarkerPosition.SERIES_NEGATIVE && yValue > 0) {
         yValue = 0;
@@ -499,8 +504,8 @@ anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker = function(opt
         y = Number(point.meta(fieldName));
         if (isNaN(y) && !isNaN(yValue)) {
           y = series.applyRatioToBounds(series.yScale().transform(yValue), false);
-          y = goog.math.clamp(y, this.pixelBoundsCache.top, this.pixelBoundsCache.top + this.pixelBoundsCache.height);
         }
+        y = goog.math.clamp(y, this.pixelBoundsCache.top, this.pixelBoundsCache.top + this.pixelBoundsCache.height);
       }
       if (direction == anychart.enums.EventMarkerDirection.AUTO) {
         direction = (yValue < 0 || !yValue && position == anychart.enums.EventMarkerPosition.SERIES_NEGATIVE) ?
@@ -559,9 +564,10 @@ anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker = function(opt
   var width = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('width', state, iterator, anychart.core.settings.numberOrPercentNormalizer, false)), this.pixelBoundsCache.width);
   var height = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('height', state, iterator, anychart.core.settings.numberOrPercentNormalizer, false)), this.pixelBoundsCache.height);
   drawer(path, x, y, width, height, directionIsUp);
-  var label = this.drawLabel_(iterator, state, type, x, y, height, directionIsUp, !!opt_offsets ? zIndex + anychart.stockModule.eventMarkers.PlotController.Z_INDEX_LABELS_ADD : NaN);
+  var label = this.drawLabel_(iterator, state, type, x, y, width, height, directionIsUp, !!opt_offsets ? zIndex + anychart.stockModule.eventMarkers.PlotController.Z_INDEX_LABELS_ADD : NaN);
   label.getDomElement().tag = tag;
-  drawer(overlay, x, y, width, height, directionIsUp);
+  var overlayDrawer = this.SINGLE_MARKER_DRAWERS[type == anychart.enums.EventMarkerType.FLAG ? anychart.enums.EventMarkerType.FLAG : anychart.enums.EventMarkerType.RECT];
+  overlayDrawer(overlay, x, y, width, height, directionIsUp);
   offset += height;
   totalHeightDiff = height + connectorLen - Number(iterator.meta('totalHeight') || 0);
   iterator.meta('totalHeight', height + connectorLen);
@@ -576,13 +582,14 @@ anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker = function(opt
  * @param {anychart.enums.EventMarkerType} markerType
  * @param {number} x
  * @param {number} y
+ * @param {number} width
  * @param {number} height
  * @param {boolean} directionIsUp
  * @param {number} zIndexOrUpdate
  * @return {anychart.core.ui.LabelsFactory.Label}
  * @private
  */
-anychart.stockModule.eventMarkers.Group.prototype.drawLabel_ = function(iterator, state, markerType, x, y, height, directionIsUp, zIndexOrUpdate) {
+anychart.stockModule.eventMarkers.Group.prototype.drawLabel_ = function(iterator, state, markerType, x, y, width, height, directionIsUp, zIndexOrUpdate) {
   var index = iterator.getIndex();
   var label;
   var formatProvider = new anychart.format.Context({
@@ -591,7 +598,7 @@ anychart.stockModule.eventMarkers.Group.prototype.drawLabel_ = function(iterator
       type: anychart.enums.TokenType.DATE_TIME
     }
   }, iterator);
-  var positionProvider = this.getTextPositionProvider_(markerType, x, y, height, directionIsUp);
+  var positionProvider = this.getTextPositionProvider_(markerType, x, y, width, height, directionIsUp);
   if (isNaN(zIndexOrUpdate)) {
     label = /** @type {anychart.core.ui.LabelsFactory.Label} */(this.labels_.getLabel(index));
     label.formatProvider(formatProvider);
@@ -607,8 +614,9 @@ anychart.stockModule.eventMarkers.Group.prototype.drawLabel_ = function(iterator
   }
   labelChain.push({
     'positionFormatter': anychart.utils.DEFAULT_FORMATTER,
-    'anchor': this.getTextAnchor_(markerType, directionIsUp),
-    'rotation': 0
+    'anchor': anychart.enums.Anchor.CENTER,
+    'rotation': 0,
+    'height': positionProvider['height'] // defined only in PIN type
   });
   label.stateOrder(/** @type {Array.<Object>} */(labelChain));
   label.container(/** @type {acgraph.vector.ILayer} */(this.container()));
@@ -977,44 +985,34 @@ anychart.stockModule.eventMarkers.Group.prototype.SINGLE_MARKER_DRAWERS = (funct
 
 
 /**
- * Returns text anchor due to shape properties.
- * @param {anychart.enums.EventMarkerType} type
- * @param {boolean} directionIsUp
- * @return {anychart.enums.Anchor}
- * @private
- */
-anychart.stockModule.eventMarkers.Group.prototype.getTextAnchor_ = function(type, directionIsUp) {
-  var anchor;
-  if (type == anychart.enums.EventMarkerType.FLAG) {
-    anchor = anychart.enums.Anchor.LEFT_CENTER;
-  } else if (directionIsUp) {
-    anchor = anychart.enums.Anchor.CENTER_BOTTOM;
-  } else {
-    anchor = anychart.enums.Anchor.CENTER_TOP;
-  }
-  return anchor;
-};
-
-
-/**
  * Returns text position provider due to shape properties.
  * @param {anychart.enums.EventMarkerType} type
  * @param {number} x
  * @param {number} y
+ * @param {number} width
  * @param {number} height
  * @param {boolean} directionIsUp
  * @return {Object}
  * @private
  */
-anychart.stockModule.eventMarkers.Group.prototype.getTextPositionProvider_ = function(type, x, y, height, directionIsUp) {
+anychart.stockModule.eventMarkers.Group.prototype.getTextPositionProvider_ = function(type, x, y, width, height, directionIsUp) {
+  var res = {};
   if (directionIsUp)
     height = -height;
   if (type == anychart.enums.EventMarkerType.FLAG) {
-    y += height / 2;
-  } else if (type == anychart.enums.EventMarkerType.PIN) {
-    y += height / 4;
+    x += width / 2;
   }
-  return {'value': {'x': x, 'y': y}};
+  if (type == anychart.enums.EventMarkerType.PIN) {
+    y += 5 * height / 8;
+    res['height'] = Math.abs(height * 3 / 4);
+  } else {
+    y += height / 2;
+  }
+  res['value'] = {
+    'x': x,
+    'y': y
+  };
+  return res;
 };
 
 
@@ -1029,7 +1027,7 @@ anychart.stockModule.eventMarkers.Group.prototype.getTextPositionProvider_ = fun
 anychart.stockModule.eventMarkers.Group.prototype.serialize = function() {
   var json = anychart.stockModule.eventMarkers.Group.base(this, 'serialize');
 
-  anychart.core.settings.serialize(this, anychart.stockModule.eventMarkers.Group.DESCRIPTORS, json);
+  anychart.core.settings.serialize(this, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS, json);
   json['normal'] = this.normal_.serialize();
   json['hovered'] = this.hovered_.serialize();
   json['selected'] = this.selected_.serialize();

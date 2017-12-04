@@ -433,6 +433,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.applyState = function
           group.translateEventMarker(iterator, hash, offset);
         }
         for (var i = group.index + 1; i < this.groups_.length; i++) {
+          group = this.groups_[i];
           if (group && group.enabled() && (iterator = group.getIterator()).selectByDataIndex(stackIndex)) {
             do {
               group.translateEventMarker(iterator, hash, offset);
@@ -458,7 +459,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.serialize = function(
   var json = anychart.stockModule.eventMarkers.PlotController.base(this, 'serialize');
 
   // Group is not a typo
-  anychart.core.settings.serialize(this, anychart.stockModule.eventMarkers.Group.DESCRIPTORS, json);
+  anychart.core.settings.serialize(this, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS, json);
   json['normal'] = this.normal_.serialize();
   json['hovered'] = this.hovered_.serialize();
   json['selected'] = this.selected_.serialize();
