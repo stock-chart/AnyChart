@@ -546,8 +546,9 @@ anychart.cartesian3dModule.Chart.prototype.setSeriesPointZIndex_ = function(seri
   var inc = directIndex * anychart.core.series.Base.ZINDEX_INCREMENT_MULTIPLIER;
   var value = anychart.utils.toNumber(iterator.get('value'));
   var zIndex = anychart.core.ChartWithSeries.ZINDEX_SERIES;
+  var mult = this.yScale().inverted() ? -1 : 1;
 
-  if (value > 0) {
+  if (value >= 0) {
     if (/** @type {boolean} */(series.getOption('isVertical'))) {
       if (!series.planIsStacked()) {
         if (this.getOption('zDistribution')) {
@@ -556,20 +557,20 @@ anychart.cartesian3dModule.Chart.prototype.setSeriesPointZIndex_ = function(seri
           zIndex -= inc;
         }
       } else {
-        zIndex += inc;
+        zIndex += (inc * mult);
       }
     } else {
-      zIndex += inc;
+      zIndex += (inc * mult);
     }
 
   } else if (value < 0) {
     if (/** @type {boolean} */(series.getOption('isVertical'))) {
-      zIndex -= inc;
+      zIndex -= (inc * mult);
     } else {
       if (!series.planIsStacked()) {
         zIndex += inc;
       } else {
-        zIndex -= inc;
+        zIndex -= (inc * mult);
       }
     }
   }
@@ -585,20 +586,20 @@ anychart.cartesian3dModule.Chart.prototype.prepare3d = function() {
   this.lastEnabledAreaSeriesMap = {};
   var allSeries = this.getAllSeries();
   var series;
+  var isStacked = /** @type {anychart.enums.ScaleStackMode} */ (this.yScale().stackMode()) != anychart.enums.ScaleStackMode.NONE;
   var stackDirection = /** @type {anychart.enums.ScaleStackDirection} */ (this.yScale().stackDirection());
   var stackIsDirect = stackDirection == anychart.enums.ScaleStackDirection.DIRECT;
 
   for (var i = 0; i < allSeries.length; i++) {
     var directIndex = allSeries.length - i - 1;
-    var actualIndex = stackIsDirect ? directIndex : i;
+    var actualIndex = isStacked && stackIsDirect ? directIndex : i;
     series = allSeries[actualIndex];
     if (series && series.enabled()) {
       if (series.check(anychart.core.drawers.Capabilities.IS_3D_BASED)) {
         if (series.isDiscreteBased()) {
           var iterator = series.getResetIterator();
           while (iterator.advance()) {
-            var z = this.yScale().inverted() ? directIndex : i;
-            this.setSeriesPointZIndex_(/** @type {anychart.core.series.Cartesian} */(series), z);
+            this.setSeriesPointZIndex_(/** @type {anychart.core.series.Cartesian} */(series), i);
           }
         } else if (series.supportsStack()) {
           this.lastEnabledAreaSeriesMap[series.getScalesPairIdentifier()] = actualIndex;
