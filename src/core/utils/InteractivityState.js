@@ -139,6 +139,7 @@ anychart.core.utils.InteractivityState.prototype.getSeriesStateForUpdate = funct
  * their state to opt_stateToChange.
  */
 anychart.core.utils.InteractivityState.prototype.setPointState = function(state, opt_index, opt_stateToChange) {
+  console.log('setPointState');
   var i, iterator, index;
   if (goog.isDef(opt_index)) {
     var val = this.target.getStartValueForAppearanceReduction();
@@ -212,11 +213,13 @@ anychart.core.utils.InteractivityState.prototype.setPointState = function(state,
 /**
  * @param {anychart.PointState|number} state .
  * @param {number} index .
+ * @param {*=} opt_rval .
+ * @return {*}
  * @protected
  */
-anychart.core.utils.InteractivityState.prototype.addPointStateInternal = function(state, index) {
+anychart.core.utils.InteractivityState.prototype.addPointStateInternal = function(state, index, opt_rval) {
   if (!this.target.getIterator().select(index))
-    return;
+    return opt_rval;
 
   var arrIndex = goog.array.binarySearch(this.stateIndex, index);
   //if state is normal - do nothing.
@@ -228,7 +231,7 @@ anychart.core.utils.InteractivityState.prototype.addPointStateInternal = functio
       goog.array.insertAt(this.stateValue, state, ~arrIndex);
 
       if (this.seriesState == anychart.PointState.NORMAL)
-        this.target.applyAppearanceToPoint(state);
+        opt_rval = this.target.applyAppearanceToPoint(state, opt_rval);
 
       var updateSeries = this.updateRules(state, NaN);
       if (updateSeries && !this.target.isDiscreteBased() && this.target.hoverMode() == anychart.enums.HoverMode.SINGLE)
@@ -236,6 +239,7 @@ anychart.core.utils.InteractivityState.prototype.addPointStateInternal = functio
     } else
       this.stateValue[arrIndex] |= state;
   }
+  return opt_rval;
 };
 
 
@@ -250,14 +254,15 @@ anychart.core.utils.InteractivityState.prototype.addPointState = function(state,
     //If passed index out of index data, then do nothing
     if (opt_index >= this.target.getIterator().getRowsCount())
       return;
+    var val = this.target.getStartValueForAppearanceReduction();
     if (goog.isArray(opt_index)) {
       goog.array.sort(opt_index);
       for (i = opt_index.length; i--;)
-        this.addPointStateInternal(state, +opt_index[i]);
+        val = this.addPointStateInternal(state, +opt_index[i], val);
     } else {
-      this.addPointStateInternal(state, +opt_index);
+      val = this.addPointStateInternal(state, +opt_index, val);
     }
-    this.target.finalizePointAppearance();
+    this.target.finalizePointAppearance(val);
   } else {
     if (!this.isStateContains(this.seriesState, state)) {
       for (i = this.stateValue.length; i--;) {
