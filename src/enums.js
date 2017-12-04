@@ -849,7 +849,7 @@ anychart.enums.EventMarkerPosition = {
   SERIES: 'series',
   SERIES_POSITIVE: 'series-positive',
   SERIES_NEGATIVE: 'series-negative',
-  SERIES_ZERO: 'series-zero',
+  ZERO: 'zero',
   AXIS: 'axis'
 };
 

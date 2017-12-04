@@ -75,6 +75,12 @@ anychart.stockModule.eventMarkers.Group = function(plot, index) {
    * @private
    */
   this.partialChains_ = [];
+
+  /**
+   * @type {function(anychart.core.IShapeManagerUser, number, boolean=, boolean=): acgraph.vector.AnyColor}
+   * @private
+   */
+  this.connectorStrokeResolver_ = anychart.color.getColorResolver('stroke', anychart.enums.ColorType.STROKE, true, true);
 };
 goog.inherits(anychart.stockModule.eventMarkers.Group, anychart.core.VisualBase);
 
@@ -131,7 +137,9 @@ anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_OVERRIDE = (function()
     anychart.core.settings.descriptors.EVENT_MARKER_TYPE,
     anychart.core.settings.descriptors.WIDTH,
     anychart.core.settings.descriptors.HEIGHT,
-    anychart.core.settings.descriptors.FORMAT
+    anychart.core.settings.descriptors.FORMAT,
+    anychart.core.settings.descriptors.FILL_FUNCTION,
+    anychart.core.settings.descriptors.STROKE_FUNCTION
   ]);
   return res;
 })();
@@ -144,8 +152,8 @@ anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS = (function() {
   var map = {};
   anychart.core.settings.createDescriptors(map, anychart.stockModule.eventMarkers.Group.STATE_DESCRIPTORS_OVERRIDE);
   anychart.core.settings.createDescriptors(map, [
-      anychart.core.settings.descriptors.FILL,
-      anychart.core.settings.descriptors.STROKE
+      anychart.core.settings.descriptors.FILL_FUNCTION,
+      anychart.core.settings.descriptors.STROKE_FUNCTION
   ]);
   return map;
 })();
@@ -279,12 +287,12 @@ anychart.stockModule.eventMarkers.Group.prototype.getParentState = function(stat
 //------------------------------------------------------------------------------
 /**
  * @typedef {{
- *   data: Array.<(number|Date|{date:(number|Date)})>,
+ *   data: Array.<(number|string|Date|{date:(number|string|Date)})>,
  *   dateTimePattern: (string|null|undefined),
  *   timeOffset: (number|null|undefined),
  *   baseDate: (number|Date|null|undefined),
  *   locale: (string|anychart.format.Locale|null|undefined)
- * }|Array.<(number|Date|{date:(number|Date)})>}
+ * }|Array.<(number|string|Date|{date:(number|string|Date)})>}
  */
 anychart.stockModule.eventMarkers.Group.DataFormat;
 
@@ -486,7 +494,7 @@ anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker = function(opt
         y = goog.math.clamp(y, this.pixelBoundsCache.top, this.pixelBoundsCache.top + this.pixelBoundsCache.height);
         position = (y == this.pixelBoundsCache.top + this.pixelBoundsCache.height) ?
             anychart.enums.EventMarkerPosition.AXIS :
-            anychart.enums.EventMarkerPosition.SERIES_ZERO;
+            anychart.enums.EventMarkerPosition.ZERO;
       } else {
         y = Number(point.meta(fieldName));
         if (isNaN(y) && !isNaN(yValue)) {
@@ -514,7 +522,7 @@ anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker = function(opt
   iterator.meta('offset', offset);
   var connectorLen = 0;
   if (!offset) {
-    connectorLen = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('length', state, iterator, anychart.core.settings.numberOrPercentNormalizer, true)), this.pixelBoundsCache.width);
+    connectorLen = anychart.utils.normalizeSize(/** @type {number|string} */(this.resolveOption('length', state, iterator, anychart.core.settings.numberOrPercentNormalizer, true)), this.pixelBoundsCache.height);
     offset += connectorLen;
   }
   y += directionIsUp ? -offset : offset;
@@ -522,7 +530,7 @@ anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker = function(opt
     group: this,
     index: iterator.getIndex()
   };
-  var connectorStroke = /** @type {acgraph.vector.Stroke} */(this.resolveOption('stroke', state, iterator, anychart.core.settings.strokeSimpleNormalizer, true));
+  var connectorStroke = /** @type {acgraph.vector.Stroke} */(this.connectorStrokeResolver_(this, state));
   if (connectorLen && connectorStroke) {
     var connectorPath = this.plot.eventMarkers().drawConnector(x, y, y - (directionIsUp ? -connectorLen : connectorLen), connectorStroke, opt_offsets ? undefined : /** @type {acgraph.vector.Path} */(iterator.meta('connectorPath')));
     connectorPath.tag = tag;
