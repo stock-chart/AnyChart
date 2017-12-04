@@ -546,7 +546,9 @@ anychart.cartesian3dModule.Chart.prototype.setSeriesPointZIndex_ = function(seri
   var inc = directIndex * anychart.core.series.Base.ZINDEX_INCREMENT_MULTIPLIER;
   var value = anychart.utils.toNumber(iterator.get('value'));
   var zIndex = anychart.core.ChartWithSeries.ZINDEX_SERIES;
-  var mult = this.yScale().inverted() ? -1 : 1;
+  var yMult = this.yScale().inverted() ? -1 : 1;
+  var xMult = this.xScale().inverted() ? 1 : -1;
+
 
   if (value >= 0) {
     if (/** @type {boolean} */(series.getOption('isVertical'))) {
@@ -554,23 +556,23 @@ anychart.cartesian3dModule.Chart.prototype.setSeriesPointZIndex_ = function(seri
         if (this.getOption('zDistribution')) {
           zIndex += inc;
         } else {
-          zIndex -= inc;
+          zIndex -= (inc * xMult * yMult);
         }
       } else {
-        zIndex += (inc * mult);
+        zIndex += (inc * yMult);
       }
     } else {
-      zIndex += (inc * mult);
+      zIndex += (inc * yMult);
     }
 
   } else if (value < 0) {
     if (/** @type {boolean} */(series.getOption('isVertical'))) {
-      zIndex -= (inc * mult);
+      zIndex -= (inc * xMult * yMult);
     } else {
       if (!series.planIsStacked()) {
         zIndex += inc;
       } else {
-        zIndex -= (inc * mult);
+        zIndex -= (inc * yMult);
       }
     }
   }
