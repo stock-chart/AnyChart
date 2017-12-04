@@ -464,6 +464,13 @@ anychart.stockModule.eventMarkers.PlotController.prototype.serialize = function(
   json['hovered'] = this.hovered_.serialize();
   json['selected'] = this.selected_.serialize();
 
+  var groups = [];
+  for (var i = 0; i < this.groups_.length; i++) {
+    var group = this.groups_[i];
+    groups.push(group ? group.serialize() : null);
+  }
+  json['groups'] = groups;
+
   return json;
 };
 
@@ -478,6 +485,28 @@ anychart.stockModule.eventMarkers.PlotController.prototype.setupByJSON = functio
   this.selected_.setupInternal(!!opt_default, config['selected']);
   // Group is not a typo
   anychart.core.settings.deserialize(this, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS, config);
+
+  var groups = config['groups'];
+  if (goog.isDef(groups)) {
+    this.disposeGroups();
+    if (goog.isArray(groups)) {
+      for (var i = 0; i < groups.length; i++) {
+        var group = groups[i];
+        if (goog.isDefAndNotNull(group)) {
+          this.group(i, group);
+        }
+      }
+    }
+  }
+};
+
+
+/**
+ * Disposes groups.
+ */
+anychart.stockModule.eventMarkers.PlotController.prototype.disposeGroups = function() {
+  goog.disposeAll(this.groups_);
+  this.groups_.length = 0;
 };
 
 

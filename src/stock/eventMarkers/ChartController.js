@@ -237,6 +237,19 @@ anychart.stockModule.eventMarkers.ChartController.prototype.setupByJSON = functi
   this.selected_.setupInternal(!!opt_default, config['selected']);
   // Group is not a typo
   anychart.core.settings.deserialize(this, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS, config);
+
+  var groups = config['groups'];
+  if (goog.isDef(groups)) {
+    this.chart_.plot().eventMarkers().disposeGroups();
+    if (goog.isArray(groups)) {
+      for (var i = 0; i < groups.length; i++) {
+        var group = groups[i];
+        if (goog.isDefAndNotNull(group)) {
+          this.group(i, group);
+        }
+      }
+    }
+  }
 };
 
 

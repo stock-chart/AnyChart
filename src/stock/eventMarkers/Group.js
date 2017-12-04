@@ -1032,6 +1032,8 @@ anychart.stockModule.eventMarkers.Group.prototype.serialize = function() {
   json['hovered'] = this.hovered_.serialize();
   json['selected'] = this.selected_.serialize();
 
+  json['data'] = this.dataTable_.getData();
+
   return json;
 };
 
