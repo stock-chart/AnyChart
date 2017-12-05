@@ -4,6 +4,7 @@ goog.require('anychart.core.StateSettings');
 goog.require('anychart.core.VisualBase');
 goog.require('anychart.core.shapeManagers.PerPoint');
 goog.require('anychart.core.ui.LabelsFactory');
+goog.require('anychart.core.ui.Tooltip');
 goog.require('anychart.enums');
 goog.require('anychart.format.Context');
 goog.require('anychart.stockModule.eventMarkers.Table');
@@ -590,14 +591,11 @@ anychart.stockModule.eventMarkers.Group.prototype.drawEventMarker = function(opt
  * @private
  */
 anychart.stockModule.eventMarkers.Group.prototype.drawLabel_ = function(iterator, state, markerType, x, y, width, height, directionIsUp, zIndexOrUpdate) {
+  var chain = this.getResolutionChain(iterator, state, false, false);
   var index = iterator.getIndex();
   var label;
-  var formatProvider = new anychart.format.Context({
-    'dateTime': {
-      value: iterator.getX(),
-      type: anychart.enums.TokenType.DATE_TIME
-    }
-  }, iterator);
+  iterator.meta('symbol', (/** @type {string} */(this.resolveOptionFast(chain, 'format', anychart.core.settings.stringNormalizer))).charAt(0));
+  var formatProvider = new anychart.format.Context(this.getContextProviderValues(iterator), iterator);
   var positionProvider = this.getTextPositionProvider_(markerType, x, y, width, height, directionIsUp);
   if (isNaN(zIndexOrUpdate)) {
     label = /** @type {anychart.core.ui.LabelsFactory.Label} */(this.labels_.getLabel(index));
@@ -607,7 +605,6 @@ anychart.stockModule.eventMarkers.Group.prototype.drawLabel_ = function(iterator
     label = this.labels_.add(formatProvider, positionProvider, index);
     label.zIndex(zIndexOrUpdate);
   }
-  var chain = this.getResolutionChain(iterator, state, false, false);
   var labelChain = [];
   for (var i = chain.length; i--;) {
     labelChain.push(chain[i]);
@@ -1015,6 +1012,103 @@ anychart.stockModule.eventMarkers.Group.prototype.getTextPositionProvider_ = fun
   return res;
 };
 
+/**
+ * @param {number} index
+ * @return {anychart.format.Context}
+ */
+anychart.stockModule.eventMarkers.Group.prototype.getContextProvider = function(index) {
+  var values;
+  var iterator = this.getIterator();
+  if (iterator.select(index)) {
+    values = this.getContextProviderValues(iterator);
+  } else {
+    iterator = null;
+  }
+  var res = new anychart.format.Context(values, iterator);
+  res.propagate();
+  return res;
+};
+
+
+/**
+ *
+ * @param {anychart.stockModule.eventMarkers.Table.Iterator} iterator
+ * @return {Object}
+ */
+anychart.stockModule.eventMarkers.Group.prototype.getContextProviderValues = function(iterator) {
+  var grouping = this.plot.getChart().grouping().getCurrentDataInterval();
+  return {
+    'date': {
+      value: iterator.getPreciseX(),
+      type: anychart.enums.TokenType.DATE_TIME
+    },
+    'groupedDate': {
+      value: iterator.getX(),
+      type: anychart.enums.TokenType.DATE_TIME
+    },
+    'group': {
+      value: this,
+      type: anychart.enums.TokenType.UNKNOWN
+    },
+    'plot': {
+      value: this.plot,
+      type: anychart.enums.TokenType.UNKNOWN
+    },
+    'chart': {
+      value: this.plot.getChart(),
+      type: anychart.enums.TokenType.UNKNOWN
+    },
+    'title': {
+      value: iterator.get('title') || '',
+      type: anychart.enums.TokenType.STRING
+    },
+    'description': {
+      value: iterator.get('description') || '',
+      type: anychart.enums.TokenType.STRING
+    },
+    'symbol': {
+      value: iterator.meta('symbol'),
+      type: anychart.enums.TokenType.STRING
+    },
+    'dataIntervalUnit': {
+      value: grouping['unit'],
+      type: anychart.enums.TokenType.STRING
+    },
+    'dataIntervalUnitCount': {
+      value: grouping['count'],
+      type: anychart.enums.TokenType.NUMBER
+    }
+  };
+};
+
+
+//endregion
+//region --- Tooltip
+//------------------------------------------------------------------------------
+//
+//  Tooltip
+//
+//------------------------------------------------------------------------------
+/**
+ * Creates chart tooltip.
+ * @param {(Object|boolean|null)=} opt_value
+ * @return {!(anychart.core.ui.Tooltip|anychart.stockModule.eventMarkers.Group)}
+ */
+anychart.stockModule.eventMarkers.Group.prototype.tooltip = function(opt_value) {
+  if (!this.tooltip_) {
+    this.tooltip_ = new anychart.core.ui.Tooltip(0);
+    this.tooltip_.parent(/** @type {anychart.core.ui.Tooltip} */(this.plot.eventMarkers().tooltip()));
+    this.tooltip_.containerProvider(this.plot);
+  }
+
+  if (goog.isDef(opt_value)) {
+    this.tooltip_.setup(opt_value);
+    return this;
+  } else {
+    return this.tooltip_;
+  }
+};
+
 
 //endregion
 //region --- Ser/Deser/Disp
@@ -1031,6 +1125,7 @@ anychart.stockModule.eventMarkers.Group.prototype.serialize = function() {
   json['normal'] = this.normal_.serialize();
   json['hovered'] = this.hovered_.serialize();
   json['selected'] = this.selected_.serialize();
+  json['tooltip'] = this.tooltip().serialize();
 
   json['data'] = this.dataTable_.getData();
 
@@ -1058,14 +1153,15 @@ anychart.stockModule.eventMarkers.Group.prototype.setupByJSON = function(config,
   this.normal_.setupInternal(!!opt_default, config['normal']);
   this.hovered_.setupInternal(!!opt_default, config['hovered']);
   this.selected_.setupInternal(!!opt_default, config['selected']);
+  this.tooltip().setupInternal(!!opt_default, config['tooltip']);
   anychart.core.settings.deserialize(this, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS, config);
 };
 
 
 /** @inheritDoc */
 anychart.stockModule.eventMarkers.Group.prototype.disposeInternal = function() {
-  goog.disposeAll(this.shapeManager_, this.normal_, this.hovered_, this.selected_);
-  this.normal_ = this.hovered_ = this.selected_ = this.shapeManager_ = this.plot = null;
+  goog.disposeAll(this.shapeManager_, this.normal_, this.hovered_, this.selected_, this.tooltip_);
+  this.normal_ = this.hovered_ = this.selected_ = this.shapeManager_ = this.plot = this.tooltip_ = null;
   anychart.stockModule.eventMarkers.Group.base(this, 'disposeInternal');
 };
 

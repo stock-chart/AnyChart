@@ -619,6 +619,7 @@ anychart.core.ui.LabelBase.prototype.drawLabel = function() {
 
   if (this.parentBounds()) {
     switch (this.getOption('position')) {
+      default:
       case anychart.enums.Position.LEFT_TOP:
         position.x = parentX;
         position.y = parentY;

@@ -1,6 +1,7 @@
 goog.provide('anychart.stockModule.eventMarkers.ChartController');
 goog.require('anychart.core.Base');
 goog.require('anychart.core.StateSettings');
+goog.require('anychart.core.ui.Tooltip');
 goog.require('anychart.stockModule.eventMarkers.Group');
 
 
@@ -42,6 +43,7 @@ anychart.stockModule.eventMarkers.ChartController = function(chart) {
   chart.listen(anychart.enums.EventType.EVENT_MARKER_MOUSE_MOVE, this.handleMouseOverAndMove_, false, this);
   chart.listen(anychart.enums.EventType.EVENT_MARKER_MOUSE_OUT, this.handleMouseOut_, false, this);
   chart.listen(anychart.enums.EventType.EVENT_MARKER_CLICK, this.handleMouseClick_, false, this);
+  // chart.listen(anychart.enums.EventType.POINTS_HOVER, this.hideTooltip_, false, this);
 };
 goog.inherits(anychart.stockModule.eventMarkers.ChartController, anychart.core.Base);
 anychart.core.settings.populate(anychart.stockModule.eventMarkers.ChartController, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS);
@@ -148,17 +150,25 @@ anychart.stockModule.eventMarkers.ChartController.prototype.handleMouseOverAndMo
   var group = e['group'];
   if (group) {
     var index = e['index'];
+    var evt = /** @type {anychart.core.MouseEvent} */(e['originalEvent']);
     if (this.currentHoverGroup_ != group || this.currentHoverIndex_ != index) {
       if (this.currentHoverGroup_) {
         this.currentHoverGroup_.plot.eventMarkers().applyState(this.currentHoverGroup_, this.currentHoverIndex_, anychart.PointState.NORMAL, anychart.PointState.HOVER);
       }
       if (group.plot.eventMarkers().applyState(group, index, anychart.PointState.HOVER, anychart.PointState.NORMAL)) {
+        if (this.currentHoverGroup_)
+          this.currentHoverGroup_.tooltip().hide(true);
         this.currentHoverGroup_ = group;
         this.currentHoverIndex_ = index;
+        group.tooltip().showFloat(evt['clientX'], evt['clientY'], group.getContextProvider(index));
       } else {
+        if (this.currentHoverGroup_)
+          this.currentHoverGroup_.tooltip().hide();
         this.currentHoverGroup_ = null;
         this.currentHoverIndex_ = NaN;
       }
+    } else {
+      group.tooltip().showFloat(evt['clientX'], evt['clientY'], group.getContextProvider(index));
     }
   }
 };
@@ -174,6 +184,7 @@ anychart.stockModule.eventMarkers.ChartController.prototype.handleMouseOut_ = fu
   if (group) {
     var index = e['index'];
     if (group.plot.eventMarkers().applyState(group, index, anychart.PointState.NORMAL, anychart.PointState.HOVER)) {
+      this.currentHoverGroup_.tooltip().hide();
       this.currentHoverGroup_ = null;
       this.currentHoverIndex_ = NaN;
     }
@@ -207,6 +218,32 @@ anychart.stockModule.eventMarkers.ChartController.prototype.handleMouseClick_ = 
 
 
 //endregion
+//region --- Tooltip
+//------------------------------------------------------------------------------
+//
+//  Tooltip
+//
+//------------------------------------------------------------------------------
+/**
+ * Creates chart tooltip.
+ * @param {(Object|boolean|null)=} opt_value
+ * @return {!(anychart.core.ui.Tooltip|anychart.stockModule.eventMarkers.ChartController)}
+ */
+anychart.stockModule.eventMarkers.ChartController.prototype.tooltip = function(opt_value) {
+  if (!this.tooltip_) {
+    this.tooltip_ = new anychart.core.ui.Tooltip(0);
+  }
+
+  if (goog.isDef(opt_value)) {
+    this.tooltip_.setup(opt_value);
+    return this;
+  } else {
+    return this.tooltip_;
+  }
+};
+
+
+//endregion
 //region --- Ser/Deser/Disp
 //------------------------------------------------------------------------------
 //
@@ -222,6 +259,7 @@ anychart.stockModule.eventMarkers.ChartController.prototype.serialize = function
   json['normal'] = this.normal_.serialize();
   json['hovered'] = this.hovered_.serialize();
   json['selected'] = this.selected_.serialize();
+  json['tooltip'] = this.tooltip().serialize();
 
   return json;
 };
@@ -231,6 +269,7 @@ anychart.stockModule.eventMarkers.ChartController.prototype.serialize = function
 anychart.stockModule.eventMarkers.ChartController.prototype.setupByJSON = function(config, opt_default) {
   anychart.stockModule.eventMarkers.ChartController.base(this, 'setupByJSON', config, opt_default);
 
+  this.tooltip().setupInternal(!!opt_default, config['tooltip']);
   this.normal_.setupInternal(!!opt_default, config);
   this.normal_.setupInternal(!!opt_default, config['normal']);
   this.hovered_.setupInternal(!!opt_default, config['hovered']);
@@ -255,8 +294,8 @@ anychart.stockModule.eventMarkers.ChartController.prototype.setupByJSON = functi
 
 /** @inheritDoc */
 anychart.stockModule.eventMarkers.ChartController.prototype.disposeInternal = function() {
-  goog.disposeAll(this.normal_, this.hovered_, this.selected_);
-  this.normal_ = this.hovered_ = this.selected_ = this.chart_ = null;
+  goog.disposeAll(this.normal_, this.hovered_, this.selected_, this.tooltip_);
+  this.normal_ = this.hovered_ = this.selected_ = this.chart_ = this.tooltip_ = null;
   anychart.stockModule.eventMarkers.ChartController.base(this, 'disposeInternal');
 };
 

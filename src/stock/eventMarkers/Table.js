@@ -399,6 +399,15 @@ anychart.stockModule.eventMarkers.Table.Iterator.prototype.getX = function() {
 
 
 /**
+ * Returns current key.
+ * @return {number}
+ */
+anychart.stockModule.eventMarkers.Table.Iterator.prototype.getPreciseX = function() {
+  return this.currentItemIndex_ < this.data_.length ? this.data_[this.currentItemIndex_].items[this.currentSubIndex_].key : NaN;
+};
+
+
+/**
  * Item getter.
  * @param {string} name
  * @return {*}

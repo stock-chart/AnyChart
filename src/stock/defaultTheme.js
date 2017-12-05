@@ -479,6 +479,33 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'height': 25,
         'fill': 'red'
       },
+      'tooltip': {
+        'title': {
+          'fontColor': '#fff',
+          'enabled': true
+        },
+        /**
+         * @this {*}
+         * @returns {string}
+         */
+        'titleFormat': function() {
+          var date = anychart.format.dateTime(this['date'],
+              anychart.format.getDateTimeFormat(
+                  anychart.format.getIntervalIdentifier(
+                      this['dataIntervalUnit'], void 0, 'full'
+                  )));
+          return this['title'] ? this['title'] + ' (' + date + ')' : date;
+        },
+        /**
+         * @this {*}
+         * @returns {string}
+         */
+        'format': function() {
+          return this['description'] || this['symbol'];
+        },
+        'fontColor': '#fff',
+        'separator': true
+      },
       'direction': 'auto',
       'position': 'axis',
       'seriesId': '0',

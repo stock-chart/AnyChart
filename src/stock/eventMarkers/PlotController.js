@@ -1,6 +1,7 @@
 goog.provide('anychart.stockModule.eventMarkers.PlotController');
 goog.require('anychart.core.StateSettings');
 goog.require('anychart.core.VisualBase');
+goog.require('anychart.core.ui.Tooltip');
 goog.require('anychart.stockModule.eventMarkers.Group');
 
 
@@ -448,6 +449,33 @@ anychart.stockModule.eventMarkers.PlotController.prototype.applyState = function
 };
 
 
+//region --- Tooltip
+//------------------------------------------------------------------------------
+//
+//  Tooltip
+//
+//------------------------------------------------------------------------------
+/**
+ * Creates chart tooltip.
+ * @param {(Object|boolean|null)=} opt_value
+ * @return {!(anychart.core.ui.Tooltip|anychart.stockModule.eventMarkers.PlotController)}
+ */
+anychart.stockModule.eventMarkers.PlotController.prototype.tooltip = function(opt_value) {
+  if (!this.tooltip_) {
+    this.tooltip_ = new anychart.core.ui.Tooltip(0);
+    this.tooltip_.parent(/** @type {anychart.core.ui.Tooltip} */(this.plot_.getChart().eventMarkers().tooltip()));
+  }
+
+  if (goog.isDef(opt_value)) {
+    this.tooltip_.setup(opt_value);
+    return this;
+  } else {
+    return this.tooltip_;
+  }
+};
+
+
+//endregion
 //region --- Ser/Deser/Disp
 //------------------------------------------------------------------------------
 //
@@ -463,6 +491,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.serialize = function(
   json['normal'] = this.normal_.serialize();
   json['hovered'] = this.hovered_.serialize();
   json['selected'] = this.selected_.serialize();
+  json['tooltip'] = this.tooltip().serialize();
 
   var groups = [];
   for (var i = 0; i < this.groups_.length; i++) {
@@ -483,6 +512,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.setupByJSON = functio
   this.normal_.setupInternal(!!opt_default, config['normal']);
   this.hovered_.setupInternal(!!opt_default, config['hovered']);
   this.selected_.setupInternal(!!opt_default, config['selected']);
+  this.tooltip().setupInternal(!!opt_default, config['tooltip']);
   // Group is not a typo
   anychart.core.settings.deserialize(this, anychart.stockModule.eventMarkers.Group.OWN_DESCRIPTORS, config);
 
@@ -512,9 +542,9 @@ anychart.stockModule.eventMarkers.PlotController.prototype.disposeGroups = funct
 
 /** @inheritDoc */
 anychart.stockModule.eventMarkers.PlotController.prototype.disposeInternal = function() {
-  goog.disposeAll(this.groups_, this.rootLayer_, this.normal_, this.hovered_, this.selected_);
+  goog.disposeAll(this.groups_, this.rootLayer_, this.normal_, this.hovered_, this.selected_, this.tooltip_);
   delete this.groups_;
-  this.normal_ = this.hovered_ = this.selected_ = this.rootLayer_ = this.plot_ = null;
+  this.normal_ = this.hovered_ = this.selected_ = this.rootLayer_ = this.plot_ = this.tooltip_ = null;
   anychart.stockModule.eventMarkers.PlotController.base(this, 'disposeInternal');
 };
 

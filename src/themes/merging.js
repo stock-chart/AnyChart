@@ -841,7 +841,8 @@ anychart.themes.merging.mergingMap_ = (function() {
           ['pert.', [
             'milestones',
             'tasks'
-          ]]
+          ]],
+          'stock.eventMarkers'
         ], '.tooltip']
       ]
     },
