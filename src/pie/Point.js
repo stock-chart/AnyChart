@@ -50,6 +50,9 @@ anychart.pieModule.Point.prototype.exploded = function(opt_value) {
 
 
 //exports
+/**
+ * @suppress {deprecated}
+ */
 (function() {
   var proto = anychart.pieModule.Point.prototype;
   proto['getStartAngle'] = proto.getStartAngle;
