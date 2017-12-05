@@ -178,11 +178,16 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme']['chart'], {
       'text': 'Label',
       'offsetX': 0,
       'offsetY': 0,
-      'anchor': 'center',
-      'hAlign': 'center',
-      'vAlign': 'middle',
+      'anchor': 'left-top',
+      'hAlign': 'start',
+      'vAlign': 'top',
       'width': null,
-      'height': null
+      'height': null,
+      'normal': {
+        'markers': {
+          'size': 3
+        }
+      }
     }
   }
 });

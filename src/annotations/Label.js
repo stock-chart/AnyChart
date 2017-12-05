@@ -85,6 +85,62 @@ anychart.annotationsModule.Label.prototype.resolveOption = function(name, state,
 };
 
 
+/** @inheritDoc */
+anychart.annotationsModule.Label.prototype.createPositionProviders = function() {
+  var res = [];
+  res.push(
+      {
+        'x': this.coords['xAnchor'],
+        'y': this.coords['valueAnchor']
+      },
+      {
+        'x': this.textBoundsCache_.left,
+        'y': this.textBoundsCache_.top
+      },
+      {
+        'x': this.textBoundsCache_.getRight(),
+        'y': this.textBoundsCache_.top
+      },
+      {
+        'x': this.textBoundsCache_.getRight(),
+        'y': this.textBoundsCache_.getBottom()
+      },
+      {
+        'x': this.textBoundsCache_.left,
+        'y': this.textBoundsCache_.getBottom()
+      }
+  );
+  return goog.array.map(res, function(item) {
+    return {'value': item};
+  });
+};
+
+
+//endregion
+//region Dragging
+/** @inheritDoc */
+anychart.annotationsModule.Label.prototype.secureCurrentPosition = function() {
+  anychart.annotationsModule.Label.base(this, 'secureCurrentPosition');
+  this.securedBounds = this.textBoundsCache_.clone();
+};
+
+
+/** @inheritDoc */
+anychart.annotationsModule.Label.prototype.moveAnchor = function(anchorId, dx, dy) {
+  if (anchorId < 1)
+    return anychart.annotationsModule.Label.base(this, 'moveAnchor', anchorId, dx, dy);
+  else {
+    var right = this.securedBounds.width;
+    var bottom = this.securedBounds.height;
+    this.ownSettings['width'] = right + dx;
+    this.ownSettings['height'] = bottom + dy;
+  }
+  this.invalidate(anychart.ConsistencyState.ANNOTATIONS_SHAPES | anychart.ConsistencyState.ANNOTATIONS_MARKERS);
+  this.draw();
+  return this;
+};
+
+
 //endregion
 //region Drawing
 //----------------------------------------------------------------------------------------------------------------------
@@ -134,12 +190,14 @@ anychart.annotationsModule.Label.prototype.applyTextSettings = function(state) {
 anychart.annotationsModule.Label.prototype.ensureCreated = function() {
   anychart.annotationsModule.Label.base(this, 'ensureCreated');
   if (!this.textElement_) {
-    this.textElement_ = acgraph.text();
-    this.textElement_.parent(this.rootLayer);
+    this.textElement_ = /** @type {acgraph.vector.Text} */(this.rootLayer.text());
     this.textElement_.zIndex(anychart.annotationsModule.Base.LABELS_ZINDEX);
   }
-  if (!this.path_) {
-    this.path_ = this.rootLayer.path().zIndex(10).fill('none').stroke('black');
+  if (!this.hoverRect_) {
+    this.hoverRect_ = this.rootLayer.rect();
+    this.hoverRect_
+        .fill(anychart.color.TRANSPARENT_HANDLER)
+        .zIndex(anychart.annotationsModule.Base.HOVER_SHAPE_ZINDEX);
   }
 };
 
@@ -157,17 +215,18 @@ anychart.annotationsModule.Label.prototype.drawOnePointShape = function(x, y) {
   anychart.utils.applyOffsetByAnchor(position, anchor,
       /** @type {number} */(this.getOption('offsetX') || 0),
       /** @type {number} */(this.getOption('offsetY') || 0));
-
   this.textElement_.x(position.x);
   this.textElement_.y(position.y);
-  bounds = this.textElement_.getBounds();
-  this.path_
-      .clear()
-      .moveTo(bounds.left, bounds.top)
-      .lineTo(bounds.getRight(), bounds.top)
-      .lineTo(bounds.getRight(), bounds.getBottom())
-      .lineTo(bounds.left, bounds.getBottom())
-      .lineTo(bounds.left, bounds.top);
+
+  this.textBoundsCache_ = this.textElement_.getBounds();
+  var hg = (/** @type {number} */(this.getOption('hoverGap')) || 0) / 2;
+  this.textBoundsCache_.left -= hg;
+  this.textBoundsCache_.top -= hg;
+  this.textBoundsCache_.width += 2 * hg;
+  this.textBoundsCache_.height += 2 * hg;
+  anychart.utils.applyPixelShiftToRect(this.textBoundsCache_, 1);
+  this.hoverRect_.setBounds(this.textBoundsCache_);
+  this.invalidate(anychart.ConsistencyState.ANNOTATIONS_MARKERS);
 };
 
 
@@ -176,6 +235,12 @@ anychart.annotationsModule.Label.prototype.colorize = function(state) {
   anychart.annotationsModule.Label.base(this, 'colorize', state);
   this.textElement_.color(this.resolveOption('fontColor', state, null));
   this.textElement_.opacity(this.resolveOption('fontOpacity', state, null));
+  var stroke = (state == anychart.PointState.SELECT) ?
+      {
+        color: 'black',
+        thickness: 1
+      } : 'none';
+  this.hoverRect_.stroke(/** @type {acgraph.vector.SolidFill} */(stroke));
 };
 
 
@@ -213,7 +278,7 @@ anychart.annotationsModule.Label.prototype.setupByJSON = function(config, opt_de
 
 /** @inheritDoc */
 anychart.annotationsModule.Label.prototype.disposeInternal = function() {
-  goog.dispose(this.textElement_);
+  goog.disposeAll(this.textElement_, this.hoverRect_);
   anychart.annotationsModule.Label.base(this, 'disposeInternal');
 };
 //endregion
