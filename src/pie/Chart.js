@@ -369,6 +369,7 @@ anychart.pieModule.Chart.prototype.SUPPORTED_CONSISTENCY_STATES =
     anychart.core.SeparateChart.prototype.SUPPORTED_CONSISTENCY_STATES |
     anychart.ConsistencyState.APPEARANCE |
     anychart.ConsistencyState.PIE_LABELS |
+    anychart.ConsistencyState.PIE_CENTER_CONTENT |
     anychart.ConsistencyState.PIE_DATA;
 
 
@@ -1108,6 +1109,22 @@ anychart.pieModule.Chart.prototype.isOutsideLabels = function() {
 anychart.pieModule.Chart.prototype.isNoData = function() {
   var rowsCount = this.getIterator().getRowsCount();
   return (!rowsCount);
+};
+
+
+//endregion
+//region --- Center content
+/**
+ *
+ */
+anychart.pieModule.Chart.prototype.centerContent = function() {
+  // if (!this.centerContent_) {
+  //   this.centerContent_ = new anychart.pieModule.CenterContent();
+  //   this.centerContent_.listen();
+  //   this.invalidate(anychart.ConsistencyState.PIE_CENTER_CONTENT, anychart.Signal.NEEDS_REDRAW);
+  // }
+  //
+  // return this.centerContent_;
 };
 
 
@@ -1986,6 +2003,15 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
     this.calculateBounds_(bounds);
     this.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.PIE_LABELS);
+  }
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.PIE_CENTER_CONTENT)) {
+    // if (this.centerContentLayer_) {
+    //   this.centerContentLayer_.parent(this.rootElement);
+    //   this.centerContentLayer_.content('<div style="position: absolute; left: 100px; top: 100px; width: 100px; height: 100px">sdfsdfs</div>');
+    // }
+
+    this.markConsistent(anychart.ConsistencyState.PIE_CENTER_CONTENT);
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
