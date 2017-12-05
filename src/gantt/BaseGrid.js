@@ -1318,9 +1318,13 @@ anychart.ganttModule.BaseGrid.prototype.getInheritedOption = function(name, defa
  * @return {*}
  */
 anychart.ganttModule.BaseGrid.prototype.resolveOption = function(name, state, normalizer) {
-  var isFill = goog.string.contains(name, 'Fill');
-  var defaultName = isFill ? 'baseFill' : 'baseStroke';
-  return normalizer(this.getInheritedOption(name, defaultName));
+  if (name == 'rowSelectedFill' || name == 'rowHoverFill') {
+    return normalizer(this.getOption(name));
+  } else {
+    var isFill = goog.string.contains(name, 'Fill');
+    var defaultName = isFill ? 'baseFill' : 'baseStroke';
+    return normalizer(this.getInheritedOption(name, defaultName));
+  }
 };
 
 

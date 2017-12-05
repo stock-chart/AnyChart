@@ -321,20 +321,13 @@ anychart.core.settings.populate(anychart.ganttModule.DataGrid, anychart.ganttMod
 
 /**
  * Resolve header fill.
- * @return {acgraph.vector.AnyColor}
+ * @return {acgraph.vector.Fill}
  */
 anychart.ganttModule.DataGrid.prototype.resolveHeaderFill = function() {
-  return anychart.ganttModule.BaseGrid.getColorResolver('headerFill', anychart.enums.ColorType.FILL, false)(this, 0);
+  return /** @type {acgraph.vector.Fill} */(this.getOption('headerFill'));
 };
 
 
-/** @inheritDoc */
-anychart.ganttModule.DataGrid.prototype.resolveOption = function(name, state, normalizer) {
-  var val = this.getOption(name);
-  if (!goog.isDefAndNotNull(val))
-    val = (function () { return this['sourceColor']; });
-  return normalizer(val);
-};
 //endregion
 
 

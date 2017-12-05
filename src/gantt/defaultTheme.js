@@ -9,6 +9,8 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     'splitterPosition': '30%',
     'headerHeight': 70,
     'rowStroke': '#cecece',
+    'rowHoverFill': anychart.core.defaultTheme.returnSourceColor,
+    'rowSelectedFill': anychart.core.defaultTheme.returnSourceColor,
     'editing': false,
     'title': {
       'enabled': false
