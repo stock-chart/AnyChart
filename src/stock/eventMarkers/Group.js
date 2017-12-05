@@ -605,16 +605,12 @@ anychart.stockModule.eventMarkers.Group.prototype.drawLabel_ = function(iterator
     label = this.labels_.add(formatProvider, positionProvider, index);
     label.zIndex(zIndexOrUpdate);
   }
-  var labelChain = [];
-  for (var i = chain.length; i--;) {
-    labelChain.push(chain[i]);
-  }
-  labelChain.push({
+  var labelChain = goog.array.concat({
     'positionFormatter': anychart.utils.DEFAULT_FORMATTER,
     'anchor': anychart.enums.Anchor.CENTER,
     'rotation': 0,
     'height': positionProvider['height'] // defined only in PIN type
-  });
+  }, chain);
   label.stateOrder(/** @type {Array.<Object>} */(labelChain));
   label.container(/** @type {acgraph.vector.ILayer} */(this.container()));
   label.draw();
