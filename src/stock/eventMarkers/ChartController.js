@@ -153,9 +153,12 @@ anychart.stockModule.eventMarkers.ChartController.prototype.handleMouseOverAndMo
     var evt = /** @type {anychart.core.MouseEvent} */(e['originalEvent']);
     if (this.currentHoverGroup_ != group || this.currentHoverIndex_ != index) {
       if (this.currentHoverGroup_) {
-        this.currentHoverGroup_.plot.eventMarkers().applyState(this.currentHoverGroup_, this.currentHoverIndex_, anychart.PointState.NORMAL, anychart.PointState.HOVER);
+        if (this.chart_.dispatchEvent(this.makeInteractivityMarkerEvent_(evt, false, [], this.currentHoverGroup_, this.currentHoverIndex_))) {
+          this.currentHoverGroup_.plot.eventMarkers().applyState(this.currentHoverGroup_, this.currentHoverIndex_, anychart.PointState.NORMAL, anychart.PointState.HOVER);
+        }
       }
-      if (group.plot.eventMarkers().applyState(group, index, anychart.PointState.HOVER, anychart.PointState.NORMAL)) {
+      if (this.chart_.dispatchEvent(this.makeInteractivityMarkerEvent_(evt, false, [{group: group, index: index}], group, index)) &&
+          group.plot.eventMarkers().applyState(group, index, anychart.PointState.HOVER, anychart.PointState.NORMAL)) {
         if (this.currentHoverGroup_)
           this.currentHoverGroup_.tooltip().hide(true);
         this.currentHoverGroup_ = group;
@@ -183,7 +186,8 @@ anychart.stockModule.eventMarkers.ChartController.prototype.handleMouseOut_ = fu
   var group = e['group'];
   if (group) {
     var index = e['index'];
-    if (group.plot.eventMarkers().applyState(group, index, anychart.PointState.NORMAL, anychart.PointState.HOVER)) {
+    if (this.chart_.dispatchEvent(this.makeInteractivityMarkerEvent_(/** @type {anychart.core.MouseEvent} */(e['originalEvent']), false, [], group, index)) &&
+        group.plot.eventMarkers().applyState(group, index, anychart.PointState.NORMAL, anychart.PointState.HOVER)) {
       this.currentHoverGroup_.tooltip().hide();
       this.currentHoverGroup_ = null;
       this.currentHoverIndex_ = NaN;
@@ -201,12 +205,16 @@ anychart.stockModule.eventMarkers.ChartController.prototype.handleMouseClick_ = 
   var group = e['group'];
   if (group) {
     var index = e['index'];
+    var evt = /** @type {anychart.core.MouseEvent} */(e['originalEvent']);
     var sameMarker = this.currentSelectGroup_ == group && this.currentSelectIndex_ == index;
     // var evt = (/** @type {anychart.core.MouseEvent} */(e['originalEvent']));
-    if (this.currentSelectGroup_) {
+    if (this.currentSelectGroup_ &&
+        this.chart_.dispatchEvent(this.makeInteractivityMarkerEvent_(evt, true, [], this.currentSelectGroup_, this.currentSelectIndex_))) {
       this.currentSelectGroup_.plot.eventMarkers().applyState(this.currentSelectGroup_, this.currentSelectIndex_, sameMarker ? anychart.PointState.HOVER : anychart.PointState.NORMAL, anychart.PointState.SELECT);
     }
-    if (!sameMarker && group.plot.eventMarkers().applyState(group, index, anychart.PointState.SELECT, anychart.PointState.HOVER)) {
+    if (!sameMarker &&
+        this.chart_.dispatchEvent(this.makeInteractivityMarkerEvent_(evt, true, [{group: group, index: index}], group, index)) &&
+        group.plot.eventMarkers().applyState(group, index, anychart.PointState.SELECT, anychart.PointState.HOVER)) {
       this.currentSelectGroup_ = group;
       this.currentSelectIndex_ = index;
     } else {
@@ -214,6 +222,29 @@ anychart.stockModule.eventMarkers.ChartController.prototype.handleMouseClick_ = 
       this.currentSelectIndex_ = NaN;
     }
   }
+};
+
+
+/**
+ * @param {anychart.core.MouseEvent} event
+ * @param {boolean} isSelect
+ * @param {Array} status
+ * @param {anychart.stockModule.eventMarkers.Group} group
+ * @param {number} index
+ * @return {Object}
+ * @private
+ */
+anychart.stockModule.eventMarkers.ChartController.prototype.makeInteractivityMarkerEvent_ = function(event, isSelect, status, group, index) {
+  return {
+    'type': isSelect ? anychart.enums.EventType.EVENT_MARKERS_SELECT : anychart.enums.EventType.EVENT_MARKERS_HOVER,
+    'status': goog.array.map(status, function(obj) {
+      return obj.group.getMarkerContext(obj.index);
+    }),
+    'eventMarker': group.getMarkerContext(index),
+    'actualTarget': group,
+    'target': this,
+    'originalEvent': event
+  };
 };
 
 
@@ -306,6 +337,7 @@ anychart.stockModule.eventMarkers.ChartController.prototype.disposeInternal = fu
   var proto = anychart.stockModule.eventMarkers.ChartController.prototype;
   proto['group'] = proto.group;
   proto['data'] = proto.data;
+  proto['tooltip'] = proto.tooltip;
   proto['normal'] = proto.normal;
   proto['hovered'] = proto.hovered;
   proto['selected'] = proto.selected;

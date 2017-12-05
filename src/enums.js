@@ -1442,6 +1442,9 @@ anychart.enums.EventType = {
   EVENT_MARKER_CLICK: 'eventmarkerclick',
   EVENT_MARKER_DBLCLICK: 'eventmarkerdblclick',
 
+  EVENT_MARKERS_HOVER: 'eventmarkershover',
+  EVENT_MARKERS_SELECT: 'eventmarkersselect',
+
   DRAG: 'drag',
   DRAG_START: 'dragstart',
   DRAG_END: 'dragend',

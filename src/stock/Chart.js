@@ -922,13 +922,14 @@ anychart.stockModule.Chart.prototype.setDefaultPlotSettings = function(value) {
 
 /**
  * Returns an array of params to pass to eventMarkers table getIterator() method.
- * @return {Array} [from, to, coIterator]
+ * @param {boolean=} opt_full
+ * @return {Array} [coIterator, fromOrNaN, toOrNaN]
  */
-anychart.stockModule.Chart.prototype.getEventMarkersIteratorParams = function() {
+anychart.stockModule.Chart.prototype.getEventMarkersIteratorParams = function(opt_full) {
   return [
-    this.dataController_.getFirstSelectedKey(),
-    this.dataController_.getLastSelectedKey(),
-    this.dataController_.getCoIterator(false, false, true)
+    this.dataController_.getCoIterator(false, false, true),
+    opt_full ? NaN : this.dataController_.getFirstSelectedKey(),
+    opt_full ? NaN : this.dataController_.getLastSelectedKey()
   ];
 };
 

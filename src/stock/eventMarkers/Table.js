@@ -108,14 +108,22 @@ anychart.stockModule.eventMarkers.Table.prototype.getData = function() {
 
 /**
  * Returns a new iterator for passed range of keys and a coIterator for a keys grid.
- * @param {number} from
- * @param {number} to
  * @param {anychart.stockModule.data.TableIterator.ICoIterator} coIterator
+ * @param {number} fromOrNaNForFull
+ * @param {number} toOrNaNForFull
  * @return {!anychart.stockModule.eventMarkers.Table.Iterator}
  */
-anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, to, coIterator) {
-  var fromIndex = ~goog.array.binarySearch(this.data_, {key: from, index: -1}, anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR);
-  var toIndex = ~goog.array.binarySearch(this.data_, {key: to, index: -Infinity}, anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR);
+anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(coIterator, fromOrNaNForFull, toOrNaNForFull) {
+  var fromIndex, toIndex;
+  var full = isNaN(fromOrNaNForFull) || isNaN(toOrNaNForFull);
+  if (full) {
+    fromIndex = 0;
+    toIndex = this.data_.length - 1;
+  } else {
+    fromIndex = ~goog.array.binarySearch(this.data_, {key: fromOrNaNForFull, index: -1}, anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR);
+    toIndex = ~goog.array.binarySearch(this.data_, {key: toOrNaNForFull, index: -Infinity}, anychart.stockModule.eventMarkers.Table.DATA_ITEMS_COMPARATOR);
+  }
+
 
   var data, count, lookups, firstIndex, j;
   if (this.lastDataCache_ && this.lastDataCache_.fromIndex == fromIndex && this.lastDataCache_.toIndex == toIndex && this.lastDataCache_.pointsCount == coIterator.getRowsCount()) {
@@ -140,7 +148,7 @@ anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, t
         i++;
       }
       if (items.length) {
-        if (isNaN(prevIterKey)) {
+        if (isNaN(prevIterKey) && !full) {
           items.length = 0;
         } else {
           if (!data.length) {
@@ -162,7 +170,7 @@ anychart.stockModule.eventMarkers.Table.prototype.getIterator = function(from, t
       prevIterKey = coIterator.currentKey();
       prevIterIndex = coIterator.currentIndex();
     }
-    if (!isNaN(prevIterKey)) {
+    if (!isNaN(prevIterKey) || full) {
       while (i < toIndex) {
         items.push(currItem);
         i++;

@@ -609,7 +609,8 @@ anychart.stockModule.eventMarkers.Group.prototype.drawLabel_ = function(iterator
     'positionFormatter': anychart.utils.DEFAULT_FORMATTER,
     'anchor': anychart.enums.Anchor.CENTER,
     'rotation': 0,
-    'height': positionProvider['height'] // defined only in PIN type
+    'width': width,
+    'height': positionProvider['height'] || height // defined only in PIN type
   }, chain);
   label.stateOrder(/** @type {Array.<Object>} */(labelChain));
   label.container(/** @type {acgraph.vector.ILayer} */(this.container()));
@@ -757,10 +758,11 @@ anychart.stockModule.eventMarkers.Group.prototype.getIterator = function() {
 
 
 /**
+ * @param {boolean=} opt_full
  * @return {!anychart.stockModule.eventMarkers.Table.Iterator}
  */
-anychart.stockModule.eventMarkers.Group.prototype.getDetachedIterator = function() {
-  return this.dataTable_.getIterator.apply(this.dataTable_, this.plot.getChart().getEventMarkersIteratorParams());
+anychart.stockModule.eventMarkers.Group.prototype.getDetachedIterator = function(opt_full) {
+  return this.dataTable_.getIterator.apply(this.dataTable_, this.plot.getChart().getEventMarkersIteratorParams(opt_full));
 };
 
 
@@ -1046,6 +1048,10 @@ anychart.stockModule.eventMarkers.Group.prototype.getContextProviderValues = fun
       value: this,
       type: anychart.enums.TokenType.UNKNOWN
     },
+    'index': {
+      value: iterator.getIndex(),
+      type: anychart.enums.TokenType.NUMBER
+    },
     'plot': {
       value: this.plot,
       type: anychart.enums.TokenType.UNKNOWN
@@ -1075,6 +1081,23 @@ anychart.stockModule.eventMarkers.Group.prototype.getContextProviderValues = fun
       type: anychart.enums.TokenType.NUMBER
     }
   };
+};
+
+
+/**
+ *
+ * @param {number} index
+ * @return {anychart.format.Context}
+ */
+anychart.stockModule.eventMarkers.Group.prototype.getMarkerContext = function(index) {
+  var iterator = this.getDetachedIterator(true);
+  if (iterator.select(index)) {
+    var res = new anychart.format.Context(this.getContextProviderValues(iterator), iterator);
+    res.propagate();
+  } else {
+    res = null;
+  }
+  return res;
 };
 
 
@@ -1167,6 +1190,8 @@ anychart.stockModule.eventMarkers.Group.prototype.disposeInternal = function() {
 (function() {
   var proto = anychart.stockModule.eventMarkers.Group.prototype;
   proto['data'] = proto.data;
+  proto['tooltip'] = proto.tooltip;
+  proto['getMarkerContext'] = proto.getMarkerContext;
   proto['normal'] = proto.normal;
   proto['hovered'] = proto.hovered;
   proto['selected'] = proto.selected;

@@ -555,6 +555,7 @@ anychart.stockModule.eventMarkers.PlotController.prototype.disposeInternal = fun
   var proto = anychart.stockModule.eventMarkers.PlotController.prototype;
   proto['group'] = proto.group;
   proto['data'] = proto.data;
+  proto['tooltip'] = proto.tooltip;
   proto['normal'] = proto.normal;
   proto['hovered'] = proto.hovered;
   proto['selected'] = proto.selected;
